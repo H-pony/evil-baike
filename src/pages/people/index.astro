@@ -1,0 +1,101 @@
+---
+/**
+ * 人物列表页 - 按"事件主人物"展示
+ *
+ * 约定：每个事件的 `people` 数组首位 = 该事件"主人物"。
+ * /people 列表页仅展示主人物；其他人物 .md 仍存在，
+ * 可经直接 URL / 收藏夹 / 事件详情页 EntityLink 访问。
+ *
+ * 这是"档案收录范围"的产品决策，非道德定性：
+ *   - 武大事件：people = ['yang-jingyuan', 'xiao-moumo'] → 仅展示 杨景媛
+ *   - 吕梁事件：people = ['lv-moumou-judge', 'wang-lushi-complainant'] → 仅展示 吕某某
+ *
+ * 当事人未被"删除"或"贴标签"——他们的人物档案仍可访问，
+ * 只是不在主页列表中按"事件 × 1 主人物"的形式展示。
+ */
+
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import PersonCard from '~/components/PersonCard.astro';
+import FilterBar from '~/components/FilterBar.astro';
+import { getCollection } from 'astro:content';
+import { isIndexable } from '~/content.config';
+
+const allEvents = await getCollection('events', (e) => isIndexable(e.data.status));
+const allPeople = await getCollection('people', (p) => isIndexable(p.data.status));
+
+// 约定：people[0] 是事件主人物
+const primaryPersonEventCount = new Map<string, number>();
+for (const event of allEvents) {
+  if (event.data.people.length > 0) {
+    const primary = event.data.people[0];
+    primaryPersonEventCount.set(primary, (primaryPersonEventCount.get(primary) ?? 0) + 1);
+  }
+}
+
+// 人物卡 eventCount = 涉及事件数（用于卡片显示）
+const eventCountMap = new Map<string, number>();
+for (const event of allEvents) {
+  for (const personId of event.data.people) {
+    eventCountMap.set(personId, (eventCountMap.get(personId) ?? 0) + 1);
+  }
+}
+
+// 仅主人物进入列表
+const primaryPeople = allPeople.filter((p) => primaryPersonEventCount.has(p.id));
+
+// 按主人物事件数降序
+const people = [...primaryPeople].sort(
+  (a, b) => (primaryPersonEventCount.get(b.id) ?? 0) - (primaryPersonEventCount.get(a.id) ?? 0),
+);
+
+const filters: Array<{ name: string; label: string; options: Array<{ value: string; label: string }> }> = [];
+---
+
+<BaseLayout title="人物" description="档案库中事件的主人物">
+  <header class="text-center py-8 border-b-3 border-double border-ink-900 mb-8">
+    <p class="meta-stamp mb-2">SECTION 02</p>
+    <h1 class="headline text-4xl lg:text-5xl">人物</h1>
+    <p class="deck mt-2" data-count-line data-total={people.length}>
+      共 {people.length} 位 · 当前显示 <span data-current-count>{people.length}</span> 位 · 按主人物事件数排序
+    </p>
+    <p class="meta-stamp mt-3 max-w-2xl mx-auto text-ink-faded">
+      每个事件展示其主人物（事件 frontmatter 的 <code class="font-mono">people</code> 字段首位）。
+      其他当事人仍收录于档案，可经事件详情页 / 收藏夹 / 直接 URL 访问。
+    </p>
+  </header>
+
+  {filters.length > 0 && (
+    <FilterBar
+      filters={filters}
+      current={{}}
+      basePath="/people"
+      data-filter-bar="people"
+    />
+  )}
+
+  {people.length === 0 ? (
+    <p class="text-center text-ink-muted py-20">尚无可展示的事件主人物。</p>
+  ) : (
+    <div
+      data-card-grid
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+    >
+      {people.map((person) => (
+        <article data-card data-id={person.id}>
+          <PersonCard
+            id={person.id}
+            name={person.data.name}
+            summary={person.data.summary}
+            status={person.data.status}
+            aliases={person.data.aliases}
+            eventCount={eventCountMap.get(person.id) ?? 0}
+          />
+        </article>
+      ))}
+    </div>
+  )}
+
+  <p data-empty hidden class="text-center text-ink-muted py-20">
+    无匹配条目。<a href="/people">清除筛选</a>。
+  </p>
+</BaseLayout>

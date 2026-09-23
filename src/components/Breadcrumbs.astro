@@ -1,0 +1,30 @@
+---
+/**
+ * Breadcrumbs - 面包屑导航
+ */
+interface Item {
+  label: string;
+  href?: string;
+}
+
+interface Props {
+  items: Item[];
+}
+
+const { items } = Astro.props;
+---
+
+<nav aria-label="面包屑" class="text-sm font-mono uppercase tracking-wider text-ink-muted">
+  <ol class="flex flex-wrap items-center gap-1.5">
+    {items.map((item, idx) => (
+      <li class="flex items-center gap-1.5">
+        {idx > 0 && <span aria-hidden="true">›</span>}
+        {item.href ? (
+          <a href={item.href} class="hover:text-archive-seal">{item.label}</a>
+        ) : (
+          <span class="text-ink-900">{item.label}</span>
+        )}
+      </li>
+    ))}
+  </ol>
+</nav>

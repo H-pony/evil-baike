@@ -1,0 +1,78 @@
+---
+/**
+ * BaseLayout - 全站基础布局
+ * 档案馆 / 报纸风格：报头 + 内容区 + 页脚
+ */
+
+import Header from '~/components/Header.astro';
+import Footer from '~/components/Footer.astro';
+import DisclaimerBanner from '~/components/DisclaimerBanner.astro';
+import '~/styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  showDisclaimer?: boolean;
+  ogType?: 'website' | 'article';
+  noIndex?: boolean;
+}
+
+const {
+  title,
+  description = '恶人百科 · 公共事件的永久档案馆',
+  showDisclaimer = false,
+  ogType = 'website',
+  noIndex = false,
+} = Astro.props;
+
+const siteName = '恶人百科';
+const fullTitle = title === siteName ? title : `${title} · ${siteName}`;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).toString();
+---
+
+<!doctype html>
+<html lang="zh-Hans" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+
+    {noIndex && <meta name="robots" content="noindex,nofollow" />}
+
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content={siteName} />
+    <meta property="og:locale" content="zh_CN" />
+
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate" type="application/rss+xml" title={siteName} href="/rss.xml" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+
+    <meta name="theme-color" content="#0a0908" />
+  </head>
+  <body class="min-h-screen flex flex-col">
+    <Header />
+
+    {showDisclaimer && (
+      <div class="container mx-auto px-4 mt-4 no-print">
+        <DisclaimerBanner />
+      </div>
+    )}
+
+    <main class="flex-1 container mx-auto px-4 py-8 lg:py-12 max-w-6xl">
+      <slot />
+    </main>
+
+    <Footer />
+  </body>
+</html>

@@ -1,0 +1,113 @@
+---
+/**
+ * EventOverview - 事件档案概览
+ *
+ * 详情页顶部使用，按四段呈现：
+ *   1. 已确认事实（confirmedFacts）
+ *   2. 各方主张（claims，按陈述方列出）
+ *   3. 当前处理结果（currentOutcome）
+ *   4. 仍待核实（pendingVerification）
+ *
+ * 数据来源：frontmatter 显式声明，避免自动推断混淆事实与陈述。
+ */
+
+interface Claim {
+  claim: string;
+  by: string;
+  sources?: string[];
+}
+
+interface Props {
+  confirmedFacts?: string[];
+  claims?: Claim[];
+  currentOutcome?: string;
+  pendingVerification?: string[];
+}
+
+const {
+  confirmedFacts = [],
+  claims = [],
+  currentOutcome,
+  pendingVerification = [],
+} = Astro.props;
+
+const hasAny = confirmedFacts.length > 0
+  || claims.length > 0
+  || currentOutcome
+  || pendingVerification.length > 0;
+---
+
+{hasAny && (
+  <section class="archive-box p-5 mb-8" data-event-overview>
+    <h2 class="meta-stamp mb-3 text-archive-seal">档案概览 · 阅读前请先读这一段</h2>
+
+    {confirmedFacts.length > 0 && (
+      <div class="mb-4">
+        <h3 class="font-display font-semibold text-base mb-2">
+          已确认事实 <span class="meta-stamp ml-1">[{confirmedFacts.length}]</span>
+        </h3>
+        <ul class="space-y-1.5 text-sm leading-relaxed list-disc list-inside text-ink-900/90">
+          {confirmedFacts.map((fact) => (
+            <li>{fact}</li>
+          ))}
+        </ul>
+        <p class="meta-stamp mt-2">
+          事实以法院判决书、武大通报、官方通报等一级信源为准。
+        </p>
+      </div>
+    )}
+
+    {claims.length > 0 && (
+      <div class="mb-4 pt-4 border-t border-ink-900/20">
+        <h3 class="font-display font-semibold text-base mb-2">
+          各方主张 <span class="meta-stamp ml-1">[{claims.length}]</span>
+        </h3>
+        <ul class="space-y-3 text-sm leading-relaxed">
+          {claims.map((c) => (
+            <li>
+              <p class="text-ink-900/90">
+                <span class="font-mono uppercase tracking-wider text-[10px] text-archive-seal mr-1">陈述方</span>
+                <span class="font-medium">{c.by}</span>
+              </p>
+              <blockquote class="blockquote mt-1">{c.claim}</blockquote>
+              {c.sources && c.sources.length > 0 && (
+                <p class="meta-stamp mt-1">
+                  信源：
+                  {c.sources.map((url, i) => (
+                    <>
+                      <a href={url} target="_blank" rel="noopener noreferrer nofollow">[{i + 1}]</a>
+                      {i < c.sources!.length - 1 && ', '}
+                    </>
+                  ))}
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+
+    {currentOutcome && (
+      <div class="mb-4 pt-4 border-t border-ink-900/20">
+        <h3 class="font-display font-semibold text-base mb-2">当前处理结果</h3>
+        <p class="text-sm leading-relaxed whitespace-pre-line text-ink-900/90">{currentOutcome}</p>
+      </div>
+    )}
+
+    {pendingVerification.length > 0 && (
+      <div class="pt-4 border-t border-ink-900/20">
+        <h3 class="font-display font-semibold text-base mb-2">
+          仍待核实 <span class="meta-stamp ml-1">[{pendingVerification.length}]</span>
+        </h3>
+        <ul class="space-y-1.5 text-sm leading-relaxed list-disc list-inside text-ink-900/90">
+          {pendingVerification.map((item) => (
+            <li>{item}</li>
+          ))}
+        </ul>
+        <p class="meta-stamp mt-2">
+          如掌握新信源，可通过页面底部「报告错误 / 补充证据 / 申请更正」入口反馈。
+        </p>
+      </div>
+    )}
+  </section>
+)}

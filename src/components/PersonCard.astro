@@ -1,0 +1,99 @@
+---
+/**
+ * PersonCard - 人物卡片（列表页用）
+ *
+ * 含匿名化头像（基于 id 哈希从档案中性色板中选色）。
+ * - 中文姓名：取首字
+ * - 英文姓名：取首字母组合
+ * - 括号内注解（如"肖某某（武汉大学图书馆事件被指控人）"的注解部分）不参与计算
+ * - 配色：基于档案色板（archive-aged / ink-50 / ink-100 / archive-paper），
+ *   避开朱砂红（archive-seal），避免给真人贴"红/危险"暗示。
+ */
+
+import StatusBadge from './StatusBadge.astro';
+
+interface Props {
+  id: string;
+  name: string;
+  summary: string;
+  status: 'draft' | 'submitted' | 'reviewing' | 'published' | 'archived' | 'withdrawn';
+  aliases?: string[];
+  eventCount: number;
+}
+
+const { id, name, summary, status, aliases = [], eventCount } = Astro.props;
+
+/** 取首字符（中文取首字 / 英文取首字母组合）。括号内注解不计入。 */
+function getInitials(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return '?';
+  const withoutParens = trimmed.replace(/[（(][^）)]*[）)]/g, '').trim();
+  const cn = withoutParens.match(/[\u4e00-\u9fa5]/);
+  if (cn) return cn[0];
+  const parts = withoutParens.split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return trimmed.slice(0, 1).toUpperCase();
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + (parts[1]?.[0] ?? '')).toUpperCase();
+}
+
+/**
+ * 基于 id 哈希分配稳定背景色。
+ * 同一 id 始终同一颜色——切页 / 刷新 / 跨页面都一致。
+ * 仅在档案中性色板内选，避开 archive-seal（朱砂红）。
+ */
+function getAvatarStyle(id: string): { bg: string; text: string; border: string } {
+  const palette = [
+    { bg: 'bg-archive-aged', text: 'text-ink-900', border: 'border-ink-900/40' },
+    { bg: 'bg-ink-50', text: 'text-ink-900', border: 'border-ink-900/30' },
+    { bg: 'bg-ink-100', text: 'text-ink-900', border: 'border-ink-900/40' },
+    { bg: 'bg-archive-paper', text: 'text-ink-900', border: 'border-ink-900/50' },
+  ];
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = ((hash << 5) - hash) + id.charCodeAt(i);
+    hash |= 0;
+  }
+  return palette[Math.abs(hash) % palette.length];
+}
+
+const initials = getInitials(name);
+const avatar = getAvatarStyle(id);
+---
+
+<a href={`/people/${id}`} class="card-link block archive-box hover:border-archive-seal transition-colors">
+  <div class="flex items-start gap-3 mb-2">
+    <!-- 匿名化头像：首字方块 -->
+    <div
+      class:list={[
+        'shrink-0 w-14 h-14 flex items-center justify-center font-display font-bold text-2xl border-2 rounded-sm select-none',
+        avatar.bg,
+        avatar.text,
+        avatar.border,
+      ]}
+      aria-hidden="true"
+      data-person-avatar={id}
+    >
+      {initials}
+    </div>
+
+    <div class="flex-1 min-w-0">
+      <div class="flex items-start justify-between gap-2 mb-2">
+        <span class="meta-stamp border border-ink-900/30 px-2 py-0.5">人物</span>
+        <StatusBadge status={status} size="sm" />
+      </div>
+      <h3 class="card-title font-display font-semibold text-xl leading-tight">
+        {name}
+      </h3>
+    </div>
+  </div>
+
+  {aliases.length > 0 && (
+    <p class="meta-stamp text-ink-faded mb-2">又称：{aliases.join(' · ')}</p>
+  )}
+
+  <p class="text-sm text-ink-900/80 line-clamp-3 mb-3">{summary}</p>
+
+  <div class="text-xs font-mono text-ink-muted text-right">
+    涉及事件 {eventCount}
+  </div>
+</a>

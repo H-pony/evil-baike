@@ -1,0 +1,200 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   档案馆 / 报纸 风格 - 全局基础
+   ============================================================ */
+
+@layer base {
+  :root {
+    /* 浅色模式（米黄档案纸 + 浓黑墨） */
+    --ink-50: 247 246 242;
+    --ink-100: 238 233 221;
+    --ink-faded: 139 132 120;
+    --ink-muted: 74 71 66;
+    --ink-900: 10 9 8;
+    --ink-950: 0 0 0;
+    --archive-paper: 244 239 230;
+    --archive-aged: 232 223 200;
+    --archive-seal: 168 57 46;
+  }
+
+  /* 深色模式（墨色档案盒 + 米黄字迹） */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink-50: 24 23 21;
+      --ink-100: 38 36 33;
+      --ink-faded: 130 124 113;
+      --ink-muted: 180 175 165;
+      --ink-900: 244 239 230;
+      --ink-950: 250 248 244;
+      --archive-paper: 20 19 17;
+      --archive-aged: 32 30 27;
+      --archive-seal: 217 96 84;
+    }
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: 'kern', 'liga', 'onum';
+  }
+
+  body {
+    @apply bg-archive-paper text-ink-900 font-serif;
+    background-image:
+      linear-gradient(180deg, rgb(var(--archive-aged) / 0.12) 0%, rgb(var(--archive-aged) / 0) 200px);
+    background-attachment: fixed;
+  }
+
+  /* 报纸感：基础排版调整 */
+  p {
+    @apply text-newspaper;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display tracking-tight;
+  }
+
+  /* 链接：纯文字加下划线，不喧宾夺主 */
+  a {
+    @apply underline decoration-1 underline-offset-2 decoration-ink-900/40 transition-colors;
+  }
+  a:hover {
+    @apply decoration-archive-seal text-archive-seal;
+  }
+
+  /* 焦点态：键盘可访问性 */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-archive-seal;
+  }
+
+  /* 选区 */
+  ::selection {
+    @apply bg-archive-seal/20 text-ink-900;
+  }
+}
+
+/* ============================================================
+   报纸组件
+   ============================================================ */
+
+@layer components {
+
+  /* 报纸头条：粗大黑衬线 */
+  .headline {
+    @apply font-display font-black leading-[1.05] tracking-tight;
+  }
+
+  /* 副标 */
+  .deck {
+    @apply font-serif italic text-ink-900/70;
+  }
+
+  /* 报头 */
+  .masthead {
+    @apply border-y-3 border-double border-ink-900;
+  }
+
+  /* 时间戳 / 来源 / 元数据 */
+  .meta-stamp {
+    @apply font-mono text-xs uppercase tracking-wider text-ink-muted;
+  }
+
+  /* 三联双线 */
+  .rule-double {
+    @apply border-y border-double border-ink-900;
+  }
+
+  /* 单线 */
+  .rule-single {
+    @apply border-t border-ink-900;
+  }
+
+  /* 章节起始大写首字母 */
+  .initial-cap::first-letter {
+    @apply font-display text-5xl float-left mr-2 leading-none mt-1;
+  }
+
+  /* 时间线条目 */
+  .timeline-item {
+    @apply relative pl-8 pb-6 border-l-2 border-ink-900/30;
+  }
+  .timeline-item::before {
+    content: '';
+    @apply absolute left-[-7px] top-1 w-3 h-3 bg-archive-seal rounded-full border-2 border-archive-paper;
+  }
+
+  /* 引用块 */
+  .blockquote {
+    @apply pl-4 border-l-4 border-archive-seal italic font-serif text-ink-900/80;
+  }
+
+  /* 归档档案盒样式 */
+  .archive-box {
+    @apply bg-archive-aged/30 border border-ink-900/20 p-4 rounded-sm;
+  }
+
+  /* 状态徽章 */
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 text-xs font-mono uppercase tracking-wider border;
+  }
+  .badge-draft { @apply border-ink-faded text-ink-faded bg-transparent; }
+  .badge-submitted { @apply border-archive-seal/50 text-archive-seal bg-archive-seal/5; }
+  .badge-reviewing { @apply border-archive-seal text-archive-seal bg-archive-seal/10; }
+  .badge-published { @apply border-ink-900 text-archive-paper bg-ink-900; }
+  .badge-archived { @apply border-ink-faded text-ink-muted bg-ink-900/5; }
+  .badge-withdrawn { @apply border-archive-seal text-archive-paper bg-archive-seal line-through; }
+
+  /* 风险等级徽章 */
+  .risk-low { @apply bg-emerald-900/10 text-emerald-900 border-emerald-900/30; }
+  .risk-medium { @apply bg-amber-900/10 text-amber-900 border-amber-900/30; }
+  .risk-high { @apply bg-archive-seal/10 text-archive-seal border-archive-seal/40; }
+
+  /* 标签 */
+  .tag {
+    @apply inline-block px-2 py-0.5 text-xs font-mono uppercase tracking-wider border border-ink-900/30 bg-transparent text-ink-muted hover:border-archive-seal hover:text-archive-seal no-underline transition-colors;
+  }
+
+  /* 链接的卡片样式 */
+  .card-link {
+    @apply no-underline hover:text-inherit;
+  }
+  .card-link:hover .card-title {
+    @apply text-archive-seal;
+  }
+}
+
+/* ============================================================
+   印刷品效果：噪点纹理（极淡）
+   ============================================================ */
+
+@layer utilities {
+  .paper-texture {
+    background-image: radial-gradient(rgb(var(--ink-900) / 0.04) 1px, transparent 1px);
+    background-size: 4px 4px;
+  }
+
+  .aged-edge {
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(var(--archive-seal) / 0.06) 50%,
+      transparent 100%
+    );
+  }
+}
+
+/* ============================================================
+   打印样式：黑白严肃档案
+   ============================================================ */
+
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+  .no-print { display: none !important; }
+}

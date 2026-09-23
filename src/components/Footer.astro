@@ -1,0 +1,50 @@
+---
+/**
+ * Footer - 页脚：版权、投稿入口、免责声明、RSS
+ */
+const year = new Date().getFullYear();
+---
+
+<footer class="mt-16 border-t-3 border-double border-ink-900 bg-archive-aged/30">
+  <div class="container mx-auto px-4 max-w-6xl py-10">
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+
+      <div>
+        <h3 class="meta-stamp mb-3 text-ink-muted">关于本站</h3>
+        <p class="text-sm leading-relaxed">
+          恶人百科是一个<strong>中立记录</strong>公共事件的档案馆。
+          本站不作道德评价，不直接定性，仅汇总各方报道的时间线与信源。
+        </p>
+      </div>
+
+      <div>
+        <h3 class="meta-stamp mb-3 text-ink-muted">参与</h3>
+        <ul class="text-sm space-y-1.5">
+          <li><a href="/submit">📮 投稿事件</a></li>
+          <li><a href="/methodology">📐 收录方法论</a></li>
+          <li><a href="/about">ℹ️ 关于项目</a></li>
+          <li><a href="/rss.xml">📡 RSS 订阅</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h3 class="meta-stamp mb-3 text-ink-muted">法律</h3>
+        <ul class="text-sm space-y-1.5">
+          <li><a href="/disclaimer">⚖️ 免责声明</a></li>
+          <li><a href="/methodology#takedown">🚨 下架与申诉</a></li>
+          <li><a href="/methodology#correction">✏️ 更正流程</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="border-t border-ink-900/30 pt-6 flex flex-wrap items-center justify-between gap-4 text-xs font-mono uppercase tracking-wider text-ink-muted">
+      <div>
+        © {year} 恶人百科 · 内容采用 CC BY-NC-SA 4.0 许可
+      </div>
+      <div>
+        如发现内容错误，请通过 GitHub Issue 或 <a href="/submit">投稿表单</a>提交更正
+      </div>
+    </div>
+  </div>
+</footer>

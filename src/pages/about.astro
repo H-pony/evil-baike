@@ -1,0 +1,57 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="关于" description="关于恶人百科项目">
+  <article class="max-w-3xl mx-auto">
+    <header class="py-8 border-b-3 border-double border-ink-900 mb-8">
+      <h1 class="headline text-4xl lg:text-5xl">关于本档案馆</h1>
+    </header>
+
+    <div class="prose prose-stone max-w-reading">
+      <p class="lead">
+        恶人百科是一个民间维护的<strong>公共事件档案馆</strong>。
+        我们不作道德评价，不直接定性，只如实汇总事件经过与各方报道，
+        让事件的完整时间线、信源链条在多年后仍可被查阅。
+      </p>
+
+      <h2 class="headline text-2xl mt-10 mb-3">缘起</h2>
+      <p>
+        网络上的热搜每周都在换。事件热度一过，公众注意力就转移到下一个议题。
+        很多重要的事件在 3-6 个月后已经几乎搜不到原始信息，原始报道链接失效、当事人改名、关键截图被删。
+      </p>
+      <p>
+        普通人的精力是有限的。没有人能记住所有的事。
+        因此，<strong>需要一份"耻辱柱"</strong>——不是因为要羞辱谁，
+        而是因为只有被记录下来，事件才有可能被讨论、被监督、被作为未来决策的参考。
+      </p>
+
+      <h2 class="headline text-2xl mt-10 mb-3">运作原则</h2>
+      <ol class="list-decimal list-inside space-y-2">
+        <li><strong>严格信源</strong>。无信源不入档。信源链接失效时附 archive.org 快照。</li>
+        <li><strong>不作定性</strong>。"恶人"仅是档案分类标签，不是法律或道德判断。</li>
+        <li><strong>开放更正</strong>。任何人发现错误可申诉，由主编核实后更正。</li>
+        <li><strong>可下架</strong>。当事人提供充分证据证明事实错误，下架并保留撤销记录。</li>
+      </ol>
+
+      <h2 class="headline text-2xl mt-10 mb-3">技术</h2>
+      <p>
+        本站为静态站，使用 Astro 构建，数据以 Markdown + YAML frontmatter 形式存储于 Git 仓库。
+        所有历史变更可追溯，所有投稿记录可审计。
+      </p>
+
+      <h2 class="headline text-2xl mt-10 mb-3">许可</h2>
+      <p>
+        本站所有内容采用 <strong>CC BY-NC-SA 4.0</strong> 许可。
+        允许非商业转载，需注明来源并以相同方式分享。
+      </p>
+
+      <h2 class="headline text-2xl mt-10 mb-3">联系</h2>
+      <ul>
+        <li>投稿：见 <a href="/submit">投稿页</a></li>
+        <li>纠错：<a href="/methodology#correction">更正流程</a></li>
+        <li>法律相关：<a href="/methodology#takedown">下架与申诉</a></li>
+      </ul>
+    </div>
+  </article>
+</BaseLayout>

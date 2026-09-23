@@ -1,0 +1,83 @@
+---
+/**
+ * EntryStatusBanner - 顶部状态标识横幅
+ * 用于 EntryLayout 顶部：根据 status + verifiedAt + contested 提示读者
+ * 不再用颜色或措辞暗示人物有罪 / 危险
+ */
+
+type Status = 'draft' | 'submitted' | 'reviewing' | 'published' | 'archived' | 'withdrawn';
+type Contested = 'uncontested' | 'partial' | 'contested' | 'pending-review';
+type ArchivedReason = 'superseded' | 'historical' | 'unverified' | 'other';
+
+interface Props {
+  status: Status;
+  verifiedAt?: Date;
+  contested?: Contested;
+  archivedReason?: ArchivedReason;
+  archivedNote?: string;
+}
+
+const { status, verifiedAt, contested = 'uncontested', archivedReason, archivedNote } = Astro.props;
+
+// 公开状态显示文本（不含色彩暗示）
+const contestedLabel: Record<Contested, string> = {
+  'uncontested': '公开陈述未见有效异议',
+  'partial': '关键事实仍有不同陈述',
+  'contested': '主要事实存在重大争议',
+  'pending-review': '等待关键信源核实',
+};
+
+const archivedReasonLabel: Record<ArchivedReason, string> = {
+  superseded: '已被新版本取代',
+  historical: '仅作历史存档',
+  unverified: '关键信源失效且无替代',
+  other: '其他原因',
+};
+
+function formatDate(d?: Date): string {
+  return d ? d.toISOString().slice(0, 10) : '';
+}
+
+// 仅在 published / archived 时显示该横幅
+// draft/submitted/reviewing/withdrawn 一律不进入静态产物（getStaticPaths 已过滤）
+const showBanner = status === 'archived' || status === 'published';
+---
+
+{showBanner && (
+  <aside
+    class:list={[
+      'mb-6 archive-box p-4 text-sm leading-relaxed',
+      status === 'archived' && 'border-l-4 border-archive-seal',
+      status === 'published' && contested === 'partial' && 'border-l-4 border-archive-seal/60',
+      status === 'published' && contested === 'contested' && 'border-l-4 border-archive-seal',
+    ]}
+    data-entry-status={status}
+    data-contested={contested}
+  >
+    {status === 'archived' ? (
+      <div>
+        <p class="meta-stamp mb-2 text-archive-seal">档案已归档</p>
+        <p class="text-ink-900/90">
+          本条目已被归档，不再列入事件列表、搜索结果或关联推荐；
+          原 URL 保留以便旧链接继续可访问。
+          {archivedReason && (
+            <span class="block mt-1 text-ink-muted">
+              归档原因：{archivedReasonLabel[archivedReason]}
+              {archivedNote && <> · {archivedNote}</>}
+            </span>
+          )}
+        </p>
+      </div>
+    ) : (
+      <div>
+        <p class="meta-stamp mb-2 text-ink-muted">档案状态</p>
+        <p class="text-ink-900/90">
+          {verifiedAt
+            ? <>最后核对日期：<time datetime={formatDate(verifiedAt)} class="font-mono">{formatDate(verifiedAt)}</time>。 </>
+            : <>最后核对日期未填写。 </>}
+          争议状态：<span class="font-medium">{contestedLabel[contested]}</span>。
+        </p>
+      </div>
+    )}
+  </aside>
+)}

@@ -1,0 +1,114 @@
+---
+/**
+ * CorrectionBar - 「报告错误 / 补充证据 / 申请更正」入口
+ *
+ * 自动带上：
+ *   - 条目 ID（type + id）
+ *   - 页面 URL（canonical）
+ *   - 页面标题
+ *
+ * 链接目标按环境变量配置显示（PUBLIC_SUBMIT_GITHUB / PUBLIC_SUBMIT_TALLY / PUBLIC_SUBMIT_EMAIL）。
+ * 任一未配置即不显示对应按钮，避免"假装可用"。
+ */
+
+interface Props {
+  type: 'event' | 'person' | 'organization';
+  id: string;
+  title: string;
+  url: string;
+}
+
+const { type, id, title, url } = Astro.props;
+
+const githubUrl = import.meta.env.PUBLIC_SUBMIT_GITHUB ?? '';
+const tallyUrl = import.meta.env.PUBLIC_SUBMIT_TALLY ?? '';
+const submitEmail = import.meta.env.PUBLIC_SUBMIT_EMAIL ?? '';
+
+const channels: Array<{ kind: 'github' | 'tally' | 'email'; label: string; href: string; hint: string }> = [];
+
+if (githubUrl) {
+  // 自动把条目 ID / URL / 标题附到 issue body（GitHub 支持 ?body=...&title=...）
+  const issueBody = encodeURIComponent(
+    `## 条目\n\n- 类型：${type}\n- ID：${id}\n- 标题：${title}\n- URL：${url}\n\n## 反馈类型\n- [ ] 报告事实错误\n- [ ] 补充证据\n- [ ] 申请更正\n\n## 详情\n\n（请在此处填写）\n`
+  );
+  const issueTitle = encodeURIComponent(`[更正] ${type}/${id} ${title}`);
+  const sep = githubUrl.includes('?') ? '&' : '?';
+  channels.push({
+    kind: 'github',
+    label: 'GitHub Issue',
+    href: `${githubUrl}${sep}title=${issueTitle}&body=${issueBody}`,
+    hint: '公开讨论，便于追踪',
+  });
+}
+
+if (tallyUrl) {
+  // Tally 可通过 querystring 预填字段（字段名以实际表单为准，这里只预填条目 ID）
+  const sep = tallyUrl.includes('?') ? '&' : '?';
+  channels.push({
+    kind: 'tally',
+    label: '在线表单',
+    href: `${tallyUrl}${sep}entry=${encodeURIComponent(`${type}/${id}`)}`,
+    hint: '无需账号',
+  });
+}
+
+if (submitEmail) {
+  const subject = encodeURIComponent(`[更正] ${type}/${id} ${title}`);
+  const body = encodeURIComponent(
+    `条目 ID：${type}/${id}\n标题：${title}\nURL：${url}\n\n反馈类型：\n[ ] 报告事实错误\n[ ] 补充证据\n[ ] 申请更正\n\n详情：\n`
+  );
+  channels.push({
+    kind: 'email',
+    label: '邮件',
+    href: `mailto:${submitEmail}?subject=${subject}&body=${body}`,
+    hint: '适合敏感内容',
+  });
+}
+
+const hasAny = channels.length > 0;
+---
+
+<section class="mt-12 pt-6 border-t border-ink-900/30" data-correction-bar>
+  <h2 class="headline text-2xl mb-3 pb-2 border-b border-ink-900">
+    报告错误 / 补充证据 / 申请更正
+  </h2>
+
+  {hasAny ? (
+    <>
+      <p class="text-sm text-ink-muted mb-4 leading-relaxed">
+        本条目严格遵循事实陈述与信源溯源。如果你掌握了未列出的官方文件、裁判文书或主流媒体更正，
+        可通过以下任一入口提交反馈。维护者会在 <strong>14 个自然日内</strong>响应可核实的更正请求。
+      </p>
+      <div class="flex flex-wrap gap-2">
+        {channels.map((c) => (
+          <a
+            href={c.href}
+            target={c.kind === 'email' ? '_self' : '_blank'}
+            rel={c.kind === 'email' ? undefined : 'noopener noreferrer'}
+            data-correction-channel={c.kind}
+            class="inline-flex items-center gap-2 px-3 py-2 border border-archive-seal text-archive-seal hover:bg-archive-seal hover:text-archive-paper transition-colors text-sm no-underline"
+          >
+            <span class="font-mono uppercase tracking-wider text-xs">{c.label}</span>
+            <span class="meta-stamp text-[10px]">· {c.hint}</span>
+          </a>
+        ))}
+      </div>
+      <p class="meta-stamp mt-3">
+        反馈将自动带上：条目 ID <code class="font-mono">{type}/{id}</code> ·
+        URL <code class="font-mono">{url}</code>
+      </p>
+    </>
+  ) : (
+    <div class="archive-box p-4 text-sm">
+      <p class="mb-2">
+        <strong>更正入口暂未配置。</strong>
+        维护者尚未启用反馈渠道；启用后会出现在这里。
+      </p>
+      <p class="text-ink-muted text-xs leading-relaxed">
+        如需立即反馈，可前往
+        <a href="/submit">投稿与更正页</a>
+        了解当前可用渠道，或等待维护者启用本条目入口。
+      </p>
+    </div>
+  )}
+</section>

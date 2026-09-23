@@ -1,0 +1,40 @@
+---
+/**
+ * OrgCard - 机构卡片（列表页用）
+ */
+
+import StatusBadge from './StatusBadge.astro';
+
+interface Props {
+  id: string;
+  name: string;
+  summary: string;
+  type: string;
+  status: 'draft' | 'submitted' | 'reviewing' | 'published' | 'archived' | 'withdrawn';
+  aliases?: string[];
+  eventCount: number;
+}
+
+const { id, name, summary, type, status, aliases = [], eventCount } = Astro.props;
+---
+
+<a href={`/organizations/${id}`} class="card-link block archive-box hover:border-archive-seal transition-colors">
+  <div class="flex items-start justify-between gap-3 mb-2">
+    <span class="meta-stamp border border-ink-900/30 px-2 py-0.5">{type}</span>
+    <StatusBadge status={status} size="sm" />
+  </div>
+
+  <h3 class="card-title font-display font-semibold text-xl mb-2 leading-tight">
+    {name}
+  </h3>
+
+  {aliases.length > 0 && (
+    <p class="meta-stamp text-ink-faded mb-2">又称：{aliases.join(' · ')}</p>
+  )}
+
+  <p class="text-sm text-ink-900/80 line-clamp-3 mb-3">{summary}</p>
+
+  <div class="text-xs font-mono text-ink-muted text-right">
+    涉及事件 {eventCount}
+  </div>
+</a>

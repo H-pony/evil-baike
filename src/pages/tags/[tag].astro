@@ -1,0 +1,61 @@
+---
+/**
+ * 标签详情页 - 该标签下的所有事件
+ *
+ * P0 改造：只对 published events 生成 /tags/:tag 页面。
+ *           archived 条目不再生成对应 tag 页面（archived 已不计入公开列表）。
+ */
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import EventCard from '~/components/EventCard.astro';
+import { getCollection } from 'astro:content';
+import { isIndexable } from '~/content.config';
+import type { GetStaticPaths } from 'astro';
+
+export const getStaticPaths = (async () => {
+  const events = await getCollection('events', (e) => isIndexable(e.data.status));
+  const tagSet = new Set<string>();
+  for (const e of events) {
+    for (const t of e.data.tags) tagSet.add(t);
+  }
+
+  return [...tagSet].map((tag) => ({
+    params: { tag },
+    props: {
+      tag,
+      events: events
+        .filter((e) => e.data.tags.includes(tag))
+        .sort((a, b) => b.data.dateStart.getTime() - a.data.dateStart.getTime()),
+    },
+  }));
+}) satisfies GetStaticPaths;
+
+const { tag, events } = Astro.props;
+---
+
+<BaseLayout
+  title={`#${tag}`}
+  description={`标签 #${tag} 下的所有事件`}
+>
+  <header class="py-8 border-b-3 border-double border-ink-900 mb-8">
+    <p class="meta-stamp mb-2">标签</p>
+    <h1 class="headline text-4xl lg:text-5xl">#{tag}</h1>
+    <p class="deck mt-2">共 {events.length} 条归档</p>
+  </header>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+    {events.map((event) => (
+      <EventCard
+        id={event.id}
+        title={event.data.title}
+        summary={event.data.summary}
+        type={event.data.type}
+        dateStart={event.data.dateStart}
+        dateEnd={event.data.dateEnd}
+        status={event.data.status}
+        tags={event.data.tags}
+        sourceCount={event.data.sources.length}
+        timelineCount={event.data.timeline.length}
+      />
+    ))}
+  </div>
+</BaseLayout>

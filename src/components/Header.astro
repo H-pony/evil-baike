@@ -1,0 +1,128 @@
+---
+/**
+ * Header - 报头：栏目 + 报名 + 简介
+ *
+ * P2 改造：移动端汉堡菜单（< md 隐藏导航，点击展开）
+ */
+import Search from './Search.astro';
+
+const navItems = [
+  { href: '/', label: '首页' },
+  { href: '/events', label: '事件档案' },
+  { href: '/people', label: '人物' },
+  { href: '/organizations', label: '机构' },
+  { href: '/tags', label: '标签' },
+  { href: '/favorites', label: '收藏' },
+  { href: '/methodology', label: '方法论' },
+  { href: '/submit', label: '投稿' },
+];
+
+const currentPath = Astro.url.pathname;
+---
+
+<header class="border-b-3 border-double border-ink-900 bg-archive-paper/80 backdrop-blur-sm sticky top-0 z-50">
+  <div class="container mx-auto px-4 max-w-6xl">
+    <!-- 报名 + 搜索 + 移动端汉堡按钮 -->
+    <div class="flex items-center justify-between py-4 border-b border-ink-900/30 gap-2">
+      <button
+        type="button"
+        id="nav-toggle"
+        class="md:hidden inline-flex items-center justify-center w-10 h-10 border border-ink-900/30 hover:border-archive-seal hover:text-archive-seal transition-colors"
+        aria-label="打开导航菜单"
+        aria-controls="nav-menu"
+        aria-expanded="false"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+
+      <a href="/" class="no-underline flex-1 text-center min-w-0">
+        <h1 class="headline text-3xl lg:text-4xl tracking-[0.2em]">恶人百科</h1>
+        <p class="meta-stamp mt-1 text-ink-muted hidden sm:block">公共事件的永久档案馆</p>
+      </a>
+
+      <div class="w-10 md:w-32 flex justify-end">
+        <Search />
+      </div>
+    </div>
+
+    <!-- 桌面端栏目导航 -->
+    <nav class="py-2 hidden md:block" aria-label="主导航">
+      <ul class="flex flex-wrap justify-center gap-x-4 gap-y-1 lg:gap-x-6 text-sm font-mono uppercase tracking-wider">
+        {navItems.map((item) => {
+          const isActive = item.href === '/'
+            ? currentPath === '/'
+            : currentPath.startsWith(item.href);
+          return (
+            <li>
+              <a
+                href={item.href}
+                class:list={[
+                  'no-underline transition-colors',
+                  isActive
+                    ? 'text-archive-seal font-semibold border-b-2 border-archive-seal pb-0.5'
+                    : 'text-ink-900/70 hover:text-archive-seal'
+                ]}
+              >
+                {item.label}
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  </div>
+
+  <!-- 移动端抽屉式导航 -->
+  <nav
+    id="nav-menu"
+    class="md:hidden hidden border-t border-ink-900/30 bg-archive-paper/95 backdrop-blur-sm"
+    aria-label="移动端导航"
+  >
+    <ul class="container mx-auto px-4 max-w-6xl py-2 flex flex-col text-sm font-mono uppercase tracking-wider">
+      {navItems.map((item) => {
+        const isActive = item.href === '/'
+          ? currentPath === '/'
+          : currentPath.startsWith(item.href);
+        return (
+          <li>
+            <a
+              href={item.href}
+              class:list={[
+                'block py-2.5 border-b border-ink-900/10 no-underline transition-colors',
+                isActive ? 'text-archive-seal font-semibold' : 'text-ink-900/80 hover:text-archive-seal'
+              ]}
+            >
+              {item.label}
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+  </nav>
+</header>
+
+<script>
+  function initNavToggle() {
+    const btn = document.getElementById('nav-toggle');
+    const menu = document.getElementById('nav-menu');
+    if (!btn || !menu) return;
+    btn.addEventListener('click', () => {
+      const open = menu.classList.contains('hidden');
+      menu.classList.toggle('hidden');
+      btn.setAttribute('aria-expanded', String(open));
+      btn.setAttribute('aria-label', open ? '关闭导航菜单' : '打开导航菜单');
+    });
+    // 点击链接后自动收起
+    menu.querySelectorAll('a').forEach((a) => {
+      a.addEventListener('click', () => {
+        menu.classList.add('hidden');
+        btn.setAttribute('aria-expanded', 'false');
+      });
+    });
+  }
+  initNavToggle();
+</script>

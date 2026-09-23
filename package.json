@@ -1,0 +1,38 @@
+{
+  "name": "evil-baike",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "description": "恶人百科 · 公共事件的永久档案馆",
+  "license": "CC BY-NC-SA 4.0",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "validate": "node scripts/validate-content.mjs",
+    "sync:submissions": "node scripts/sync-submissions.mjs",
+    "new:event": "node scripts/new-entry.mjs event",
+    "new:person": "node scripts/new-entry.mjs person",
+    "new:organization": "node scripts/new-entry.mjs organization"
+  },
+  "dependencies": {
+    "@astrojs/check": "^0.9.4",
+    "@astrojs/cloudflare": "^12.5.0",
+    "@astrojs/rss": "^4.0.11",
+    "@astrojs/sitemap": "^3.3.0",
+    "@astrojs/tailwind": "^6.0.2",
+    "astro": "^5.5.0",
+    "fuse.js": "^7.5.0",
+    "gray-matter": "^4.0.3",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

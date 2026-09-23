@@ -1,0 +1,267 @@
+---
+/**
+ * 事件列表页（带客户端筛选 + 排序）
+ *
+ * 设计：SSR 渲染全部 published events，JS 在客户端按 URL 参数 hide 非匹配项。
+ * 优点：静态部署（无需 server adapter），首屏即可索引（SEO 友好），
+ *       无 JS 时降级显示全部条目（graceful degradation）。
+ *
+ * P2 改造：
+ *   - 移除 risk 筛选（riskLevel 不再公开）
+ *   - 移除 status=archived 公共筛选（archived 条目不再出现在列表）
+ *   - 增加排序切换：dateStart（事件发生时间）/ updatedAt（档案最近更新时间）
+ */
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import EventCard from '~/components/EventCard.astro';
+import FilterBar from '~/components/FilterBar.astro';
+import { getCollection } from 'astro:content';
+import { isIndexable } from '~/content.config';
+
+const allEvents = await getCollection('events', (e) => isIndexable(e.data.status));
+
+// 统计（用于筛选条 count）
+const typeCount: Record<string, number> = {};
+const yearCount: Record<string, number> = {};
+for (const e of allEvents) {
+  typeCount[e.data.type] = (typeCount[e.data.type] ?? 0) + 1;
+  const y = e.data.dateStart.getUTCFullYear().toString();
+  yearCount[y] = (yearCount[y] ?? 0) + 1;
+}
+
+// 默认按事件发生时间倒序
+const events = [...allEvents].sort((a, b) => b.data.dateStart.getTime() - a.data.dateStart.getTime());
+
+const typeLabels: Record<string, string> = {
+  criminal: '刑事案件',
+  legal: '法律诉讼',
+  corporate: '企业丑闻',
+  controversy: '公共争议',
+  'public-safety': '公共安全',
+  moral: '道德争议',
+  'human-rights': '人权事件',
+  media: '媒体争议',
+};
+
+const typeOrder = ['criminal', 'legal', 'corporate', 'controversy', 'public-safety', 'moral', 'human-rights', 'media'];
+
+const filters = [
+  {
+    name: 'type',
+    label: '类型',
+    options: typeOrder
+      .filter((t) => (typeCount[t] ?? 0) > 0)
+      .map((t) => ({ value: t, label: typeLabels[t] ?? t, count: typeCount[t] })),
+  },
+  {
+    name: 'year',
+    label: '年份',
+    options: Object.keys(yearCount)
+      .sort((a, b) => b.localeCompare(a))
+      .map((y) => ({ value: y, label: y, count: yearCount[y] })),
+  },
+];
+---
+
+<BaseLayout title="事件档案" description="所有已归档的公共事件">
+  <header class="text-center py-8 border-b-3 border-double border-ink-900 mb-8">
+    <p class="meta-stamp mb-2">SECTION 01</p>
+    <h1 class="headline text-4xl lg:text-5xl">事件档案</h1>
+    <p class="deck mt-2" data-count-line data-total={allEvents.length}>
+      共 {allEvents.length} 条归档 · 当前显示 <span data-current-count>{allEvents.length}</span> 条
+    </p>
+  </header>
+
+  <!-- 排序切换 -->
+  <div class="archive-box mb-4 p-3 flex flex-wrap items-center gap-3 text-sm" data-sort-bar>
+    <span class="meta-stamp">排序：</span>
+    <a
+      href="/events"
+      data-sort-link="event"
+      data-sort-name="sort"
+      data-sort-value="event"
+      class="px-3 py-1 border border-ink-900/30 hover:border-archive-seal hover:text-archive-seal transition-colors no-underline font-mono text-xs uppercase tracking-wider"
+    >
+      事件发生时间
+    </a>
+    <a
+      href="/events?sort=updated"
+      data-sort-link="updated"
+      data-sort-name="sort"
+      data-sort-value="updated"
+      class="px-3 py-1 border border-ink-900/30 hover:border-archive-seal hover:text-archive-seal transition-colors no-underline font-mono text-xs uppercase tracking-wider"
+    >
+      档案更新时间
+    </a>
+  </div>
+
+  <FilterBar
+    filters={filters}
+    current={{}}
+    basePath="/events"
+    data-filter-bar="events"
+  />
+
+  {events.length === 0 ? (
+    <p class="text-center text-ink-muted py-20">档案库为空。</p>
+  ) : (
+    <div
+      data-card-grid
+      data-type-field="type"
+      data-year-field="dateStart"
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+    >
+      {events.map((event) => (
+        <article
+          data-card
+          data-id={event.id}
+          data-type={event.data.type}
+          data-year={event.data.dateStart.getUTCFullYear().toString()}
+          data-date={event.data.dateStart.toISOString()}
+          data-updated={event.data.updatedAt.toISOString()}
+        >
+          <EventCard
+            id={event.id}
+            title={event.data.title}
+            summary={event.data.summary}
+            type={typeLabels[event.data.type] ?? event.data.type}
+            dateStart={event.data.dateStart}
+            dateEnd={event.data.dateEnd}
+            status={event.data.status}
+            tags={event.data.tags}
+            sourceCount={event.data.sources.length}
+            timelineCount={event.data.timeline.length}
+          />
+        </article>
+      ))}
+    </div>
+  )}
+
+  <p data-empty hidden class="text-center text-ink-muted py-20">
+    无匹配条目。<a href="/events">清除筛选</a>或<a href="/submit">提交新事件</a>。
+  </p>
+</BaseLayout>
+
+<script>
+  /**
+   * 客户端筛选 + 排序逻辑：
+   * 1. 读取 URL search params（type / year / sort）
+   * 2. 在 [data-filter-bar] 标记当前 active chip（朱砂红高亮）
+   * 3. 按 sort 参数决定默认排序（事件发生时间 vs 档案更新时间）
+   * 4. 遍历 [data-card] 节点，按 data-* 属性判定是否匹配
+   * 5. 不匹配的设置 hidden 属性
+   * 6. 更新计数 + 空态
+   */
+  type FilterName = 'type' | 'year';
+  type SortName = 'event' | 'updated';
+
+  function applyFilter() {
+    const params = new URLSearchParams(window.location.search);
+    const filters: Record<FilterName, string> = {
+      type: params.get('type') ?? '',
+      year: params.get('year') ?? '',
+    };
+    const sort: SortName = params.get('sort') === 'updated' ? 'updated' : 'event';
+
+    // 标记当前 active chip
+    const bar = document.querySelector<HTMLElement>('[data-filter-bar="events"]');
+    if (bar) {
+      bar.querySelectorAll<HTMLAnchorElement>('[data-filter-chip]').forEach((chip) => {
+        const name = chip.dataset.filterName as FilterName;
+        const value = chip.dataset.filterValue ?? '';
+        const isActive = filters[name] !== '' && filters[name] === value;
+        chip.classList.toggle('is-active', isActive);
+        chip.setAttribute('aria-pressed', String(isActive));
+      });
+      bar.querySelectorAll<HTMLAnchorElement>('[data-filter-all]').forEach((chip) => {
+        const name = chip.dataset.filterAll as FilterName;
+        const isActive = filters[name] === '';
+        chip.classList.toggle('is-active', isActive);
+        chip.setAttribute('aria-pressed', String(isActive));
+      });
+    }
+
+    // 排序切换高亮
+    document.querySelectorAll<HTMLAnchorElement>('[data-sort-bar] [data-sort-link]').forEach((link) => {
+      const linkSort = link.dataset.sortValue as SortName;
+      const isActive = linkSort === sort;
+      link.classList.toggle('is-active', isActive);
+      link.setAttribute('aria-pressed', String(isActive));
+    });
+
+    // 过滤卡片
+    const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-card-grid] [data-card]'));
+    let visible = 0;
+    cards.forEach((card) => {
+      let match = true;
+      for (const name of Object.keys(filters) as FilterName[]) {
+        const want = filters[name];
+        if (!want) continue;
+        const have = card.dataset[name] ?? '';
+        if (have !== want) {
+          match = false;
+          break;
+        }
+      }
+      card.hidden = !match;
+      if (match) visible++;
+    });
+
+    // 排序：仅对可见卡片进行 DOM 重排（隐藏的卡片保留在末尾）
+    const grid = document.querySelector<HTMLElement>('[data-card-grid]');
+    if (grid) {
+      const visibleCards = cards.filter((c) => !c.hidden);
+      visibleCards.sort((a, b) => {
+        const av = sort === 'updated' ? (a.dataset.updated ?? '') : (a.dataset.date ?? '');
+        const bv = sort === 'updated' ? (b.dataset.updated ?? '') : (b.dataset.date ?? '');
+        return bv.localeCompare(av);
+      });
+      // 重排 DOM
+      const frag = document.createDocumentFragment();
+      visibleCards.forEach((c) => frag.appendChild(c));
+      // 重新插入可见卡片到 grid 顶部；隐藏卡片留在原位不显示
+      grid.innerHTML = '';
+      grid.appendChild(frag);
+      // 再把隐藏卡片按原顺序追加（虽然不显示，但保留在 DOM 中以便 SSR 一致性）
+      cards.filter((c) => c.hidden).forEach((c) => grid.appendChild(c));
+    }
+
+    // 更新计数 + 空态
+    const counter = document.querySelector<HTMLElement>('[data-current-count]');
+    if (counter) counter.textContent = String(visible);
+    const empty = document.querySelector<HTMLElement>('[data-empty]');
+    if (empty) empty.hidden = visible > 0;
+  }
+
+  // 监听 popstate（浏览器后退/前进）+ 自定义事件（FilterBar 链接点击）
+  window.addEventListener('popstate', applyFilter);
+  window.addEventListener('evil-baike:filter-changed', applyFilter);
+  // 排序切换：拦截链接 click
+  document.querySelectorAll<HTMLAnchorElement>('[data-sort-bar] [data-sort-link]').forEach((link) => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const params = new URLSearchParams(window.location.search);
+      const value = link.dataset.sortValue ?? 'event';
+      params.set('sort', value);
+      const qs = params.toString();
+      const newUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+      window.dispatchEvent(new CustomEvent('evil-baike:filter-changed', { detail: { url: newUrl } }));
+    });
+  });
+  applyFilter();
+</script>
+
+<style is:global>
+  /* FilterBar active chip（运行时由 JS 切换） */
+  [data-filter-bar] a.is-active {
+    border-color: rgb(168 57 46) !important;
+    background-color: rgb(168 57 46 / 0.1) !important;
+    color: rgb(168 57 46) !important;
+  }
+  /* 排序按钮 active 态 */
+  [data-sort-bar] a.is-active {
+    border-color: rgb(168 57 46) !important;
+    background-color: rgb(168 57 46 / 0.1) !important;
+    color: rgb(168 57 46) !important;
+  }
+</style>

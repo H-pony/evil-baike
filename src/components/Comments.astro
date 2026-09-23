@@ -1,0 +1,61 @@
+---
+/**
+ * Comments - 评论组件
+ *
+ * 行为：
+ *   - 配置了 PUBLIC_GISCUS_REPO / PUBLIC_GISCUS_REPO_ID / PUBLIC_GISCUS_CATEGORY_ID 时：
+ *     渲染 Giscus 评论框（基于 GitHub Discussions）。
+ *   - 未配置时：完全不在公开页面展示 Giscus 占位说明，
+ *     改为简洁提示"暂未配置 · 可用页面底部更正入口反馈"，不向访客透露技术配置细节。
+ */
+
+interface Props {
+  term?: string;   // 用于映射到 GitHub Discussion（默认用页面标题）
+}
+
+const { term } = Astro.props;
+
+const repo = import.meta.env.PUBLIC_GISCUS_REPO ?? '';
+const repoId = import.meta.env.PUBLIC_GISCUS_REPO_ID ?? '';
+const category = import.meta.env.PUBLIC_GISCUS_CATEGORY ?? 'Announcements';
+const categoryId = import.meta.env.PUBLIC_GISCUS_CATEGORY_ID ?? '';
+
+const enabled = !!(repo && repoId && categoryId);
+const mapTerm = term ?? Astro.url.pathname;
+---
+
+{enabled ? (
+  <section class="mt-12 pt-6 border-t border-ink-900/30" data-giscus-section>
+    <h2 class="headline text-2xl mb-4 pb-2 border-b border-ink-900">
+      评论 <span class="meta-stamp ml-2">[由 GitHub Discussions 驱动]</span>
+    </h2>
+    <div class="text-sm text-ink-muted mb-3">
+      评论需登录 GitHub 账号，遵守讨论准则。
+      所有评论均公开存档于 GitHub Discussions。
+    </div>
+    <script
+      is:inline
+      src="https://giscus.app/client.js"
+      data-repo={repo}
+      data-repo-id={repoId}
+      data-category={category}
+      data-category-id={categoryId}
+      data-mapping="specific"
+      data-term={mapTerm}
+      data-strict="1"
+      data-reactions-enabled="1"
+      data-emit-metadata="0"
+      data-input-position="top"
+      data-theme="preferred_color_scheme"
+      data-lang="zh-CN"
+      data-loading="lazy"
+      crossorigin="anonymous"
+      async
+    />
+  </section>
+) : null}
+{!enabled && (
+  <section class="mt-12 pt-6 border-t border-ink-900/30 text-sm text-ink-muted" data-giscus-disabled>
+    评论功能暂未启用。如对条目内容有反馈，请使用页面底部的「报告错误 / 补充证据 / 申请更正」入口。
+  </section>
+)}

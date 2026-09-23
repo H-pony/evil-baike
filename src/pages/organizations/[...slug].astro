@@ -1,0 +1,142 @@
+---
+/**
+ * 机构详情页
+ *
+ * 发布边界：只对 status === 'published' 或 'archived' 的条目生成 HTML。
+ */
+import EntryLayout from '~/layouts/EntryLayout.astro';
+import EntityLink from '~/components/EntityLink.astro';
+import { getCollection, render } from 'astro:content';
+import { isPubliclyVisible, isIndexable } from '~/content.config';
+import type { GetStaticPaths } from 'astro';
+
+export const getStaticPaths = (async () => {
+  const orgs = await getCollection('organizations', (o) => isPubliclyVisible(o.data.status));
+  return orgs.map((org) => ({
+    params: { slug: org.id },
+    props: { org },
+  }));
+}) satisfies GetStaticPaths;
+
+const { org } = Astro.props;
+const { Content } = await render(org);
+
+const allEvents = await getCollection('events', (e) => isIndexable(e.data.status));
+const relatedEvents = allEvents
+  .filter((e) => e.data.organizations.includes(org.id))
+  .sort((a, b) => b.data.dateStart.getTime() - a.data.dateStart.getTime());
+
+const people = await getCollection('people', (p) => isPubliclyVisible(p.data.status));
+const peopleMap = new Map(people.map((p) => [p.id, p]));
+
+const typeLabels: Record<string, string> = {
+  criminal: '刑事',
+  legal: '法律',
+  corporate: '企业',
+  controversy: '争议',
+  'public-safety': '公共安全',
+  moral: '道德',
+  'human-rights': '人权',
+  media: '媒体',
+};
+
+const orgTypeLabels: Record<string, string> = {
+  company: '企业',
+  government: '政府',
+  'political-party': '政党',
+  ngo: 'NGO',
+  academic: '学术',
+  media: '媒体',
+  religious: '宗教',
+  military: '军事',
+  other: '其他',
+};
+---
+
+<EntryLayout
+  entryType="organization"
+  entryId={org.id}
+  title={org.data.name}
+  summary={org.data.summary}
+  status={org.data.status}
+  type={orgTypeLabels[org.data.type] ?? org.data.type}
+  aliases={org.data.aliases}
+  tags={org.data.tags}
+  sources={org.data.sources}
+  breadcrumbs={[
+    { label: '首页', href: '/' },
+    { label: '机构', href: '/organizations' },
+    { label: org.data.name },
+  ]}
+  meta={{
+    authors: org.data.authors,
+    reviewers: org.data.reviewers,
+    createdAt: org.data.createdAt,
+    updatedAt: org.data.updatedAt,
+    verifiedAt: org.data.verifiedAt,
+    contested: org.data.contested,
+    archivedReason: org.data.archivedReason,
+    archivedNote: org.data.archivedNote,
+  }}
+>
+  <Content />
+
+  {org.data.people.length > 0 && (
+    <section class="mt-10 pt-6 border-t border-ink-900/30">
+      <h2 class="headline text-xl mb-4">关联人物</h2>
+      <div class="flex flex-wrap gap-2">
+        {org.data.people.map((id) => {
+          const p = peopleMap.get(id);
+          return (
+            <EntityLink type="person" id={id}>
+              {p?.data.name ?? id}
+            </EntityLink>
+          );
+        })}
+      </div>
+    </section>
+  )}
+
+  {relatedEvents.length > 0 && (
+    <section class="mt-12 pt-6 border-t border-ink-900/30">
+      <div class="flex items-baseline justify-between mb-4">
+        <h2 class="headline text-2xl">涉及事件</h2>
+        <span class="meta-stamp">[{relatedEvents.length} 条 · 按事件发生时间倒序]</span>
+      </div>
+      <ul class="space-y-3">
+        {relatedEvents.map((e) => (
+          <li>
+            <a
+              href={`/events/${e.id}`}
+              class="block archive-box hover:border-archive-seal transition-colors no-underline"
+            >
+              <div class="flex items-center gap-2 mb-2 flex-wrap">
+                <span class="meta-stamp border border-ink-900/30 px-2 py-0.5">
+                  {typeLabels[e.data.type] ?? e.data.type}
+                </span>
+                <span class="meta-stamp text-ink-faded">
+                  {e.data.dateStart.toISOString().slice(0, 10)}
+                  {e.data.dateEnd ? ` – ${e.data.dateEnd.toISOString().slice(0, 10)}` : ' –'}
+                </span>
+              </div>
+              <h3 class="card-title font-display font-semibold text-lg mb-1">
+                {e.data.title}
+              </h3>
+              <p class="text-sm text-ink-muted line-clamp-2">{e.data.summary}</p>
+              {e.data.people.length > 0 && (
+                <div class="flex flex-wrap gap-1.5 mt-2">
+                  <span class="meta-stamp text-ink-faded text-xs">涉及人物：</span>
+                  {e.data.people.map((pid) => (
+                    <EntityLink type="person" id={pid}>
+                      {peopleMap.get(pid)?.data.name ?? pid}
+                    </EntityLink>
+                  ))}
+                </div>
+              )}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+</EntryLayout>

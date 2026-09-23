@@ -1,0 +1,64 @@
+---
+/**
+ * EventCard - 事件卡片（列表页用）
+ */
+
+import StatusBadge from './StatusBadge.astro';
+
+interface Props {
+  id: string;
+  title: string;
+  summary: string;
+  type: string;
+  dateStart: Date;
+  dateEnd?: Date;
+  status: 'draft' | 'submitted' | 'reviewing' | 'published' | 'archived' | 'withdrawn';
+  tags?: string[];
+  sourceCount: number;
+  timelineCount: number;
+}
+
+const {
+  id,
+  title,
+  summary,
+  type,
+  dateStart,
+  dateEnd,
+  status,
+  tags = [],
+  sourceCount,
+  timelineCount,
+} = Astro.props;
+
+const dateRange = dateEnd
+  ? `${dateStart.toISOString().slice(0, 10)} – ${dateEnd.toISOString().slice(0, 10)}`
+  : `${dateStart.toISOString().slice(0, 10)} –`;
+---
+
+<a href={`/events/${id}`} class="card-link block archive-box hover:border-archive-seal transition-colors">
+  <div class="flex items-start justify-between gap-3 mb-2">
+    <span class="meta-stamp border border-ink-900/30 px-2 py-0.5">{type}</span>
+    <StatusBadge status={status} size="sm" />
+  </div>
+
+  <h3 class="card-title font-display font-semibold text-xl mb-2 leading-tight">
+    {title}
+  </h3>
+
+  <p class="text-sm text-ink-900/80 line-clamp-3 mb-3">{summary}</p>
+
+  <div class="flex items-center justify-between text-xs font-mono text-ink-muted">
+    <span>{dateRange}</span>
+    <span>
+      时间线 {timelineCount} · 信源 {sourceCount}
+    </span>
+  </div>
+
+  {tags.length > 0 && (
+    <div class="flex flex-wrap gap-1 mt-2">
+      {tags.slice(0, 3).map((t) => <span class="tag">#{t}</span>)}
+      {tags.length > 3 && <span class="tag text-ink-faded">+{tags.length - 3}</span>}
+    </div>
+  )}
+</a>

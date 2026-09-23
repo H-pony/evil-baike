@@ -1,0 +1,236 @@
+---
+/**
+ * EntryLayout - 条目页通用布局（事件/人物/机构共用）
+ *
+ * P0 改造：
+ *   - 不再显示 riskLevel（保留在 schema，作为内部编辑字段）
+ *   - 显示 verifiedAt + contested 公开字段
+ *   - archived 条目顶部显示归档标识
+ *
+ * P1 改造：
+ *   - 顶部加 EntryStatusBanner
+ *   - 底部加 CorrectionBar
+ */
+
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import StatusBadge from '~/components/StatusBadge.astro';
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import SourceList from '~/components/SourceList.astro';
+import FavoriteButton from '~/components/FavoriteButton.astro';
+import ShareBar from '~/components/ShareBar.astro';
+import CitationBox from '~/components/CitationBox.astro';
+import EntryStatusBanner from '~/components/EntryStatusBanner.astro';
+import CorrectionBar from '~/components/CorrectionBar.astro';
+import Comments from '~/components/Comments.astro';
+
+interface BreadcrumbItem {
+  label: string;
+  href?: string;
+}
+
+type Status = 'draft' | 'submitted' | 'reviewing' | 'published' | 'archived' | 'withdrawn';
+type Contested = 'uncontested' | 'partial' | 'contested' | 'pending-review';
+type ArchivedReason = 'superseded' | 'historical' | 'unverified' | 'other';
+
+interface Props {
+  entryType: 'event' | 'person' | 'organization';
+  entryId: string;
+  title: string;
+  summary: string;
+  status: Status;
+  type?: string;
+  aliases?: string[];
+  tags?: string[];
+  sources: Array<{
+    url: string;
+    title: string;
+    publisher?: string;
+    publishedAt?: Date;
+    accessedAt?: Date;
+    archive?: string;
+    note?: string;
+  }>;
+  breadcrumbs: BreadcrumbItem[];
+  meta?: {
+    authors?: string[];
+    reviewers?: string[];
+    submittedBy?: string;
+    createdAt?: Date;
+    updatedAt?: Date;
+    verifiedAt?: Date;
+    contested?: Contested;
+    archivedReason?: ArchivedReason;
+    archivedNote?: string;
+  };
+  showDisclaimer?: boolean;
+}
+
+const {
+  entryType,
+  entryId,
+  title,
+  summary,
+  status,
+  type,
+  aliases = [],
+  tags = [],
+  sources,
+  breadcrumbs,
+  meta,
+  showDisclaimer = true,
+} = Astro.props;
+
+// canonical URL（分享 / 引用都用）
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://evil-baike.example.com').toString();
+---
+
+<BaseLayout
+  title={title}
+  description={summary}
+  ogType="article"
+  showDisclaimer={showDisclaimer && status === 'published'}
+  noIndex={status === 'archived'}
+>
+  <article class="max-w-3xl mx-auto" data-entry-id={`${entryType}/${entryId}`}>
+    <Breadcrumbs items={breadcrumbs} />
+
+    <!-- 报头式标题区 -->
+    <header class="mt-6 mb-6 pb-6 border-b-3 border-double border-ink-900">
+      <div class="flex flex-wrap items-center gap-2 mb-3">
+        <StatusBadge status={status} />
+        {type && (
+          <span class="meta-stamp border border-ink-900/30 px-2 py-0.5">
+            {type}
+          </span>
+        )}
+        {/* riskLevel 已从公开 UI 移除：保留在 schema 作为内部编辑字段，不展示 */}
+      </div>
+
+      <h1 class="headline text-4xl lg:text-5xl mb-3">{title}</h1>
+
+      {aliases.length > 0 && (
+        <p class="meta-stamp mb-4">
+          又称：{aliases.join(' · ')}
+        </p>
+      )}
+
+      <p class="deck text-lg lg:text-xl leading-relaxed">{summary}</p>
+
+      {tags.length > 0 && (
+        <div class="flex flex-wrap gap-2 mt-5">
+          {tags.map((tag) => (
+            <a href={`/tags/${encodeURIComponent(tag)}`} class="tag">#{tag}</a>
+          ))}
+        </div>
+      )}
+
+      <!-- 操作栏：收藏 / 分享（仅 published 显示） -->
+      {status === 'published' && (
+        <div class="mt-6 pt-4 border-t border-ink-900/20 flex flex-wrap items-start gap-3">
+          <FavoriteButton type={entryType} id={entryId} title={title} />
+          <ShareBar url={canonicalUrl} title={title} summary={summary} />
+        </div>
+      )}
+    </header>
+
+    <!-- 顶部状态横幅：verifiedAt / contested / archived -->
+    <EntryStatusBanner
+      status={status}
+      verifiedAt={meta?.verifiedAt}
+      contested={meta?.contested}
+      archivedReason={meta?.archivedReason}
+      archivedNote={meta?.archivedNote}
+    />
+
+    <!-- 正文 -->
+    <div class="prose prose-stone max-w-reading mx-auto">
+      <slot />
+    </div>
+
+    <!-- 元数据侧栏 -->
+    {meta && (
+      <aside class="mt-12 pt-6 border-t border-ink-900/30 archive-box">
+        <h3 class="meta-stamp mb-3 text-ink-muted">档案元数据</h3>
+        <dl class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm font-mono">
+          {meta.authors && meta.authors.length > 0 && (
+            <div>
+              <dt class="text-ink-muted inline">撰写：</dt>
+              <dd class="inline">{meta.authors.join(', ')}</dd>
+            </div>
+          )}
+          {meta.reviewers && meta.reviewers.length > 0 && (
+            <div>
+              <dt class="text-ink-muted inline">审核：</dt>
+              <dd class="inline">{meta.reviewers.join(', ')}</dd>
+            </div>
+          )}
+          {meta.submittedBy && (
+            <div>
+              <dt class="text-ink-muted inline">投稿：</dt>
+              <dd class="inline">{meta.submittedBy}</dd>
+            </div>
+          )}
+          {meta.createdAt && (
+            <div>
+              <dt class="text-ink-muted inline">创建：</dt>
+              <dd class="inline">{meta.createdAt.toISOString().slice(0, 10)}</dd>
+            </div>
+          )}
+          {meta.updatedAt && (
+            <div>
+              <dt class="text-ink-muted inline">最后更新：</dt>
+              <dd class="inline">{meta.updatedAt.toISOString().slice(0, 10)}</dd>
+            </div>
+          )}
+          {meta.verifiedAt && (
+            <div>
+              <dt class="text-ink-muted inline">最后核对：</dt>
+              <dd class="inline">{meta.verifiedAt.toISOString().slice(0, 10)}</dd>
+            </div>
+          )}
+        </dl>
+      </aside>
+    )}
+
+    <!-- 信源 -->
+    {sources.length > 0 && (
+      <section id="sources" class="mt-12">
+        <h2 class="headline text-2xl mb-4 pb-2 border-b border-ink-900">
+          信源 <span class="font-mono text-base text-ink-faded ml-2">[{sources.length}]</span>
+        </h2>
+        <SourceList sources={sources} />
+      </section>
+    )}
+
+    <!-- 学术引用 -->
+    {status === 'published' && (
+      <section class="mt-12">
+        <CitationBox
+          type={entryType}
+          id={entryId}
+          title={title}
+          authors={meta?.authors}
+          reviewers={meta?.reviewers}
+          createdAt={meta?.createdAt}
+          updatedAt={meta?.updatedAt}
+          url={canonicalUrl}
+        />
+      </section>
+    )}
+
+    <!-- 更正 / 报告错误入口（仅 published / archived 显示） -->
+    {(status === 'published' || status === 'archived') && (
+      <CorrectionBar
+        type={entryType}
+        id={entryId}
+        title={title}
+        url={canonicalUrl}
+      />
+    )}
+
+    <!-- 评论（仅在配置 Giscus 时渲染；否则显示空态引导） -->
+    {status === 'published' && (
+      <Comments term={`${entryType}/${entryId}`} />
+    )}
+  </article>
+</BaseLayout>

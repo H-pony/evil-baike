@@ -1,0 +1,28 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="档案未找到" description="404 - 此条目不存在或暂未公开" noIndex>
+  <div class="text-center py-20 max-w-xl mx-auto">
+    <p class="meta-stamp mb-4 text-archive-seal">ERROR 404</p>
+    <h1 class="headline text-5xl lg:text-6xl mb-4">档案未找到</h1>
+    <p class="deck text-lg mb-8">
+      此条目不存在、尚未发布，或链接已变更。
+    </p>
+
+    <div class="archive-box text-left">
+      <h2 class="font-display font-semibold text-base mb-2">可能的原因</h2>
+      <ul class="text-sm space-y-1.5 list-disc list-inside">
+        <li>条目处于草稿、待审、审核中、已撤回状态（不会生成公开页面）</li>
+        <li>条目已被申诉下架或归档后又被移除</li>
+        <li>URL 拼写错误</li>
+        <li>条目 ID 已变更</li>
+      </ul>
+    </div>
+
+    <div class="mt-8 flex flex-wrap justify-center gap-3">
+      <a href="/" class="badge badge-published px-4 py-2 no-underline">返回首页</a>
+      <a href="/events" class="badge border-ink-900 text-ink-900 px-4 py-2 no-underline hover:border-archive-seal hover:text-archive-seal">浏览事件</a>
+    </div>
+  </div>
+</BaseLayout>

@@ -1,0 +1,258 @@
+---
+/**
+ * 收藏夹页（本地存储）
+ *
+ * - 服务端渲染所有 published+archived 条目作为 DOM 节点（隐藏）
+ * - 客户端 JS 读取 localStorage 并取消隐藏匹配的条目
+ * - 空收藏时显示空态
+ *
+ * 优点：无 SSR hydration cost、SEO 友好、JS 失败时页面仍可浏览（只是看不到收藏）
+ */
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import EventCard from '~/components/EventCard.astro';
+import PersonCard from '~/components/PersonCard.astro';
+import OrgCard from '~/components/OrgCard.astro';
+import { getCollection } from 'astro:content';
+import { isPubliclyVisible } from '~/content.config';
+
+const events = await getCollection('events', (e) => isPubliclyVisible(e.data.status));
+const people = await getCollection('people', (p) => isPubliclyVisible(p.data.status));
+const orgs = await getCollection('organizations', (o) => isPubliclyVisible(o.data.status));
+
+const typeLabels: Record<string, string> = {
+  criminal: '刑事案件', legal: '法律诉讼', corporate: '企业丑闻',
+  controversy: '公共争议', 'public-safety': '公共安全', moral: '道德争议',
+  'human-rights': '人权事件', media: '媒体争议',
+};
+
+const orgTypeLabels: Record<string, string> = {
+  company: '企业', government: '政府', 'political-party': '政党',
+  ngo: 'NGO', academic: '学术机构', media: '媒体',
+  religious: '宗教', military: '军事', other: '其他',
+};
+
+// 事件计数（人物/机构卡显示）
+const eventCountMap = new Map<string, number>();
+for (const e of events) {
+  for (const pid of e.data.people) eventCountMap.set(pid, (eventCountMap.get(pid) ?? 0) + 1);
+  for (const oid of e.data.organizations) eventCountMap.set(oid, (eventCountMap.get(oid) ?? 0) + 1);
+}
+
+// 按时间倒序（收藏夹里最新收藏在前，先按时间排序作为 tiebreaker）
+events.sort((a, b) => b.data.dateStart.getTime() - a.data.dateStart.getTime());
+---
+
+<BaseLayout title="我的收藏" description="你加入收藏的事件 / 人物 / 机构（仅存储在本地浏览器）">
+  <header class="text-center py-8 border-b-3 border-double border-ink-900 mb-8">
+    <p class="meta-stamp mb-2">LOCAL · 0 KB 服务器存储</p>
+    <h1 class="headline text-4xl lg:text-5xl">我的收藏</h1>
+    <p class="deck mt-2">
+      数据存储于 <code>localStorage</code>，不与服务器同步 · 清空浏览器数据会丢失
+    </p>
+  </header>
+
+  <!-- 空态：未收藏任何条目 -->
+  <div data-fav-empty class="archive-box p-8 text-center">
+    <p class="text-2xl font-display mb-2">尚未收藏任何条目</p>
+    <p class="text-sm text-ink-muted mb-4">
+      在任何事件 / 人物 / 机构详情页点击右上角的「☆ 收藏」按钮即可加入此处。
+    </p>
+    <div class="flex justify-center gap-3 text-sm">
+      <a href="/events" class="badge border-ink-900 hover:bg-ink-900 hover:text-archive-paper no-underline">浏览事件</a>
+      <a href="/people" class="badge border-ink-900 hover:bg-ink-900 hover:text-archive-paper no-underline">浏览人物</a>
+      <a href="/organizations" class="badge border-ink-900 hover:bg-ink-900 hover:text-archive-paper no-underline">浏览机构</a>
+    </div>
+  </div>
+
+  <!-- 收藏统计 -->
+  <div data-fav-stats hidden class="archive-box p-4 mb-6 flex flex-wrap items-center justify-between gap-3">
+    <div class="flex flex-wrap gap-4 text-sm font-mono">
+      <span>收藏总数 <strong data-fav-total class="text-archive-seal">0</strong></span>
+      <span class="text-ink-muted">
+        事件 <strong data-fav-event-count>0</strong> ·
+        人物 <strong data-fav-person-count>0</strong> ·
+        机构 <strong data-fav-org-count>0</strong>
+      </span>
+    </div>
+    <button
+      type="button"
+      data-fav-clear
+      class="text-xs font-mono uppercase tracking-wider px-3 py-1.5 border border-archive-seal/40 text-archive-seal hover:bg-archive-seal/10 transition-colors"
+    >
+      清空所有收藏
+    </button>
+  </div>
+
+  <!-- 事件 -->
+  <section data-fav-section="event" hidden class="mb-10">
+    <h2 class="headline text-2xl mb-4 pb-2 border-b border-ink-900">
+      收藏的事件 <span class="font-mono text-base text-ink-faded ml-2" data-fav-section-count>[0]</span>
+    </h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      {events.map((event) => (
+        <div
+          data-fav-card="event"
+          data-fav-id={event.id}
+          hidden
+        >
+          <EventCard
+            id={event.id}
+            title={event.data.title}
+            summary={event.data.summary}
+            type={typeLabels[event.data.type] ?? event.data.type}
+            dateStart={event.data.dateStart}
+            dateEnd={event.data.dateEnd}
+            status={event.data.status}
+            tags={event.data.tags}
+            sourceCount={event.data.sources.length}
+            timelineCount={event.data.timeline.length}
+          />
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- 人物 -->
+  <section data-fav-section="person" hidden class="mb-10">
+    <h2 class="headline text-2xl mb-4 pb-2 border-b border-ink-900">
+      收藏的人物 <span class="font-mono text-base text-ink-faded ml-2" data-fav-section-count>[0]</span>
+    </h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      {people.map((person) => (
+        <div
+          data-fav-card="person"
+          data-fav-id={person.id}
+          hidden
+        >
+          <PersonCard
+            id={person.id}
+            name={person.data.name}
+            summary={person.data.summary}
+            status={person.data.status}
+            aliases={person.data.aliases}
+            eventCount={eventCountMap.get(person.id) ?? 0}
+          />
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- 机构 -->
+  <section data-fav-section="organization" hidden class="mb-10">
+    <h2 class="headline text-2xl mb-4 pb-2 border-b border-ink-900">
+      收藏的机构 <span class="font-mono text-base text-ink-faded ml-2" data-fav-section-count>[0]</span>
+    </h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      {orgs.map((org) => (
+        <div
+          data-fav-card="organization"
+          data-fav-id={org.id}
+          hidden
+        >
+          <OrgCard
+            id={org.id}
+            name={org.data.name}
+            summary={org.data.summary}
+            type={orgTypeLabels[org.data.type] ?? org.data.type}
+            status={org.data.status}
+            aliases={org.data.aliases}
+            eventCount={eventCountMap.get(org.id) ?? 0}
+          />
+        </div>
+      ))}
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  const KEY = 'evil-baike-favs';
+  type FavType = 'event' | 'person' | 'organization';
+
+  function readFavs(): Record<FavType, Array<{ id: string; title: string; ts: number }>> {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (!raw) return { event: [], person: [], organization: [] };
+      const parsed = JSON.parse(raw);
+      return {
+        event: Array.isArray(parsed.event) ? parsed.event : [],
+        person: Array.isArray(parsed.person) ? parsed.person : [],
+        organization: Array.isArray(parsed.organization) ? parsed.organization : [],
+      };
+    } catch {
+      return { event: [], person: [], organization: [] };
+    }
+  }
+
+  function render() {
+    const favs = readFavs();
+    const counts: Record<FavType, number> = {
+      event: favs.event.length,
+      person: favs.person.length,
+      organization: favs.organization.length,
+    };
+    const total = counts.event + counts.person + counts.organization;
+
+    const empty = document.querySelector<HTMLElement>('[data-fav-empty]');
+    const stats = document.querySelector<HTMLElement>('[data-fav-stats]');
+    const totalEl = document.querySelector<HTMLElement>('[data-fav-total]');
+    const evCount = document.querySelector<HTMLElement>('[data-fav-event-count]');
+    const peCount = document.querySelector<HTMLElement>('[data-fav-person-count]');
+    const orCount = document.querySelector<HTMLElement>('[data-fav-org-count]');
+
+    if (total === 0) {
+      empty?.removeAttribute('hidden');
+      stats?.setAttribute('hidden', '');
+    } else {
+      empty?.setAttribute('hidden', '');
+      stats?.removeAttribute('hidden');
+      if (totalEl) totalEl.textContent = String(total);
+      if (evCount) evCount.textContent = String(counts.event);
+      if (peCount) peCount.textContent = String(counts.person);
+      if (orCount) orCount.textContent = String(counts.organization);
+    }
+
+    // 按 type 显示/隐藏 cards + section
+    const types: FavType[] = ['event', 'person', 'organization'];
+    for (const t of types) {
+      const section = document.querySelector<HTMLElement>(`[data-fav-section="${t}"]`);
+      const sectionCountEl = section?.querySelector<HTMLElement>('[data-fav-section-count]');
+      const ids = new Set(favs[t].map((f) => f.id));
+      let visible = 0;
+      document.querySelectorAll<HTMLElement>(`[data-fav-card="${t}"]`).forEach((card) => {
+        const id = card.dataset.favId ?? '';
+        if (ids.has(id)) {
+          card.removeAttribute('hidden');
+          visible++;
+        } else {
+          card.setAttribute('hidden', '');
+        }
+      });
+      if (visible > 0) {
+        section?.removeAttribute('hidden');
+        if (sectionCountEl) sectionCountEl.textContent = `[${visible}]`;
+      } else {
+        section?.setAttribute('hidden', '');
+      }
+    }
+  }
+
+  function bindClear() {
+    const clearBtn = document.querySelector<HTMLButtonElement>('[data-fav-clear]');
+    clearBtn?.addEventListener('click', () => {
+      if (!confirm('确定清空所有收藏？此操作不可撤销。')) return;
+      localStorage.removeItem(KEY);
+      window.dispatchEvent(new CustomEvent('evil-baike:favs-changed'));
+      render();
+    });
+  }
+
+  render();
+  bindClear();
+
+  // 跨组件同步：fav 页打开时其它 tab/页面 toggle 也会刷新
+  window.addEventListener('evil-baike:favs-changed', render);
+  // 跨 tab：storage 事件
+  window.addEventListener('storage', (e) => {
+    if (e.key === KEY) render();
+  });
+</script>

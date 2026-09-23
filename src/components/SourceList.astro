@@ -1,0 +1,81 @@
+---
+/**
+ * SourceList - 信源列表（事实溯源用）
+ *
+ * 每条信源显示：
+ *   - 标题（链接到原始 URL）
+ *   - 发布者
+ *   - 发布日期
+ *   - 访问日期（必备，学术引用要求）
+ *   - 存档链接（如有）
+ *   - 备注
+ */
+
+interface Source {
+  url: string;
+  title: string;
+  publisher?: string;
+  publishedAt?: Date;
+  accessedAt?: Date;
+  archive?: string;
+  note?: string;
+}
+
+interface Props {
+  sources: Source[];
+}
+
+const { sources } = Astro.props;
+
+function formatDate(d?: Date): string {
+  return d ? d.toISOString().slice(0, 10) : '';
+}
+
+const totalCount = sources.length;
+const missingAccess = sources.filter((s) => !s.accessedAt).length;
+---
+
+<div data-source-list>
+  {missingAccess > 0 && (
+    <p class="meta-stamp mb-3 text-archive-seal/80">
+      ⚠ {missingAccess} / {totalCount} 条信源缺少访问日期（建议补全以便学术引用）
+    </p>
+  )}
+
+  <ol class="space-y-3 font-serif">
+    {sources.map((src, idx) => (
+      <li class="flex gap-3 pb-3 border-b border-ink-900/10 last:border-b-0">
+        <span class="font-mono text-xs text-ink-faded pt-0.5 shrink-0">
+          [{String(idx + 1).padStart(2, '0')}]
+        </span>
+        <div class="flex-1 min-w-0">
+          <a
+            href={src.url}
+            rel="noopener noreferrer nofollow"
+            target="_blank"
+            class="font-medium break-words"
+          >
+            {src.title}
+          </a>
+          <div class="text-xs text-ink-muted mt-1 font-mono flex flex-wrap gap-x-3 gap-y-0.5">
+            {src.publisher && <span>发布：{src.publisher}</span>}
+            {src.publishedAt && <span>· {formatDate(src.publishedAt)}</span>}
+            {src.accessedAt ? (
+              <span>· 访问 {formatDate(src.accessedAt)}</span>
+            ) : (
+              <span class="text-archive-seal/80">· 访问日期未填</span>
+            )}
+            {src.archive && (
+              <a href={src.archive} rel="noopener noreferrer nofollow" target="_blank" class="text-archive-seal">
+                · 存档
+              </a>
+            )}
+          </div>
+          {src.note && (
+            <p class="text-xs text-ink-muted mt-1 italic">{src.note}</p>
+          )}
+        </div>
+      </li>
+    ))}
+  </ol>
+</div>

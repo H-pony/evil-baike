@@ -1,0 +1,215 @@
+---
+/**
+ * 事件详情页
+ *
+ * 发布边界：只对 status === 'published' 或 'archived' 的条目生成 HTML。
+ * draft / submitted / reviewing / withdrawn 不会进入静态产物。
+ */
+import EntryLayout from '~/layouts/EntryLayout.astro';
+import EventOverview from '~/components/EventOverview.astro';
+import Timeline from '~/components/Timeline.astro';
+import EntityLink from '~/components/EntityLink.astro';
+import { getCollection, render } from 'astro:content';
+import { isPubliclyVisible, isIndexable } from '~/content.config';
+import type { GetStaticPaths } from 'astro';
+
+export const getStaticPaths = (async () => {
+  const events = await getCollection('events', (e) => isPubliclyVisible(e.data.status));
+  return events.map((event) => ({
+    params: { slug: event.id },
+    props: { event },
+  }));
+}) satisfies GetStaticPaths;
+
+const { event } = Astro.props;
+const { Content } = await render(event);
+
+const allEvents = await getCollection('events', (e) => isIndexable(e.data.status));
+const people = await getCollection('people', (p) => isPubliclyVisible(p.data.status));
+const orgs = await getCollection('organizations', (o) => isPubliclyVisible(o.data.status));
+
+const peopleMap = new Map(people.map((p) => [p.id, p]));
+const orgsMap = new Map(orgs.map((o) => [o.id, o]));
+const eventsMap = new Map(allEvents.map((e) => [e.id, e]));
+
+// 解析手动指定的关联事件
+const manualRelated = event.data.related
+  .map((id) => eventsMap.get(id))
+  .filter((e): e is NonNullable<typeof e> => Boolean(e));
+
+// 自动推荐：涉及同一人物或机构的其他事件
+const myPeople = new Set(event.data.people);
+const myOrgs = new Set(event.data.organizations);
+
+const autoRelated = allEvents
+  .filter((e) => e.id !== event.id)
+  .filter((e) => {
+    const sharedPeople = e.data.people.some((p) => myPeople.has(p));
+    const sharedOrgs = e.data.organizations.some((o) => myOrgs.has(o));
+    return sharedPeople || sharedOrgs;
+  })
+  .sort((a, b) => {
+    const aShared = a.data.people.filter((p) => myPeople.has(p)).length
+      + a.data.organizations.filter((o) => myOrgs.has(o)).length;
+    const bShared = b.data.people.filter((p) => myPeople.has(p)).length
+      + b.data.organizations.filter((o) => myOrgs.has(o)).length;
+    return bShared - aShared || b.data.dateStart.getTime() - a.data.dateStart.getTime();
+  })
+  .slice(0, 6);
+
+// 合并去重（手动优先）
+const manualIds = new Set(manualRelated.map((e) => e.id));
+const relatedEvents = [
+  ...manualRelated,
+  ...autoRelated.filter((e) => !manualIds.has(e.id)),
+];
+
+const typeLabels: Record<string, string> = {
+  criminal: '刑事',
+  legal: '法律',
+  corporate: '企业',
+  controversy: '争议',
+  'public-safety': '公共安全',
+  moral: '道德',
+  'human-rights': '人权',
+  media: '媒体',
+};
+---
+
+<EntryLayout
+  entryType="event"
+  entryId={event.id}
+  title={event.data.title}
+  summary={event.data.summary}
+  status={event.data.status}
+  type={event.data.type}
+  aliases={event.data.aliases}
+  tags={event.data.tags}
+  sources={event.data.sources}
+  breadcrumbs={[
+    { label: '首页', href: '/' },
+    { label: '事件档案', href: '/events' },
+    { label: event.data.title },
+  ]}
+  meta={{
+    authors: event.data.authors,
+    reviewers: event.data.reviewers,
+    submittedBy: event.data.submittedBy,
+    createdAt: event.data.createdAt,
+    updatedAt: event.data.updatedAt,
+    verifiedAt: event.data.verifiedAt,
+    contested: event.data.contested,
+    archivedReason: event.data.archivedReason,
+    archivedNote: event.data.archivedNote,
+  }}
+>
+  <!-- 档案概览（已确认事实 / 各方主张 / 当前处理结果 / 仍待核实） -->
+  <EventOverview
+    confirmedFacts={event.data.confirmedFacts}
+    claims={event.data.claims}
+    currentOutcome={event.data.currentOutcome}
+    pendingVerification={event.data.pendingVerification}
+  />
+
+  <!-- 正文 Markdown -->
+  <Content />
+
+  <!-- 涉及人物 / 机构 -->
+  {(event.data.people.length > 0 || event.data.organizations.length > 0) && (
+    <section class="mt-10 pt-6 border-t border-ink-900/30">
+      <h2 class="headline text-xl mb-4">涉及主体</h2>
+      <div class="flex flex-wrap gap-2">
+        {event.data.people.map((id) => {
+          const p = peopleMap.get(id);
+          return (
+            <EntityLink type="person" id={id}>
+              {p?.data.name ?? id}
+            </EntityLink>
+          );
+        })}
+        {event.data.organizations.map((id) => {
+          const o = orgsMap.get(id);
+          return (
+            <EntityLink type="organization" id={id}>
+              {o?.data.name ?? id}
+            </EntityLink>
+          );
+        })}
+      </div>
+    </section>
+  )}
+
+  <!-- 时间线 -->
+  {event.data.timeline.length > 0 && (
+    <section class="mt-12">
+      <h2 class="headline text-2xl mb-2 pb-2 border-b border-ink-900">
+        事件时间线
+        <span class="font-mono text-sm text-ink-faded ml-2">
+          [{event.data.timeline.length} 个节点]
+        </span>
+      </h2>
+      <Timeline entries={event.data.timeline} />
+    </section>
+  )}
+
+  <!-- 关联事件（手动 + 自动推荐） -->
+  {relatedEvents.length > 0 && (
+    <section class="mt-12 pt-6 border-t border-ink-900/30">
+      <div class="flex items-baseline justify-between mb-4">
+        <h2 class="headline text-2xl">关联事件</h2>
+        <span class="meta-stamp">
+          {manualRelated.length} 手动 · {autoRelated.length} 自动推荐 · 共 {relatedEvents.length}
+        </span>
+      </div>
+      <ul class="space-y-3">
+        {relatedEvents.map((e, idx) => {
+          const isManual = idx < manualRelated.length;
+          const sharedPeople = e.data.people.filter((p) => myPeople.has(p));
+          const sharedOrgs = e.data.organizations.filter((o) => myOrgs.has(o));
+          return (
+            <li>
+              <a
+                href={`/events/${e.id}`}
+                class="block archive-box hover:border-archive-seal transition-colors no-underline"
+              >
+                <div class="flex items-center gap-2 mb-2 flex-wrap">
+                  <span class="meta-stamp border border-ink-900/30 px-2 py-0.5">
+                    {typeLabels[e.data.type] ?? e.data.type}
+                  </span>
+                  {isManual && (
+                    <span class="meta-stamp border border-archive-seal/40 px-2 py-0.5 text-archive-seal">
+                      手动指定
+                    </span>
+                  )}
+                  <span class="meta-stamp text-ink-faded">
+                    {e.data.dateStart.toISOString().slice(0, 10)}
+                    {e.data.dateEnd ? ` – ${e.data.dateEnd.toISOString().slice(0, 10)}` : ' –'}
+                  </span>
+                </div>
+                <h3 class="card-title font-display font-semibold text-lg mb-1">
+                  {e.data.title}
+                </h3>
+                <p class="text-sm text-ink-muted line-clamp-2">{e.data.summary}</p>
+                {(sharedPeople.length > 0 || sharedOrgs.length > 0) && (
+                  <div class="flex flex-wrap gap-1.5 mt-2 text-xs">
+                    <span class="meta-stamp text-ink-faded">共同主体：</span>
+                    {sharedPeople.map((pid) => (
+                      <EntityLink type="person" id={pid}>
+                        {peopleMap.get(pid)?.data.name ?? pid}
+                      </EntityLink>
+                    ))}
+                    {sharedOrgs.map((oid) => (
+                      <EntityLink type="organization" id={oid}>
+                        {orgsMap.get(oid)?.data.name ?? oid}
+                      </EntityLink>
+                    ))}
+                  </div>
+                )}
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  )}
+</EntryLayout>

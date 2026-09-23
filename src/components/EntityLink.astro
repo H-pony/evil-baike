@@ -1,0 +1,25 @@
+---
+/**
+ * EntityLink - 人物/机构/事件交叉引用链接
+ * 用法：<EntityLink type="person" id="zhang-san">张三</EntityLink>
+ */
+
+interface Props {
+  type: 'event' | 'person' | 'organization';
+  id: string;
+  showIcon?: boolean;
+}
+
+const { type, id, showIcon = true } = Astro.props;
+
+const path = `/${type === 'event' ? 'events' : type === 'person' ? 'people' : 'organizations'}/${id}`;
+
+const icon = type === 'event' ? '◆' : type === 'person' ? '👤' : '⌬';
+const typeLabel = type === 'event' ? '事件' : type === 'person' ? '人物' : '机构';
+---
+
+<a href={path} class="inline-flex items-center gap-1.5 px-2 py-0.5 border border-ink-900/30 hover:border-archive-seal hover:text-archive-seal no-underline transition-colors font-mono text-xs uppercase tracking-wider">
+  {showIcon && <span class="text-ink-muted">{icon}</span>}
+  <span class="text-ink-faded">{typeLabel}</span>
+  <span class="font-medium"><slot /></span>
+</a>

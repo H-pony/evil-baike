@@ -1,0 +1,96 @@
+---
+/**
+ * Timeline - 时间线组件
+ *
+ * 每个节点显示：
+ *   - 信息性质标签（FactNatureTag）
+ *   - 日期
+ *   - 标题
+ *   - 描述（关键陈述直接链接到信源）
+ *   - 节点级信源（折叠 + 行内）
+ *   - 自定义标签
+ */
+
+import FactNatureTag from './FactNatureTag.astro';
+
+type Nature = 'confirmed' | 'official-action' | 'media-claim' | 'self-claim' | 'rumor' | 'correction';
+
+interface Entry {
+  date: Date;
+  title: string;
+  description: string;
+  sources?: string[];
+  tags?: string[];
+  nature?: Nature;
+  by?: string;
+}
+
+interface Props {
+  entries: Entry[];
+}
+
+const { entries } = Astro.props;
+
+const sorted = [...entries].sort(
+  (a, b) => a.date.getTime() - b.date.getTime()
+);
+
+function formatDate(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+// 把描述里 [信源 N] / [1] 这类标记替换成超链接；
+// 没有标记时不强加链接（避免误导）。
+function linkifyDescription(desc: string, sources: string[]): string {
+  if (!sources || sources.length === 0) return desc;
+  // 匹配 [1] [2] ... 标记
+  return desc.replace(/\[(\d{1,2})\]/g, (m, n) => {
+    const idx = parseInt(n, 10);
+    if (idx >= 1 && idx <= sources.length) {
+      return `<a href="${sources[idx - 1]}" target="_blank" rel="noopener noreferrer nofollow" class="text-archive-seal underline decoration-archive-seal/40 hover:decoration-archive-seal">[${n}]</a>`;
+    }
+    return m;
+  });
+}
+---
+
+<ol class="space-y-0 mt-6" data-timeline>
+  {sorted.map((e) => {
+    const sources = e.sources ?? [];
+    const descriptionHTML = linkifyDescription(e.description, sources);
+    return (
+      <li class="timeline-item" data-nature={e.nature ?? 'media-claim'}>
+        <div class="flex flex-wrap items-center gap-2 mb-1">
+          <time datetime={formatDate(e.date)} class="meta-stamp">{formatDate(e.date)}</time>
+          {e.nature && <FactNatureTag nature={e.nature} by={e.by} />}
+        </div>
+        <h3 class="font-display font-semibold text-lg mb-1">{e.title}</h3>
+        <p class="text-ink-900/90 leading-relaxed" set:html={descriptionHTML} />
+
+        {e.tags && e.tags.length > 0 && (
+          <div class="flex flex-wrap gap-1.5 mt-2">
+            {e.tags.map((t) => <span class="tag">#{t}</span>)}
+          </div>
+        )}
+
+        {sources.length > 0 && (
+          <details class="mt-2" data-timeline-sources>
+            <summary class="meta-stamp cursor-pointer hover:text-archive-seal">
+              节点信源 [{sources.length}]
+            </summary>
+            <ol class="mt-1.5 ml-4 space-y-0.5 text-xs">
+              {sources.map((url, i) => (
+                <li>
+                  <span class="text-archive-seal font-mono">[{i + 1}]</span>{' '}
+                  <a href={url} target="_blank" rel="noopener noreferrer nofollow" class="break-all">
+                    {url}
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </details>
+        )}
+      </li>
+    );
+  })}
+</ol>

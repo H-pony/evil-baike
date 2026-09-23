@@ -1,0 +1,95 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="方法论" description="收录原则、审核流程、更正与下架机制">
+  <article class="max-w-3xl mx-auto">
+    <header class="py-8 border-b-3 border-double border-ink-900 mb-8">
+      <p class="meta-stamp mb-2 text-archive-seal">METHODOLOGY</p>
+      <h1 class="headline text-4xl lg:text-5xl">收录方法论</h1>
+    </header>
+
+    <div class="prose prose-stone max-w-reading space-y-6 leading-relaxed">
+      <section>
+        <h2 class="headline text-2xl mb-3">1. 收录标准</h2>
+        <p>满足以下全部条件方可进入"已发布"状态：</p>
+        <ul class="list-disc list-inside space-y-1">
+          <li>事件已被<strong>至少一家主流媒体</strong>或<strong>官方文件</strong>报道。</li>
+          <li>涉及<strong>公众利益</strong>或具有公共讨论价值。</li>
+          <li>事实可溯源，信源链接有效。</li>
+          <li>条目内容严格使用事实陈述，无主观评价。</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="headline text-2xl mb-3">2. 信源要求</h2>
+        <p>信源分为以下三级：</p>
+        <ul class="list-disc list-inside space-y-1">
+          <li><strong>一级（首选）</strong>：官方文件（判决书、警方通报、政府公告、上市公司公告等）。</li>
+          <li><strong>二级（合格）</strong>：主流媒体报道（央视、新华社、人民日报、财新、新京报、第一财经等）。</li>
+          <li><strong>三级（需标注）</strong>：自媒体爆料、行业媒体、海外媒体等。<strong>必须</strong>明确标注"待交叉核实"。</li>
+        </ul>
+        <p>任何一级或二级信源引用数量不少于 2 条。三级信源仅作辅助。</p>
+      </section>
+
+      <section>
+        <h2 class="headline text-2xl mb-3">3. 状态机</h2>
+        <p>每条目按以下状态流转：</p>
+        <ol class="list-decimal list-inside space-y-1">
+          <li><code>draft</code> — 草稿，仅维护者可见。</li>
+          <li><code>submitted</code> — 已投稿，待审核。</li>
+          <li><code>reviewing</code> — 审核中，可能存在待补全字段。</li>
+          <li><code>published</code> — 已发布，全站可见。</li>
+          <li><code>archived</code> — 已归档，不显示在列表但 URL 仍可访问。</li>
+          <li><code>withdrawn</code> — 已撤回（收到合规要求或事实错误重大）。</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2 class="headline text-2xl mb-3">4. 写作规范</h2>
+        <ul class="list-disc list-inside space-y-1">
+          <li>使用第三人称客观陈述，避免"我们认为""显然"等带主观判断的表述。</li>
+          <li>每个时间线节点须附<strong>日期 + 事实 + 信源</strong>三件套。</li>
+          <li>涉及未审结案件的嫌疑人，使用"涉嫌""据报道"等措辞。</li>
+          <li>对当事人使用全名需谨慎评估；公开身份 vs 普通公民区分对待。</li>
+          <li>不引用未公开的"内部消息""知情人士透露"等。</li>
+        </ul>
+      </section>
+
+      <section id="correction">
+        <h2 class="headline text-2xl mb-3">5. 更正流程</h2>
+        <ol class="list-decimal list-inside space-y-1">
+          <li>任何访客发现事实错误，通过 <a href="/submit">投稿页</a> 提交更正请求，注明<strong>条目 ID</strong>与<strong>具体错误</strong>。</li>
+          <li>维护者<strong>14 天内</strong>核实，对信源链进行交叉验证。</li>
+          <li>若更正有效，在条目历史中标注"更正于 YYYY-MM-DD"，原文不删除而是<strong>修订</strong>。</li>
+          <li>若更正无效，回信说明原因并提供证据。</li>
+        </ol>
+      </section>
+
+      <section id="takedown">
+        <h2 class="headline text-2xl mb-3">6. 下架与申诉</h2>
+        <p>当事人或代理人认为条目对其造成不当影响，可通过以下流程申诉：</p>
+        <ol class="list-decimal list-inside space-y-1">
+          <li>提交书面申诉，附<strong>身份证明</strong>与<strong>具体申诉理由</strong>。</li>
+          <li>常见申诉理由：事实错误、身份混淆、未成年人保护、隐私侵权等。</li>
+          <li>维护者<strong>14 天内</strong>审核；如理由充分，对条目进行修订或下架。</li>
+          <li>下架时<strong>保留撤销记录</strong>（在 Git 历史中），不真正删除条目数据。</li>
+          <li>对反复申诉无果的，可走法律途径（适用法律以服务器所在地为准）。</li>
+        </ol>
+        <p class="archive-box mt-4 text-sm">
+          <strong>关于未审结案件：</strong>涉及未审结刑事案件的条目，当嫌疑人作出生效无罪判决或撤案决定时，
+          条目会<strong>主动标注"无罪判决"</strong>而非下架（参考新闻档案原则）。
+        </p>
+      </section>
+
+      <section>
+        <h2 class="headline text-2xl mb-3">7. 编辑历史</h2>
+        <p>
+          本站所有内容以 Markdown + Git 形式存储。
+          任何修改均可在公开仓库查看，包括每次修改的内容、时间、修改者。
+          这确保了<strong>审计可追溯性</strong>，也是本站区别于纯发布型档案的核心特征。
+        </p>
+      </section>
+    </div>
+  </article>
+</BaseLayout>

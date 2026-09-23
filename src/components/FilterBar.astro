@@ -1,0 +1,170 @@
+---
+/**
+ * FilterBar - 列表页筛选器（URL 参数 + 客户端 JS 增强）
+ *
+ * 工作机制：
+ * - 链接 href 仍构造 URL 参数（无 JS 也可点击，浏览器跳转到 ?type=X 页面）
+ * - 但页面本身 SSR 渲染全部条目，由各列表页 [data-filter-bar] 标识的 JS 在客户端
+ *   按 URL 参数 hide/show。URL 改动由 history.pushState 不刷新页面。
+ *
+ * 因此 FilterBar 的链接 click 需要 preventDefault + pushState。
+ */
+
+interface FilterOption {
+  value: string;
+  label: string;
+  count?: number;
+}
+
+interface FilterGroup {
+  name: string;
+  label: string;
+  options: FilterOption[];
+}
+
+interface Props {
+  filters: FilterGroup[];
+  current: Record<string, string | undefined>;  // 服务端初始状态（保留兼容）
+  basePath: string;
+  'data-filter-bar'?: string;
+}
+
+const { filters, current, basePath, ...attrs } = Astro.props;
+
+function buildUrl(name: string, value: string | null): string {
+  const params = new URLSearchParams();
+  for (const [k, v] of Object.entries(current)) {
+    if (!v) continue;
+    if (k === name) {
+      if (value !== null && v !== value) params.set(k, value);
+    } else {
+      params.set(k, v);
+    }
+  }
+  if (!Object.prototype.hasOwnProperty.call(current, name) && value !== null) {
+    params.set(name, value);
+  }
+  const qs = params.toString();
+  return qs ? `${basePath}?${qs}` : basePath;
+}
+
+function isActive(name: string, value: string | undefined): boolean {
+  return current[name] === value;
+}
+
+function activeFilterCount(): number {
+  return Object.values(current).filter(Boolean).length;
+}
+---
+
+<div class="archive-box mb-6 p-4" {...attrs}>
+  <div class="flex items-baseline gap-2 mb-3">
+    <span class="meta-stamp">筛选</span>
+    {activeFilterCount() > 0 && (
+      <a
+        href={basePath}
+        data-filter-clear
+        class="meta-stamp text-archive-seal hover:underline no-underline"
+      >
+        [清空全部]
+      </a>
+    )}
+  </div>
+
+  <div class="space-y-3">
+    {filters.map((group) => (
+      <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+        <span class="meta-stamp text-ink-faded shrink-0 w-16">{group.label}:</span>
+        <a
+          href={buildUrl(group.name, null)}
+          data-filter-all={group.name}
+          class="text-xs font-mono uppercase tracking-wider px-2 py-0.5 border border-ink-900/30 text-ink-muted hover:border-archive-seal hover:text-archive-seal transition-colors no-underline"
+        >
+          全部
+        </a>
+        {group.options.map((opt) => (
+          <a
+            href={buildUrl(group.name, isActive(group.name, opt.value) ? null : opt.value)}
+            data-filter-chip
+            data-filter-name={group.name}
+            data-filter-value={opt.value}
+            class="text-xs font-mono uppercase tracking-wider px-2 py-0.5 border border-ink-900/30 text-ink-muted hover:border-archive-seal hover:text-archive-seal transition-colors no-underline inline-flex items-center gap-1"
+          >
+            {opt.label}
+            {opt.count !== undefined && (
+              <span class="text-[10px] opacity-60">[{opt.count}]</span>
+            )}
+          </a>
+        ))}
+      </div>
+    ))}
+  </div>
+</div>
+
+<script>
+  /**
+   * FilterBar 点击行为：
+   * 1. preventDefault 阻止默认导航
+   * 2. 读取 link 的 data-* 计算「切换该 filter」后的新 URL：
+   *    - 保留当前 URL 中所有其他 filter 参数
+   *    - 本 filter 参数：点击「全部」→ 删除；点击同名 chip → 切换；点击新 filter → 设置
+   * 3. history.replaceState 不刷新页面
+   * 4. 派发 evil-baike:filter-changed 事件
+   *
+   * 委托到所有 [data-filter-bar] 容器内 a[data-filter-chip] / a[data-filter-all] / a[data-filter-clear]。
+   */
+  function buildNewUrl(name: string, value: string | null): string {
+    const params = new URLSearchParams(window.location.search);
+    if (value === null) {
+      params.delete(name);
+    } else {
+      params.set(name, value);
+    }
+    const qs = params.toString();
+    const path = window.location.pathname;
+    return qs ? `${path}?${qs}` : path;
+  }
+
+  function bindFilterBars() {
+    document.querySelectorAll<HTMLElement>('[data-filter-bar]').forEach((bar) => {
+      const grid = document.querySelector<HTMLElement>('[data-card-grid]');
+      if (!grid) return; // 没有 grid 的页面（如无筛选）不绑
+
+      bar.querySelectorAll<HTMLAnchorElement>('[data-filter-chip]').forEach((link) => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const name = link.dataset.filterName ?? '';
+          const value = link.dataset.filterValue ?? '';
+          if (!name) return;
+
+          // 切换语义：若当前已选中该项 → 清除；否则设置
+          const current = new URLSearchParams(window.location.search).get(name);
+          const newValue = current === value ? null : value;
+          const newUrl = buildNewUrl(name, newValue);
+          window.history.replaceState({}, '', newUrl);
+          window.dispatchEvent(new CustomEvent('evil-baike:filter-changed', { detail: { url: newUrl } }));
+        });
+      });
+
+      bar.querySelectorAll<HTMLAnchorElement>('[data-filter-all]').forEach((link) => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const name = link.dataset.filterAll ?? '';
+          if (!name) return;
+          const newUrl = buildNewUrl(name, null);
+          window.history.replaceState({}, '', newUrl);
+          window.dispatchEvent(new CustomEvent('evil-baike:filter-changed', { detail: { url: newUrl } }));
+        });
+      });
+
+      const clearBtn = bar.querySelector<HTMLAnchorElement>('[data-filter-clear]');
+      clearBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.history.replaceState({}, '', window.location.pathname);
+        window.dispatchEvent(new CustomEvent('evil-baike:filter-changed'));
+      });
+    });
+  }
+
+  bindFilterBars();
+</script>

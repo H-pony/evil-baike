@@ -1,0 +1,163 @@
+---
+/**
+ * 首页 - 档案馆门面
+ */
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import EventCard from '~/components/EventCard.astro';
+import { getCollection } from 'astro:content';
+import { isIndexable } from '~/content.config';
+
+// 仅展示已发布
+const allEvents = await getCollection('events', (e) => isIndexable(e.data.status));
+// 首页"最近归档"按档案更新时间（updatedAt）倒序——与列表页默认"事件发生时间"明确区分
+const published = allEvents.sort(
+  (a, b) => b.data.updatedAt.getTime() - a.data.updatedAt.getTime()
+);
+const recent = published.slice(0, 6);
+
+const allPeople = await getCollection('people', (p) => isIndexable(p.data.status));
+const recentPeople = allPeople.slice(0, 3);
+
+const allOrgs = await getCollection('organizations', (o) => isIndexable(o.data.status));
+const recentOrgs = allOrgs.slice(0, 3);
+---
+
+<BaseLayout
+  title="恶人百科"
+  description="公共事件的永久档案馆 · 档案式记录，不作道德定性"
+>
+  <!-- 报头宣传语 -->
+  <section class="text-center py-12 lg:py-16 border-b-3 border-double border-ink-900">
+    <p class="meta-stamp mb-4">公元 2024 年起 · 民间档案馆</p>
+    <h1 class="headline text-5xl lg:text-7xl tracking-tight mb-4">
+      恶人百科
+    </h1>
+    <p class="deck text-xl lg:text-2xl max-w-2xl mx-auto leading-relaxed">
+      网络没有记忆。普通人的精力是有限的。<br/>
+      这里，是那些事件的永久档案。
+    </p>
+
+    <div class="flex flex-wrap justify-center gap-3 mt-8">
+      <a href="/events" class="badge badge-published text-base px-4 py-2 no-underline hover:bg-archive-seal transition-colors">
+        浏览事件档案 →
+      </a>
+      <a href="/submit" class="badge border-ink-900 text-ink-900 text-base px-4 py-2 no-underline hover:border-archive-seal hover:text-archive-seal transition-colors">
+        投稿 / 更正
+      </a>
+    </div>
+  </section>
+
+  <!-- 三大承诺 -->
+  <section class="grid grid-cols-1 md:grid-cols-3 gap-6 py-12 border-b border-ink-900/30">
+    <div class="archive-box">
+      <h3 class="meta-stamp mb-2 text-archive-seal">不作定性</h3>
+      <p class="text-sm leading-relaxed">
+        本站仅汇总事件经过与各方报道，不对当事人作道德或法律定性。
+        "恶人"系档案分类标签。
+      </p>
+    </div>
+    <div class="archive-box">
+      <h3 class="meta-stamp mb-2 text-archive-seal">严格信源</h3>
+      <p class="text-sm leading-relaxed">
+        所有事实须附可溯源链接（官方文件 / 主流媒体 / 公开裁判文书等）。
+        无信源不入档。
+      </p>
+    </div>
+    <div class="archive-box">
+      <h3 class="meta-stamp mb-2 text-archive-seal">开放申诉</h3>
+      <p class="text-sm leading-relaxed">
+        如认为某条目事实错误或存在法律问题，可通过页面底部「报告错误 / 补充证据 / 申请更正」入口反馈。
+      </p>
+    </div>
+  </section>
+
+  <!-- 最新事件 -->
+  {recent.length > 0 && (
+    <section class="py-12">
+      <div class="flex items-baseline justify-between mb-6 border-b border-ink-900 pb-2">
+        <h2 class="headline text-3xl">最近归档</h2>
+        <span class="meta-stamp text-ink-muted">按档案更新时间倒序</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {recent.map((event) => (
+          <EventCard
+            id={event.id}
+            title={event.data.title}
+            summary={event.data.summary}
+            type={event.data.type}
+            dateStart={event.data.dateStart}
+            dateEnd={event.data.dateEnd}
+            status={event.data.status}
+            tags={event.data.tags}
+            sourceCount={event.data.sources.length}
+            timelineCount={event.data.timeline.length}
+          />
+        ))}
+      </div>
+
+      <div class="text-center mt-6">
+        <a href="/events" class="meta-stamp text-ink-muted hover:text-archive-seal no-underline">
+          查看全部 [{published.length}] →
+        </a>
+      </div>
+    </section>
+  )}
+
+  <!-- 占位状态 -->
+  {published.length === 0 && (
+    <section class="py-20 text-center">
+      <p class="meta-stamp mb-3">档案馆状态</p>
+      <h2 class="headline text-3xl mb-3">尚无已发布条目</h2>
+      <p class="text-ink-muted max-w-md mx-auto">
+        骨架已建好。首批 3 个占位条目已就位，等待你提供真实事件内容或审核通过第一篇投稿。
+      </p>
+      <a href="/submit" class="inline-block mt-6 badge border-ink-900 text-ink-900 text-base px-4 py-2 no-underline hover:border-archive-seal">
+        成为第一个投稿者 →
+      </a>
+    </section>
+  )}
+
+  <!-- 人物与机构入口 -->
+  {(recentPeople.length > 0 || recentOrgs.length > 0) && (
+    <section class="py-12 border-t border-ink-900/30 grid grid-cols-1 md:grid-cols-2 gap-8">
+      {recentPeople.length > 0 && (
+        <div>
+          <div class="flex items-baseline justify-between mb-4 border-b border-ink-900 pb-2">
+            <h2 class="headline text-2xl">人物</h2>
+            <a href="/people" class="meta-stamp text-ink-muted hover:text-archive-seal no-underline">全部 →</a>
+          </div>
+          <ul class="space-y-3">
+            {recentPeople.map((p) => (
+              <li>
+                <a href={`/people/${p.id}`} class="block py-2 hover:text-archive-seal no-underline">
+                  <span class="font-medium">{p.data.name}</span>
+                  <span class="block text-xs text-ink-muted line-clamp-1">{p.data.summary}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {recentOrgs.length > 0 && (
+        <div>
+          <div class="flex items-baseline justify-between mb-4 border-b border-ink-900 pb-2">
+            <h2 class="headline text-2xl">机构</h2>
+            <a href="/organizations" class="meta-stamp text-ink-muted hover:text-archive-seal no-underline">全部 →</a>
+          </div>
+          <ul class="space-y-3">
+            {recentOrgs.map((o) => (
+              <li>
+                <a href={`/organizations/${o.id}`} class="block py-2 hover:text-archive-seal no-underline">
+                  <span class="font-medium">{o.data.name}</span>
+                  <span class="block text-xs text-ink-muted line-clamp-1">{o.data.summary}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
+  )}
+</BaseLayout>

@@ -1,0 +1,163 @@
+---
+/**
+ * 机构列表页
+ *
+ * P0 改造：移除 risk 筛选（riskLevel 不再公开）
+ */
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import OrgCard from '~/components/OrgCard.astro';
+import FilterBar from '~/components/FilterBar.astro';
+import { getCollection } from 'astro:content';
+import { isIndexable } from '~/content.config';
+
+const allOrgs = await getCollection('organizations', (o) => isIndexable(o.data.status));
+
+const eventCountMap = new Map<string, number>();
+for (const event of await getCollection('events', (e) => isIndexable(e.data.status))) {
+  for (const orgId of event.data.organizations) {
+    eventCountMap.set(orgId, (eventCountMap.get(orgId) ?? 0) + 1);
+  }
+}
+
+const typeCount: Record<string, number> = {};
+for (const o of allOrgs) {
+  typeCount[o.data.type] = (typeCount[o.data.type] ?? 0) + 1;
+}
+
+const orgs = [...allOrgs].sort(
+  (a, b) => (eventCountMap.get(b.id) ?? 0) - (eventCountMap.get(a.id) ?? 0),
+);
+
+const typeLabels: Record<string, string> = {
+  company: '企业',
+  government: '政府',
+  'political-party': '政党',
+  ngo: 'NGO',
+  academic: '学术机构',
+  media: '媒体',
+  religious: '宗教',
+  military: '军事',
+  other: '其他',
+};
+
+const typeOrder = ['company', 'government', 'academic', 'media', 'ngo', 'political-party', 'religious', 'military', 'other'];
+
+const filters = [
+  {
+    name: 'type',
+    label: '类型',
+    options: typeOrder
+      .filter((t) => (typeCount[t] ?? 0) > 0)
+      .map((t) => ({ value: t, label: typeLabels[t] ?? t, count: typeCount[t] })),
+  },
+];
+---
+
+<BaseLayout title="机构" description="档案库中涉及的机构">
+  <header class="text-center py-8 border-b-3 border-double border-ink-900 mb-8">
+    <p class="meta-stamp mb-2">SECTION 03</p>
+    <h1 class="headline text-4xl lg:text-5xl">机构</h1>
+    <p class="deck mt-2" data-count-line data-total={allOrgs.length}>
+      共 {allOrgs.length} 家 · 当前显示 <span data-current-count>{allOrgs.length}</span> 家 · 按涉及事件数排序
+    </p>
+  </header>
+
+  <FilterBar
+    filters={filters}
+    current={{}}
+    basePath="/organizations"
+    data-filter-bar="organizations"
+  />
+
+  {orgs.length === 0 ? (
+    <p class="text-center text-ink-muted py-20">机构档案为空。</p>
+  ) : (
+    <div
+      data-card-grid
+      data-type-field="type"
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+    >
+      {orgs.map((org) => (
+        <article
+          data-card
+          data-id={org.id}
+          data-type={org.data.type}
+        >
+          <OrgCard
+            id={org.id}
+            name={org.data.name}
+            summary={org.data.summary}
+            type={typeLabels[org.data.type] ?? org.data.type}
+            status={org.data.status}
+            aliases={org.data.aliases}
+            eventCount={eventCountMap.get(org.id) ?? 0}
+          />
+        </article>
+      ))}
+    </div>
+  )}
+
+  <p data-empty hidden class="text-center text-ink-muted py-20">
+    无匹配条目。<a href="/organizations">清除筛选</a>。
+  </p>
+</BaseLayout>
+
+<script>
+  type FilterName = 'type';
+
+  function applyFilter() {
+    const params = new URLSearchParams(window.location.search);
+    const filters: Record<FilterName, string> = {
+      type: params.get('type') ?? '',
+    };
+
+    const bar = document.querySelector<HTMLElement>('[data-filter-bar="organizations"]');
+    if (bar) {
+      bar.querySelectorAll<HTMLAnchorElement>('[data-filter-chip]').forEach((chip) => {
+        const name = chip.dataset.filterName as FilterName;
+        const value = chip.dataset.filterValue ?? '';
+        const isActive = filters[name] !== '' && filters[name] === value;
+        chip.classList.toggle('is-active', isActive);
+      });
+      bar.querySelectorAll<HTMLAnchorElement>('[data-filter-all]').forEach((chip) => {
+        const name = chip.dataset.filterAll as FilterName;
+        const isActive = filters[name] === '';
+        chip.classList.toggle('is-active', isActive);
+      });
+    }
+
+    const cards = document.querySelectorAll<HTMLElement>('[data-card-grid] [data-card]');
+    let visible = 0;
+    cards.forEach((card) => {
+      let match = true;
+      for (const name of Object.keys(filters) as FilterName[]) {
+        const want = filters[name];
+        if (!want) continue;
+        const have = card.dataset[name] ?? '';
+        if (have !== want) {
+          match = false;
+          break;
+        }
+      }
+      card.hidden = !match;
+      if (match) visible++;
+    });
+
+    const counter = document.querySelector<HTMLElement>('[data-current-count]');
+    if (counter) counter.textContent = String(visible);
+    const empty = document.querySelector<HTMLElement>('[data-empty]');
+    if (empty) empty.hidden = visible > 0;
+  }
+
+  window.addEventListener('popstate', applyFilter);
+  window.addEventListener('evil-baike:filter-changed', applyFilter);
+  applyFilter();
+</script>
+
+<style is:global>
+  [data-filter-bar] a.is-active {
+    border-color: rgb(168 57 46) !important;
+    background-color: rgb(168 57 46 / 0.1) !important;
+    color: rgb(168 57 46) !important;
+  }
+</style>

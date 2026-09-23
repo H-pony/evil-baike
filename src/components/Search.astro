@@ -1,0 +1,302 @@
+---
+/**
+ * Search - 全局搜索命令面板（⌘K 唤起）
+ *
+ * P2 改造：
+ *   - 打开时记录 document.activeElement，关闭时恢复焦点
+ *   - 显式 ESC 关闭
+ *   - 无结果状态文案
+ *   - 移除 riskLevel 显示（P0）
+ */
+---
+
+<button
+  type="button"
+  id="search-trigger"
+  class="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-ink-900/30 hover:border-archive-seal hover:text-archive-seal transition-colors font-mono"
+  aria-label="打开搜索"
+  aria-haspopup="dialog"
+  aria-controls="search-panel"
+  aria-expanded="false"
+>
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+    <circle cx="11" cy="11" r="8"/>
+    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+  </svg>
+  <span class="hidden sm:inline">搜索</span>
+  <kbd class="hidden md:inline-flex items-center gap-0.5 text-[10px] border border-ink-900/30 px-1.5 py-0.5 ml-1 text-ink-faded">
+    <span>⌘</span><span>K</span>
+  </kbd>
+</button>
+
+<!-- 命令面板 -->
+<div
+  id="search-panel"
+  class="fixed inset-0 z-[100] hidden items-start justify-center pt-[10vh] px-4"
+  role="dialog"
+  aria-modal="true"
+  aria-label="全局搜索"
+>
+  <!-- 背景遮罩 -->
+  <div id="search-backdrop" class="absolute inset-0 bg-ink-950/60 backdrop-blur-sm"></div>
+
+  <!-- 面板本体 -->
+  <div class="relative w-full max-w-2xl bg-archive-paper border-2 border-ink-900 shadow-2xl">
+    <!-- 输入框 -->
+    <div class="flex items-center border-b border-ink-900/30 px-4">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-ink-muted" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"/>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input
+        type="search"
+        id="search-input"
+        placeholder="搜索事件、人物、机构…"
+        class="flex-1 ml-3 py-4 bg-transparent outline-none font-serif text-lg placeholder:text-ink-faded"
+        autocomplete="off"
+        spellcheck="false"
+        aria-label="搜索关键词"
+      />
+      <kbd class="text-[10px] border border-ink-900/30 px-1.5 py-0.5 text-ink-faded font-mono">ESC</kbd>
+    </div>
+
+    <!-- 结果区 -->
+    <div id="search-results" class="max-h-[60vh] overflow-y-auto">
+      <div id="search-empty" class="p-8 text-center text-ink-faded text-sm">
+        <p class="font-mono uppercase tracking-wider mb-3">提示</p>
+        <p class="font-serif">输入关键词开始搜索</p>
+        <p class="text-xs mt-2 font-mono">支持模糊匹配 · 跨事件/人物/机构 · 命中别名</p>
+      </div>
+      <div id="search-no-match" class="p-8 text-center text-ink-faded text-sm hidden">
+        <p class="font-mono uppercase tracking-wider mb-3">无匹配结果</p>
+        <p class="font-serif">没有匹配的事件、人物或机构</p>
+        <p class="text-xs mt-2 font-mono">
+          可尝试更短的关键词，或检查拼写 · 如需投稿请前往
+          <a href="/submit">投稿页</a>
+        </p>
+      </div>
+      <div id="search-results-list" class="hidden"></div>
+    </div>
+
+    <!-- 底栏 -->
+    <div class="border-t border-ink-900/30 px-4 py-2 flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-ink-faded">
+      <div class="flex items-center gap-3">
+        <span><kbd class="border border-ink-900/30 px-1 py-0.5">↑↓</kbd> 选择</span>
+        <span><kbd class="border border-ink-900/30 px-1 py-0.5">↵</kbd> 打开</span>
+        <span><kbd class="border border-ink-900/30 px-1 py-0.5">ESC</kbd> 关闭</span>
+      </div>
+      <span id="search-result-count">0 结果</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  import Fuse from 'fuse.js';
+
+  const trigger = document.getElementById('search-trigger') as HTMLButtonElement;
+  const panel = document.getElementById('search-panel') as HTMLDivElement;
+  const backdrop = document.getElementById('search-backdrop') as HTMLDivElement;
+  const input = document.getElementById('search-input') as HTMLInputElement;
+  const empty = document.getElementById('search-empty') as HTMLDivElement;
+  const noMatch = document.getElementById('search-no-match') as HTMLDivElement;
+  const resultsList = document.getElementById('search-results-list') as HTMLDivElement;
+  const countLabel = document.getElementById('search-result-count') as HTMLSpanElement;
+
+  type Doc = {
+    type: 'event' | 'person' | 'organization';
+    id: string;
+    title: string;
+    summary: string;
+    aliases?: string[];
+    tags?: string[];
+    url: string;
+    orgType?: string;
+  };
+
+  let fuse: Fuse<Doc> | null = null;
+  let docs: Doc[] = [];
+  let activeIndex = -1;
+  let lastFocused: HTMLElement | null = null; // P2：记录打开前的焦点
+
+  async function loadIndex() {
+    if (fuse) return;
+    try {
+      const res = await fetch('/search.json');
+      if (!res.ok) return;
+      docs = await res.json();
+      fuse = new Fuse(docs, {
+        keys: [
+          { name: 'title', weight: 3 },
+          { name: 'aliases', weight: 2 },
+          { name: 'summary', weight: 1 },
+          { name: 'tags', weight: 1.5 },
+        ],
+        threshold: 0.4,
+        ignoreLocation: true,
+        includeMatches: true,
+        minMatchCharLength: 1,
+      });
+    } catch {
+      // 网络/解析失败时不打扰用户
+    }
+  }
+
+  function open() {
+    lastFocused = document.activeElement as HTMLElement | null;
+    panel.classList.remove('hidden');
+    panel.classList.add('flex');
+    trigger.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden';
+    loadIndex();
+    setTimeout(() => input.focus(), 0);
+  }
+
+  function close() {
+    panel.classList.add('hidden');
+    panel.classList.remove('flex');
+    trigger.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+    input.value = '';
+    showEmpty();
+    // P2：恢复焦点
+    if (lastFocused && typeof lastFocused.focus === 'function') {
+      lastFocused.focus();
+    } else {
+      trigger.focus();
+    }
+    lastFocused = null;
+  }
+
+  function showEmpty() {
+    empty.classList.remove('hidden');
+    noMatch.classList.add('hidden');
+    resultsList.classList.add('hidden');
+    countLabel.textContent = '0 结果';
+    activeIndex = -1;
+  }
+
+  function showNoMatch() {
+    empty.classList.add('hidden');
+    noMatch.classList.remove('hidden');
+    resultsList.classList.add('hidden');
+    countLabel.textContent = '0 结果';
+    activeIndex = -1;
+  }
+
+  function renderResults(results: Array<{ item: Doc; matches?: ReadonlyArray<{ key?: string; value?: string; indices?: ReadonlyArray<readonly [number, number]> }> }>) {
+    if (results.length === 0) {
+      showNoMatch();
+      return;
+    }
+
+    resultsList.innerHTML = results.slice(0, 20).map((r, idx) => {
+      const d = r.item;
+      const typeLabel = d.type === 'event' ? '事件' : d.type === 'person' ? '人物' : '机构';
+      const titleMatch = r.matches?.find((m) => m.key === 'title');
+      const summaryMatch = r.matches?.find((m) => m.key === 'summary');
+
+      const titleHTML = highlight(d.title, titleMatch?.indices);
+      const summaryHTML = highlight(truncate(d.summary, 100), summaryMatch?.indices);
+
+      return `
+        <a
+          href="${d.url}"
+          data-idx="${idx}"
+          class="search-result block px-4 py-3 border-b border-ink-900/10 hover:bg-archive-aged/50 transition-colors ${idx === activeIndex ? 'bg-archive-aged/50' : ''}"
+        >
+          <div class="flex items-center gap-2 mb-1">
+            <span class="meta-stamp text-archive-seal">${typeLabel}</span>
+          </div>
+          <div class="font-display font-semibold text-base mb-1">${titleHTML}</div>
+          <div class="text-sm text-ink-muted line-clamp-2">${summaryHTML}</div>
+          ${d.tags && d.tags.length > 0 ? `<div class="flex flex-wrap gap-1 mt-1.5">${d.tags.slice(0, 4).map((t) => `<span class="tag">#${t}</span>`).join('')}</div>` : ''}
+        </a>
+      `;
+    }).join('');
+
+    resultsList.classList.remove('hidden');
+    empty.classList.add('hidden');
+    noMatch.classList.add('hidden');
+    countLabel.textContent = `${results.length} 结果`;
+    activeIndex = 0;
+  }
+
+  function highlight(text: string, indices?: ReadonlyArray<readonly [number, number]>): string {
+    if (!indices || indices.length === 0) return escapeHTML(text);
+    const parts: string[] = [];
+    let last = 0;
+    for (const [start, end] of indices) {
+      if (start > last) parts.push(escapeHTML(text.slice(last, start)));
+      parts.push(`<mark class="bg-archive-seal/30 text-ink-900 px-0.5">${escapeHTML(text.slice(start, end + 1))}</mark>`);
+      last = end + 1;
+    }
+    if (last < text.length) parts.push(escapeHTML(text.slice(last)));
+    return parts.join('');
+  }
+
+  function truncate(text: string, n: number): string {
+    if (text.length <= n) return text;
+    return text.slice(0, n) + '…';
+  }
+
+  function escapeHTML(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // 事件绑定
+  trigger.addEventListener('click', open);
+  backdrop.addEventListener('click', close);
+
+  document.addEventListener('keydown', (e) => {
+    const isOpen = !panel.classList.contains('hidden');
+    // ⌘K / Ctrl+K 切换
+    if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      if (isOpen) close();
+      else open();
+      return;
+    }
+    if (!isOpen) return;
+    // P2：ESC 关闭（不再要求用户先 click input）
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      close();
+      return;
+    }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const items = resultsList.querySelectorAll<HTMLElement>('.search-result');
+      if (items.length === 0) return;
+      items.forEach((el) => el.classList.remove('bg-archive-aged/50'));
+      activeIndex = (activeIndex + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+      items[activeIndex]?.classList.add('bg-archive-aged/50');
+      items[activeIndex]?.scrollIntoView({ block: 'nearest' });
+      return;
+    }
+    if (e.key === 'Enter' && activeIndex >= 0) {
+      const items = resultsList.querySelectorAll<HTMLElement>('.search-result');
+      const target = items[activeIndex] as HTMLAnchorElement | undefined;
+      if (target) {
+        window.location.href = target.href;
+      }
+    }
+  });
+
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  input.addEventListener('input', () => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => {
+      const q = input.value.trim();
+      if (!q || !fuse) {
+        showEmpty();
+        return;
+      }
+      const results = fuse.search(q);
+      renderResults(results as Parameters<typeof renderResults>[0]);
+    }, 100);
+  });
+</script>

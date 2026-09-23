@@ -1,0 +1,26 @@
+---
+/**
+ * StatusBadge - 条目状态徽章
+ */
+type Status = 'draft' | 'submitted' | 'reviewing' | 'published' | 'archived' | 'withdrawn';
+
+interface Props {
+  status: Status;
+  size?: 'sm' | 'md';
+}
+
+const { status, size = 'md' } = Astro.props;
+
+const labels: Record<Status, string> = {
+  draft: '草稿',
+  submitted: '已投稿',
+  reviewing: '审核中',
+  published: '已发布',
+  archived: '已归档',
+  withdrawn: '已撤回',
+};
+---
+
+<span class:list={['badge', `badge-${status}`, size === 'sm' && 'text-[10px]']}>
+  {labels[status]}
+</span>

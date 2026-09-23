@@ -1,0 +1,12 @@
+# Cloudflare Pages _redirects file
+# https://developers.cloudflare.com/pages/configuration/redirects/
+
+# 旧版带斜杠路径 → 去斜杠（trailing slash never）
+# Astro build format: 'directory' 已经生成 index.html,无需 redirect
+
+# RSS / sitemap 兼容
+/rss /rss.xml 301
+/sitemap /sitemap-index.xml 301
+
+# 投稿页可放在 /submit
+/submit* /submit/:splat 200

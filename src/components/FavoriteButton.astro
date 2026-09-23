@@ -1,0 +1,124 @@
+---
+/**
+ * FavoriteButton - 收藏按钮（localStorage）
+ *
+ * 用法：
+ *   <FavoriteButton type="event" id="2023-wu-library-allegation" title="..." />
+ *
+ * localStorage key: 'evil-baike-favs' = JSON.stringify({event: ['id1'], person: [], organization: []})
+ */
+
+interface Props {
+  type: 'event' | 'person' | 'organization';
+  id: string;
+  title: string;
+}
+
+const { type, id, title } = Astro.props;
+const safeTitle = title.replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c] ?? c));
+---
+
+<button
+  type="button"
+  data-fav-btn
+  data-fav-type={type}
+  data-fav-id={id}
+  data-fav-title={safeTitle}
+  class="inline-flex items-center gap-2 px-3 py-1.5 border border-ink-900/40 text-sm font-mono uppercase tracking-wider bg-archive-paper hover:border-archive-seal hover:text-archive-seal transition-colors"
+  aria-label="加入收藏"
+  title="加入收藏 / 取消收藏（仅本地存储）"
+>
+  <span data-fav-star aria-hidden="true">☆</span>
+  <span data-fav-label>收藏</span>
+</button>
+
+<script>
+  // 收藏管理 - 使用 localStorage
+  const KEY = 'evil-baike-favs';
+  type FavType = 'event' | 'person' | 'organization';
+
+  function readFavs(): Record<FavType, Array<{ id: string; title: string; ts: number }>> {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (!raw) return { event: [], person: [], organization: [] };
+      const parsed = JSON.parse(raw);
+      return {
+        event: Array.isArray(parsed.event) ? parsed.event : [],
+        person: Array.isArray(parsed.person) ? parsed.person : [],
+        organization: Array.isArray(parsed.organization) ? parsed.organization : [],
+      };
+    } catch {
+      return { event: [], person: [], organization: [] };
+    }
+  }
+
+  function writeFavs(favs: Record<FavType, Array<{ id: string; title: string; ts: number }>>) {
+    try {
+      localStorage.setItem(KEY, JSON.stringify(favs));
+      // 广播事件供 Header 计数 + favorites 页同步
+      window.dispatchEvent(new CustomEvent('evil-baike:favs-changed', { detail: favs }));
+    } catch (err) {
+      console.warn('[evil-baike] localStorage 写入失败', err);
+    }
+  }
+
+  function isFav(type: FavType, id: string): boolean {
+    const favs = readFavs();
+    return favs[type].some((f) => f.id === id);
+  }
+
+  function toggleFav(type: FavType, id: string, title: string) {
+    const favs = readFavs();
+    const idx = favs[type].findIndex((f) => f.id === id);
+    if (idx >= 0) {
+      favs[type].splice(idx, 1);
+    } else {
+      favs[type].push({ id, title, ts: Date.now() });
+    }
+    writeFavs(favs);
+    return favs[type].some((f) => f.id === id);
+  }
+
+  function renderBtn(btn: HTMLButtonElement, active: boolean) {
+    const star = btn.querySelector('[data-fav-star]') as HTMLElement;
+    const label = btn.querySelector('[data-fav-label]') as HTMLElement;
+    if (active) {
+      star.textContent = '★';
+      label.textContent = '已收藏';
+      btn.classList.add('border-archive-seal', 'text-archive-seal');
+      btn.classList.remove('border-ink-900/40');
+      btn.setAttribute('aria-pressed', 'true');
+    } else {
+      star.textContent = '☆';
+      label.textContent = '收藏';
+      btn.classList.remove('border-archive-seal', 'text-archive-seal');
+      btn.classList.add('border-ink-900/40');
+      btn.setAttribute('aria-pressed', 'false');
+    }
+  }
+
+  // 初始化所有按钮
+  function initAll() {
+    document.querySelectorAll<HTMLButtonElement>('[data-fav-btn]').forEach((btn) => {
+      const type = btn.dataset.favType as FavType;
+      const id = btn.dataset.favId ?? '';
+      const title = btn.dataset.favTitle ?? '';
+      renderBtn(btn, isFav(type, id));
+      btn.addEventListener('click', () => {
+        const active = toggleFav(type, id, title);
+        renderBtn(btn, active);
+      });
+    });
+  }
+
+  // 跨组件同步
+  window.addEventListener('evil-baike:favs-changed', () => {
+    document.querySelectorAll<HTMLButtonElement>('[data-fav-btn]').forEach((btn) => {
+      const type = btn.dataset.favType as FavType;
+      const id = btn.dataset.favId ?? '';
+      renderBtn(btn, isFav(type, id));
+    });
+  });
+
+  initAll();
+</script>

@@ -1,0 +1,39 @@
+---
+/**
+ * 标签列表页 - 所有出现过的标签（仅 published）
+ */
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+import { isIndexable } from '~/content.config';
+
+const tagMap = new Map<string, number>();
+
+for (const event of await getCollection('events', (e) => isIndexable(e.data.status))) {
+  for (const t of event.data.tags) {
+    tagMap.set(t, (tagMap.get(t) ?? 0) + 1);
+  }
+}
+
+const sorted = [...tagMap.entries()].sort((a, b) => b[1] - a[1]);
+---
+
+<BaseLayout title="标签" description="按标签浏览档案">
+  <header class="text-center py-8 border-b-3 border-double border-ink-900 mb-8">
+    <p class="meta-stamp mb-2">SECTION 04</p>
+    <h1 class="headline text-4xl lg:text-5xl">标签</h1>
+    <p class="deck mt-2">共 {sorted.length} 个标签</p>
+  </header>
+
+  {sorted.length === 0 ? (
+    <p class="text-center text-ink-muted py-20">暂无标签。</p>
+  ) : (
+    <div class="flex flex-wrap gap-3">
+      {sorted.map(([tag, count]) => (
+        <a href={`/tags/${encodeURIComponent(tag)}`} class="tag no-underline px-3 py-1.5">
+          #{tag}
+          <span class="ml-1.5 text-ink-faded">{count}</span>
+        </a>
+      ))}
+    </div>
+  )}
+</BaseLayout>

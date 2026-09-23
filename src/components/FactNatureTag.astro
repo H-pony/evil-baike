@@ -1,0 +1,55 @@
+---
+/**
+ * FactNatureTag - 信息性质标签
+ * 用于时间线节点 / 信源列表 / 摘要标注
+ *
+ * 性质枚举（与 content.config.ts 中 timelineEntry.nature 一致）：
+ *   confirmed       - 已被法院 / 官方文件确认
+ *   official-action - 官方处置动作
+ *   media-claim     - 媒体陈述
+ *   self-claim      - 当事人/相关方陈述
+ *   rumor           - 网传待核实
+ *   correction      - 更正 / 辟谣
+ */
+
+type Nature = 'confirmed' | 'official-action' | 'media-claim' | 'self-claim' | 'rumor' | 'correction';
+
+interface Props {
+  nature: Nature;
+  by?: string;          // 可选：附加陈述方
+}
+
+const { nature, by } = Astro.props;
+
+const labels: Record<Nature, string> = {
+  confirmed: '已确认',
+  'official-action': '官方处置',
+  'media-claim': '媒体陈述',
+  'self-claim': '当事人陈述',
+  rumor: '网传待核实',
+  correction: '更正/辟谣',
+};
+
+// 标签样式：用 archive-seal 朱砂红做不同程度浓度区分
+// 不再用颜色暗示人物有罪 / 危险（避免红=危险的暗示）
+const styles: Record<Nature, string> = {
+  confirmed: 'border-archive-seal bg-archive-seal/10 text-archive-seal',
+  'official-action': 'border-ink-900 bg-ink-900/5 text-ink-900',
+  'media-claim': 'border-ink-muted bg-archive-aged/40 text-ink-muted',
+  'self-claim': 'border-archive-seal/40 bg-archive-seal/5 text-archive-seal/90',
+  rumor: 'border-archive-seal/30 bg-archive-paper text-archive-seal/70 italic',
+  correction: 'border-ink-muted bg-ink-900/5 text-ink-muted',
+};
+---
+
+<span
+  class:list={[
+    'inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider border',
+    styles[nature],
+  ]}
+  data-nature={nature}
+  title={`信息性质：${labels[nature]}${by ? ` · 陈述方：${by}` : ''}`}
+>
+  <span>{labels[nature]}</span>
+  {by && <span class="opacity-70">· {by}</span>}
+</span>
