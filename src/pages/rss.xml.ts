@@ -10,7 +10,7 @@ export const GET: APIRoute = async (context) => {
   return rss({
     title: '恶人百科',
     description: '公共事件的永久档案馆',
-    site: context.site ?? 'https://evil-baike.example.com',
+    site: context.site ?? 'https://schemer.online',
     items: events.map((event) => ({
       title: event.data.title,
       description: event.data.summary,

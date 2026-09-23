@@ -81,7 +81,7 @@ const {
 } = Astro.props;
 
 // canonical URL（分享 / 引用都用）
-const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://evil-baike.example.com').toString();
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://schemer.online').toString();
 ---
 
 <BaseLayout

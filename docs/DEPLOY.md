@@ -34,7 +34,7 @@ git init
 git add -A
 git commit -m "initial: evil-baike static site"
 git branch -M main
-git remote add origin git@github.com:你的用户名/evil-baike.git
+git remote add origin https://github.com/H-pony/evil-baike.git
 git push -u origin main
 ```
 
@@ -143,7 +143,7 @@ git push origin feat/new-event
 | `CLOUDFLARE_API_TOKEN` | 刚才复制的 token |
 | `CLOUDFLARE_ACCOUNT_ID` | 你的 Account ID |
 
-完成后,push 到 `main` 就会通过 GitHub Actions 触发部署。
+完成后，在同一页面的 **Variables** 中新增 `CF_AUTO_DEPLOY=true`，之后 push 到 `main` 才会通过 GitHub Actions 自动部署。未配置时 Actions 只验证和构建，部署由 `scripts/deploy-cloudflare.sh` 手动执行。
 
 ---
 

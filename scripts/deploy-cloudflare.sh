@@ -5,7 +5,7 @@
 #      权限: Account > Cloudflare Pages > Edit
 #      Account Resources: 你的账户
 #   2. 在 https://dash.cloudflare.com 右侧栏复制 Account ID
-#   3. 跑本脚本,把两个值粘贴进去
+#   3. 跑本脚本,把两个值粘贴进去；Wrangler 会上传 dist/
 
 set -euo pipefail
 
@@ -27,6 +27,7 @@ err()  { echo -e "${RED}✗${RESET} $*" >&2; exit 1; }
 
 # ---------- 1. 读取 Token ----------
 step "检查 Cloudflare API Token"
+CF_API_TOKEN="${CLOUDFLARE_API_TOKEN:-${CF_API_TOKEN:-}}"
 if [[ -z "${CF_API_TOKEN:-}" ]]; then
   echo
   warn "需要 Cloudflare API Token,打开这个链接创建一个:"
@@ -42,6 +43,7 @@ ok "Token 已获取 (${#CF_API_TOKEN} 字符)"
 
 # ---------- 2. 读取 Account ID ----------
 step "检查 Cloudflare Account ID"
+CF_ACCOUNT_ID="${CLOUDFLARE_ACCOUNT_ID:-${CF_ACCOUNT_ID:-}}"
 if [[ -z "${CF_ACCOUNT_ID:-}" ]]; then
   echo
   warn "Account ID 在 Cloudflare 控制台右侧栏"
@@ -56,14 +58,32 @@ ok "Account ID: $CF_ACCOUNT_ID"
 
 # ---------- 3. 验证 Token 有效性 ----------
 step "验证 Token..."
-VERIFY=$(curl -s "https://api.cloudflare.com/client/v4/user/tokens/verify" \
+VERIFY=$(curl -fsS "https://api.cloudflare.com/client/v4/user/tokens/verify" \
   -H "Authorization: Bearer $CF_API_TOKEN")
-if echo "$VERIFY" | grep -q '"success":true'; then
+if [[ "$(echo "$VERIFY" | jq -r '.success and .result.status == "active"')" == "true" ]]; then
   ok "Token 验证通过"
 else
+  echo "$VERIFY" | jq '{success, errors}' >&2
   err "Token 验证失败,请检查权限(需要 Cloudflare Pages Edit)"
-  echo "$VERIFY" | head -5
 fi
+
+step "验证账户访问"
+ACCOUNTS=$(curl -fsS "https://api.cloudflare.com/client/v4/accounts" \
+  -H "Authorization: Bearer $CF_API_TOKEN")
+if [[ "$(echo "$ACCOUNTS" | jq -r '.success')" != "true" ]]; then
+  echo "$ACCOUNTS" | jq '{success, errors}' >&2
+  err "无法查询 Cloudflare 账户"
+fi
+if ! echo "$ACCOUNTS" | jq -e --arg id "$CF_ACCOUNT_ID" '.result[]? | select(.id == $id)' >/dev/null; then
+  warn "/accounts 未列出目标账户，改为直接验证该账户的 Pages 权限"
+fi
+PROJECTS=$(curl -fsS "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/pages/projects" \
+  -H "Authorization: Bearer $CF_API_TOKEN")
+if [[ "$(echo "$PROJECTS" | jq -r '.success')" != "true" ]]; then
+  echo "$PROJECTS" | jq '{success, errors}' >&2
+  err "目标账户的 Pages 权限验证失败"
+fi
+ok "目标账户的 Pages 权限可用"
 
 # ---------- 4. 检测项目名 ----------
 PROJECT_NAME="${CF_PROJECT_NAME:-evil-baike}"
@@ -89,49 +109,28 @@ EXISTS=$(curl -s "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/p
 
 if [[ "$EXISTS" == "200" ]]; then
   ok "项目 $PROJECT_NAME 已存在"
-else
+elif [[ "$EXISTS" == "404" ]]; then
   warn "项目不存在,创建中..."
   CREATE=$(curl -s -X POST "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/pages/projects" \
     -H "Authorization: Bearer $CF_API_TOKEN" \
     -H "Content-Type: application/json" \
     --data "{\"name\":\"$PROJECT_NAME\",\"production_branch\":\"main\"}")
-  if echo "$CREATE" | grep -q '"success":true'; then
+  if [[ "$(echo "$CREATE" | jq -r '.success')" == "true" ]]; then
     ok "项目创建成功"
   else
+    echo "$CREATE" | jq '{success, errors}' >&2
     err "项目创建失败"
-    echo "$CREATE" | head -10
   fi
-fi
-
-# ---------- 7. 打包并上传 ----------
-step "打包 dist/ 为 ZIP"
-TMP_ZIP="$(mktemp -t evil-baike-XXXXXX).zip"
-cd "$DIST_DIR"
-zip -qr "$TMP_ZIP" .
-SIZE_ZIP=$(du -sh "$TMP_ZIP" | awk '{print $1}')
-ok "打包完成: $SIZE_ZIP"
-
-step "上传到 Cloudflare Pages"
-UPLOAD=$(curl -s -X POST \
-  "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/pages/projects/$PROJECT_NAME/deployments" \
-  -H "Authorization: Bearer $CF_API_TOKEN" \
-  -F "branch=main" \
-  -F "commit=direct-upload-$(date +%Y%m%d-%H%M%S)" \
-  -F "zip=@$TMP_ZIP;type=application/zip")
-
-rm -f "$TMP_ZIP"
-
-if echo "$UPLOAD" | grep -q '"success":true'; then
-  URL=$(echo "$UPLOAD" | sed -n 's/.*"url":"\([^"]*\)".*/\1/p')
-  DEPLOY_ID=$(echo "$UPLOAD" | sed -n 's/.*"id":"\([^"]*\)".*/\1/p' | head -1)
-  ok "部署成功!"
-  echo
-  echo -e "${BOLD}${GREEN}🎉 你的站点已上线:${RESET}"
-  echo -e "   ${CYAN}https://$PROJECT_NAME.pages.dev${RESET}"
-  [[ -n "$DEPLOY_ID" ]] && echo "   Deployment ID: $DEPLOY_ID"
-  echo
-  echo -e "等待 30-60 秒让全球 CDN 节点同步,然后就能访问了。"
 else
-  err "部署失败"
-  echo "$UPLOAD" | head -20
+  cat /tmp/cf-probe.json >&2
+  err "查询 Pages 项目失败 (HTTP $EXISTS)"
 fi
+
+# ---------- 7. 上传 ----------
+# Pages 的 deployments API 需要 manifest，单独上传 ZIP 不再可用。
+step "上传 dist/ 到 Cloudflare Pages"
+cd "$PROJECT_DIR"
+export CLOUDFLARE_API_TOKEN="$CF_API_TOKEN"
+export CLOUDFLARE_ACCOUNT_ID="$CF_ACCOUNT_ID"
+npx wrangler pages deploy "$DIST_DIR" --project-name "$PROJECT_NAME" --branch main
+ok "部署完成: https://$PROJECT_NAME.pages.dev"

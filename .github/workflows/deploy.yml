@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      # 投稿聚合草稿：sync-submissions.yml 每天会 commit 到 main
+      # 这些文件不进 Astro collections（src/content.config.ts 未注册 _drafts），
+      # 所以触发 build 也不会改变 dist/，但能避免浪费 CF Pages 部署配额
+      - 'src/content/_drafts/**'
+      - '.github/workflows/sync-submissions.yml'
   workflow_dispatch:
 
 permissions:
@@ -38,6 +44,7 @@ jobs:
         run: npm run build
         env:
           NODE_ENV: production
+          PUBLIC_SUBMIT_GITHUB: https://github.com/H-pony/evil-baike/issues/new/choose
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -50,6 +57,7 @@ jobs:
   deploy:
     name: Deploy to Cloudflare Pages
     needs: build
+    if: ${{ vars.CF_AUTO_DEPLOY == 'true' }}
     runs-on: ubuntu-latest
     environment:
       name: production
@@ -75,7 +83,7 @@ jobs:
 
   deploy-preview:
     name: Deploy preview
-    if: github.event_name == 'pull_request'
+    if: ${{ github.event_name == 'pull_request' && vars.CF_AUTO_DEPLOY == 'true' }}
     runs-on: ubuntu-latest
     environment:
       name: preview

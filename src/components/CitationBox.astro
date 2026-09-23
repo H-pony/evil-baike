@@ -24,7 +24,7 @@ const { type, id, title, authors = [], reviewers = [], createdAt, updatedAt } = 
 
 const siteName = '恶人百科';
 const slugPath = type === 'event' ? 'events' : type === 'person' ? 'people' : 'organizations';
-const canonicalUrl = Astro.props.url ?? `${Astro.site ?? 'https://evil-baike.example.com'}/${slugPath}/${id}`;
+const canonicalUrl = Astro.props.url ?? `${Astro.site ?? 'https://schemer.online'}/${slugPath}/${id}`;
 
 const accessDate = new Date().toISOString().slice(0, 10);
 const pubYear = (createdAt ?? new Date()).getUTCFullYear();

@@ -1,0 +1,109 @@
+# ============================================================
+# 现有条目更正 · Issue 表单
+# ============================================================
+# 自动添加 label: correction
+# 用于反馈某事件 / 人物 / 机构详情页的事实错误、补充新信源、申请下架。
+
+name: 现有条目更正
+description: 对已收录的条目反馈事实错误、补充新信源，或申请下架。
+title: "[更正] "
+labels:
+  - correction
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > 💡 提示
+        > 详情页底部也有「报告错误 / 补充证据 / 申请更正」入口，会自动带上条目 ID 与 URL。
+        > 本表单适用于不便打开详情页的情况。
+
+  - type: dropdown
+    id: entry-type
+    attributes:
+      label: 条目类型
+      options:
+        - event          # 事件
+        - person         # 人物
+        - organization   # 机构
+    validations:
+      required: true
+
+  - type: input
+    id: entry-id
+    attributes:
+      label: 条目 ID
+      description: |
+        详情页 URL 的最后一段（kebab-case）。
+        例：`https://schemer.online/events/2024-some-event` → `2024-some-event`
+      placeholder: 例如：2024-some-event
+    validations:
+      required: true
+
+  - type: dropdown
+    id: correction-kind
+    attributes:
+      label: 反馈类型
+      options:
+        - 报告事实错误
+        - 补充新信源（媒体报道 / 官方文件 / 裁判文书）
+        - 申请更正当事人姓名匿名化
+        - 申请整条下架
+        - 其他
+    validations:
+      required: true
+
+  - type: textarea
+    id: location
+    attributes:
+      label: 错误位置
+      description: |
+        指出错误所在的段落 / 时间线节点 / 信源。
+        例：「时间线 2024-03-15 节点」
+      placeholder: 时间线 2024-03-15 节点 / 摘要第三句
+    validations:
+      required: false
+
+  - type: textarea
+    id: current-content
+    attributes:
+      label: 现状内容（描述）
+      description: 你认为有误的现有内容（可直接引用）。
+    validations:
+      required: false
+
+  - type: textarea
+    id: suggested-content
+    attributes:
+      label: 建议内容
+      description: 你认为正确的内容。
+    validations:
+      required: false
+
+  - type: textarea
+    id: sources
+    attributes:
+      label: 你的信源
+      description: |
+        每条格式：`[标题](URL) - 媒体名 - 发布日期`
+        至少 1 条可验证信源。
+    validations:
+      required: true
+
+  - type: input
+    id: reporter
+    attributes:
+      label: 反馈人
+      description: 可选；GitHub 用户名 / 笔名 / 留空。
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: 提交确认
+      options:
+        - label: 我所反馈的内容有可验证信源支持（至少 1 条）。
+          required: true
+        - label: 我知悉更正有效时条目会被修订并在修订处标注日期；重大更正（如整条下架）会保留 Git 历史。
+          required: true

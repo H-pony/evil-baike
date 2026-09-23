@@ -1,5 +1,6 @@
 # build output
 dist/
+dist.zip
 .output/
 
 # generated types
@@ -31,7 +32,9 @@ pnpm-debug.log*
 # wrangler (cloudflare)
 .wrangler/
 
-# drafts & local-only content
-src/content/_drafts/
+# drafts：投稿聚合后的草稿
+# 注意：src/content/_drafts/ 现在已纳入版本控制，由 .github/workflows/sync-submissions.yml
+# 自动同步；commit 不会触发 deploy（deploy.yml paths-ignore 过滤）。
+# 仅 *_private/ 和 *.draft.md 仍保持本地化（主编个人草稿）。
 src/content/_private/
 *.draft.md

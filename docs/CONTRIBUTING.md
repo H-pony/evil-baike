@@ -12,6 +12,7 @@
 1. **必须附信源。** 每条事实须可溯源至官方文件、主流媒体报道或公开裁判文书。无信源不入档。
 2. **仅汇总不评价。** 不要写"恶人""罪犯""坏人"等定性词，正文只用事实陈述。
 3. **尊重法律。** 涉及未审结案件时，避免对嫌疑人作定性；使用"涉嫌""据报道"等措辞。
+4. **不收录未审结未成年人案件**（隐私保护优先）。
 
 ### 什么会被拒收
 
@@ -25,9 +26,11 @@
 
 ## 二、投稿入口
 
-### 方式 1：GitHub Issue（推荐）
+### 方式 1：GitHub Issue（推荐 · 当前已启用）
 
-打开 [Issues → New Issue](https://github.com/evil-baike/submissions/issues/new)，选择 "Event Submission" 模板，填写即可。
+打开 [Issues → New Issue](https://github.com/H-pony/evil-baike/issues/new/choose)，选择 **"新事件投稿"** 模板，填写即可。
+
+**自动同步**：每天 9:00 UTC（北京时间 17:00）CI 自动拉所有带 `submission` label 的 Issue 写到 `src/content/_drafts/`，主编 review 后移到 `src/content/events/` 发布。
 
 **优点**：
 - 公开讨论，便于社区补充信源
@@ -36,17 +39,19 @@
 
 **缺点**：需 GitHub 账号。
 
-### 方式 2：Tally 表单
+### 方式 2：Tally 表单（可选 · 当前未启用）
 
 打开 [投稿表单](https://tally.so/forms/evil-baike-submit)，按字段填写。
 
 **优点**：无需登录。
 
-**缺点**：表单内容不进 Git 仓，追踪性较弱。
+**缺点**：表单内容不进 Git 仓，追踪性较弱；需要单独部署 webhook 接收端才能自动落草稿。
 
-### 方式 3：邮件
+> 启用方式：在 `.env` 中填入 `PUBLIC_SUBMIT_TALLY=https://tally.so/forms/你的表单ID`，src/pages/submit.astro 会自动显示该入口。
 
-发送至 **submit@evil-baike.example.com**。
+### 方式 3：邮件（可选 · 当前未启用）
+
+发送至 **submit@your-domain.com**（维护者在 `.env` 中配置 `PUBLIC_SUBMIT_EMAIL` 后启用）。
 
 **主题格式**：`[投稿] 事件标题（一句话）`
 
@@ -59,6 +64,8 @@
 ## 三、投稿模板
 
 无论用哪种入口，请按以下结构提交：
+
+> 💡 GitHub Issue 模板已强制字段（[新事件投稿](https://github.com/H-pony/evil-baike/issues/new/choose) 表单会自动套用本结构 + 校验必填项）；其他入口请按下方模板复制粘贴。
 
 ```markdown
 ## 事件标题
@@ -131,7 +138,7 @@
 如果你认为某条目对你造成不当影响，可提交申诉：
 
 1. 提交 Issue，使用 "Takedown Request" 模板
-2. 附身份证明（仅主编可见）
+2. 在公开 Issue 中说明不涉及隐私的申诉理由；不要上传身份证明。若需核验身份，等待维护者提供安全的沟通方式。
 3. 常见理由：事实错误、身份混淆、未成年人保护、隐私侵权
 
 **响应时间**：14 个自然日
@@ -167,7 +174,7 @@
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/evil-baike/evil-baike.git
+git clone https://github.com/H-pony/evil-baike.git
 cd evil-baike
 
 # 2. 创建分支
@@ -203,9 +210,9 @@ git push origin fix/2024-some-event
 ## 九、联系
 
 - 投稿：见上方三种入口
-- Bug 报告：GitHub Issue
-- 安全问题：security@evil-baike.example.com（PGP key 见仓库）
+- Bug 报告：[GitHub Issue](https://github.com/H-pony/evil-baike/issues/new/choose)（选择 "现有条目更正" 模板，反馈类型选 "其他"）
+- 安全问题：security@your-domain.com（PGP key 见仓库）
 
 ---
 
-最后更新：2024 年 9 月
+最后更新：2026 年 9 月

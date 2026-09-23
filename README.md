@@ -77,7 +77,8 @@ npm run validate
 │   │   ├── events/                # 事件条目（*.md）
 │   │   ├── people/                # 人物条目
 │   │   ├── organizations/         # 机构条目
-│   │   └── _drafts/               # 投稿聚合后的草稿（gitignored）
+│   │   ├── _drafts/               # 投稿聚合后的草稿（CI 每日同步，已入库但部署忽略）
+│   │   └── _private/              # 个人草稿（gitignored）
 │   ├── components/                # 卡片/徽章/时间线等组件
 │   ├── layouts/                   # BaseLayout / EntryLayout
 │   ├── pages/                     # 路由
@@ -86,15 +87,21 @@ npm run validate
 │   │   ├── people/                # 人物列表 + 详情
 │   │   ├── organizations/         # 机构列表 + 详情
 │   │   ├── tags/                  # 标签列表 + 详情
-│   │   ├── submit.astro           # 投稿入口
+│   │   ├── submit.astro           # 投稿入口（按 env 显示 GitHub / Tally / 邮件）
 │   │   ├── about.astro
 │   │   ├── disclaimer.astro
 │   │   ├── methodology.astro
 │   │   └── 404.astro
 │   └── styles/global.css          # 档案馆 / 报纸风格
+├── .github/
+│   ├── ISSUE_TEMPLATE/            # submission / correction / takedown 三套 Issue 表单
+│   └── workflows/
+│       ├── deploy.yml             # Cloudflare Pages 部署（paths-ignore 排除 _drafts）
+│       └── sync-submissions.yml   # 每日拉带 submission label 的 Issue → _drafts/
 ├── scripts/
 │   ├── new-entry.mjs              # 新条目脚手架
-│   ├── sync-submissions.mjs       # 投稿聚合（GitHub/Tally/邮件）
+│   ├── sync-submissions.mjs       # 投稿聚合（GitHub Issue 已实现；Tally / 邮件占位）
+│   ├── deploy-cloudflare.sh       # 一键部署脚本（替代 Pages 直连）
 │   └── validate-content.mjs       # 内容验证 + URL 健康检查
 ├── docs/
 │   └── CONTRIBUTING.md            # 投稿与编辑指南
@@ -144,10 +151,9 @@ npm run new:organization -- --id=acme-corp
 
 简版：
 
-1. 通过 [投稿页](https://evil-baike.example.com/submit) 选择入口：
-   - **GitHub Issue**（推荐）
-   - **Tally 表单**（低门槛）
-   - **邮件**（匿名/私密）
+1. 通过 [投稿页](https://schemer.online/submit) 选择入口：
+   - **GitHub Issue**（当前启用，内容公开）
+   - Tally 表单与邮件入口可在配置完成后启用
 2. 填写预设模板，附信源
 3. 主编审核 → 修改 `status: published`
 4. 自动出现在档案馆
@@ -169,7 +175,7 @@ npm run new:organization -- --id=acme-corp
 - 允许非商业转载，需注明来源
 - 衍生内容须以相同许可分享
 
-详细法律条款见 [/disclaimer](https://evil-baike.example.com/disclaimer)。
+详细法律条款见 [/disclaimer](https://schemer.online/disclaimer)。
 
 ---
 

@@ -7,7 +7,7 @@ import sitemap from '@astrojs/sitemap';
 // import cloudflare from '@astrojs/cloudflare';
 
 export default defineConfig({
-  site: 'https://evil-baike.example.com', // 部署时改成实际域名
+  site: 'https://schemer.online',
   trailingSlash: 'never',
   build: {
     format: 'directory',
