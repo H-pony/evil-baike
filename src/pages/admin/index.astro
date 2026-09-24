@@ -1,0 +1,343 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="浏览量后台" description="恶人百科站点浏览量管理后台" noIndex={true}>
+  <div class="admin-shell">
+    <header class="admin-header">
+      <div>
+        <p class="admin-eyebrow">SITE ADMINISTRATION</p>
+        <h1>浏览量后台</h1>
+        <p class="admin-subtitle">恶人百科 · 页面浏览统计</p>
+      </div>
+      <a class="admin-home-link" href="/">返回网站 <span aria-hidden="true">↗</span></a>
+    </header>
+
+    <section id="login-view" class="admin-panel login-panel" aria-labelledby="login-title" hidden>
+      <p class="admin-eyebrow">ADMIN ACCESS</p>
+      <h2 id="login-title">登录后台</h2>
+      <p class="admin-muted">输入后台密码查看站点浏览量。</p>
+      <form id="login-form" class="login-form">
+        <label for="admin-password">后台密码</label>
+        <input id="admin-password" name="password" type="password" autocomplete="current-password" required maxlength="256" />
+        <button id="login-button" type="submit">登录</button>
+      </form>
+      <p id="login-message" class="admin-message" role="status" aria-live="polite"></p>
+    </section>
+
+    <section id="dashboard-view" hidden aria-labelledby="dashboard-title">
+      <div class="dashboard-heading">
+        <div>
+          <p class="admin-eyebrow">TRAFFIC OVERVIEW</p>
+          <h2 id="dashboard-title">站点浏览量</h2>
+          <p class="admin-muted">按香港时间统计页面打开次数（PV），不代表独立访客数。</p>
+        </div>
+        <div class="dashboard-actions">
+          <button id="refresh-button" class="button-secondary" type="button">刷新数据</button>
+          <button id="logout-button" class="button-secondary" type="button">退出登录</button>
+        </div>
+      </div>
+
+      <p id="dashboard-message" class="admin-message" role="status" aria-live="polite"></p>
+
+      <div class="stats-grid" aria-label="浏览量汇总">
+        <article class="stat-card stat-primary"><span>累计浏览量</span><strong id="stat-total">—</strong><small>自统计功能上线起</small></article>
+        <article class="stat-card"><span>今日</span><strong id="stat-today">—</strong><small>香港时间</small></article>
+        <article class="stat-card"><span>近 7 天</span><strong id="stat-week">—</strong><small>含今天</small></article>
+        <article class="stat-card"><span>近 30 天</span><strong id="stat-month">—</strong><small>含今天</small></article>
+      </div>
+
+      <div class="dashboard-grid">
+        <section class="admin-panel chart-panel" aria-labelledby="chart-title">
+          <div class="panel-heading">
+            <div><p class="admin-eyebrow">DAILY VIEWS</p><h3 id="chart-title">近 30 天趋势</h3></div>
+            <span class="chart-legend"><i aria-hidden="true"></i> 浏览量</span>
+          </div>
+          <div class="chart-scroll"><div id="daily-chart" class="daily-chart" role="img" aria-label="近 30 天每日浏览量柱状图"></div></div>
+        </section>
+
+        <section class="admin-panel pages-panel" aria-labelledby="pages-title">
+          <div class="panel-heading">
+            <div><p class="admin-eyebrow">TOP PAGES</p><h3 id="pages-title">热门页面</h3></div>
+            <span class="admin-muted">近 30 天</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th scope="col">页面</th><th scope="col">浏览量</th></tr></thead>
+              <tbody id="pages-table"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <section class="admin-panel submissions-panel" aria-labelledby="submissions-title">
+        <div class="panel-heading">
+          <div><p class="admin-eyebrow">INCOMING SUBMISSIONS</p><h3 id="submissions-title">投稿记录</h3></div>
+          <span id="submission-count" class="admin-muted"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th scope="col">姓名</th><th scope="col">事件</th><th scope="col">提交时间</th></tr></thead>
+            <tbody id="submissions-table"></tbody>
+          </table>
+        </div>
+      </section>
+      <p class="privacy-note">统计只保存日期、页面路径和浏览次数，不收集访客 IP、Cookie 或浏览器信息。</p>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .admin-shell { max-width: 1120px; margin: 0 auto; color: #211d19; }
+  .admin-header, .dashboard-heading, .panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; }
+  .admin-header { padding: .75rem 0 2rem; border-bottom: 1px solid #ddd5c8; margin-bottom: 2.5rem; }
+  .admin-eyebrow { margin: 0 0 .55rem; color: #9b7654; font: 700 .67rem/1.3 ui-sans-serif, system-ui, sans-serif; letter-spacing: .16em; }
+  .admin-header h1, .dashboard-heading h2, .login-panel h2 { margin: 0; font: 500 clamp(1.8rem, 4vw, 2.5rem)/1.1 Georgia, 'Noto Serif SC', serif; }
+  .admin-subtitle, .admin-muted { color: #81796f; font: .85rem/1.6 ui-sans-serif, system-ui, sans-serif; }
+  .admin-subtitle { margin: .45rem 0 0; }
+  .admin-home-link { color: #67553f; font: 600 .82rem ui-sans-serif, system-ui, sans-serif; text-decoration: none; white-space: nowrap; }
+  .admin-home-link:hover { color: #a27647; }
+  .admin-panel { border: 1px solid #e3ddd3; background: #fffefa; padding: 1.4rem; }
+  .login-panel { max-width: 440px; margin: 0 auto; padding: 2rem; }
+  .login-panel h2 { font-size: 1.7rem; }
+  .login-form { display: grid; gap: .65rem; margin-top: 1.5rem; }
+  .login-form label { font: 600 .82rem ui-sans-serif, system-ui, sans-serif; }
+  .login-form input { width: 100%; border: 1px solid #cec5b8; border-radius: 3px; padding: .75rem .8rem; background: white; color: #211d19; font: 1rem ui-sans-serif, system-ui, sans-serif; }
+  .login-form input:focus { outline: 2px solid #9b7654; outline-offset: 1px; }
+  .login-form button, .button-secondary { min-height: 40px; border: 1px solid #4d4031; border-radius: 3px; padding: .55rem .9rem; font: 600 .8rem ui-sans-serif, system-ui, sans-serif; cursor: pointer; }
+  .login-form button { margin-top: .35rem; background: #30281f; color: #fff; }
+  .login-form button:disabled, .button-secondary:disabled { opacity: .55; cursor: wait; }
+  .button-secondary { background: #fffefa; color: #514638; }
+  .button-secondary:hover { background: #f4eee4; }
+  .admin-message { min-height: 1.4em; margin: .75rem 0 0; color: #a0392a; font: .82rem/1.5 ui-sans-serif, system-ui, sans-serif; }
+  .dashboard-heading { align-items: flex-end; margin-bottom: .5rem; }
+  .dashboard-heading h2 { font-size: 1.9rem; }
+  .dashboard-heading .admin-muted { margin: .45rem 0 0; }
+  .dashboard-actions { display: flex; gap: .55rem; }
+  .stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .85rem; margin: 1.1rem 0; }
+  .stat-card { display: grid; gap: .45rem; border: 1px solid #e3ddd3; padding: 1.1rem 1.2rem; background: #fffefa; }
+  .stat-card > span { color: #766d62; font: 600 .78rem ui-sans-serif, system-ui, sans-serif; }
+  .stat-card strong { font: 500 clamp(1.65rem, 3vw, 2.2rem)/1 Georgia, 'Noto Serif SC', serif; font-variant-numeric: tabular-nums; }
+  .stat-card small { color: #999084; font: .7rem ui-sans-serif, system-ui, sans-serif; }
+  .stat-primary { border-top: 3px solid #8e704e; }
+  .dashboard-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(280px, .9fr); gap: .9rem; margin-top: .9rem; }
+  .panel-heading { align-items: flex-start; margin-bottom: 1.2rem; }
+  .panel-heading h3 { margin: 0; font: 500 1.15rem Georgia, 'Noto Serif SC', serif; }
+  .panel-heading .admin-muted { margin: .25rem 0 0; font-size: .72rem; }
+  .chart-legend { display: flex; align-items: center; gap: .4rem; color: #81796f; font: .7rem ui-sans-serif, system-ui, sans-serif; white-space: nowrap; }
+  .chart-legend i { width: .5rem; height: .5rem; border-radius: 50%; background: #a98965; }
+  .daily-chart { display: grid; grid-template-columns: repeat(30, minmax(7px, 1fr)); align-items: end; gap: 4px; min-width: 600px; height: 170px; padding: .3rem 0 1.5rem; border-bottom: 1px solid #e6dfd5; }
+  .chart-scroll { overflow-x: auto; }
+  .chart-day { position: relative; height: 100%; display: flex; align-items: flex-end; justify-content: center; }
+  .chart-bar { width: min(100%, 13px); min-height: 2px; height: var(--bar-height); background: #b79a76; border-radius: 2px 2px 0 0; }
+  .chart-day:nth-child(5n + 1)::after { content: attr(data-label); position: absolute; top: calc(100% + .45rem); left: 50%; transform: translateX(-50%); color: #92897d; font: .6rem ui-sans-serif, system-ui, sans-serif; white-space: nowrap; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; text-align: left; }
+  th { padding: .5rem .35rem; color: #9a9083; font: 600 .67rem ui-sans-serif, system-ui, sans-serif; }
+  td { padding: .66rem .35rem; border-top: 1px solid #eee8df; font: .77rem/1.4 ui-sans-serif, system-ui, sans-serif; }
+  td:last-child, th:last-child { width: 74px; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .page-link { color: #584a39; text-decoration: none; overflow-wrap: anywhere; }
+  .page-link:hover { text-decoration: underline; }
+  .empty-row { color: #92897d; text-align: center !important; padding: 1.5rem .35rem; }
+  .submissions-panel { margin-top: .9rem; }
+  .submissions-panel td { vertical-align: top; }
+  .submission-event { min-width: 260px; max-width: 600px; max-height: 160px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .submission-time { min-width: 130px; color: #81796f; white-space: nowrap; }
+  .privacy-note { margin: 1rem 0 0; color: #92897d; font: .72rem/1.5 ui-sans-serif, system-ui, sans-serif; }
+  [hidden] { display: none !important; }
+  @media (max-width: 760px) {
+    .admin-header { margin-bottom: 1.6rem; }
+    .dashboard-heading { align-items: flex-start; flex-direction: column; gap: .8rem; }
+    .dashboard-actions { width: 100%; }
+    .dashboard-actions button { flex: 1; }
+    .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .dashboard-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 420px) {
+    .admin-panel { padding: 1rem; }
+    .login-panel { padding: 1.4rem; }
+    .admin-header { gap: .6rem; }
+  }
+</style>
+
+<script>
+  const loginView = document.querySelector<HTMLElement>('#login-view')!;
+  const dashboardView = document.querySelector<HTMLElement>('#dashboard-view')!;
+  const loginForm = document.querySelector<HTMLFormElement>('#login-form')!;
+  const loginMessage = document.querySelector<HTMLElement>('#login-message')!;
+  const dashboardMessage = document.querySelector<HTMLElement>('#dashboard-message')!;
+  const numberFormat = new Intl.NumberFormat('zh-Hans-CN');
+
+  function showLogin(message = '') {
+    loginView.hidden = false;
+    dashboardView.hidden = true;
+    loginMessage.textContent = message;
+    document.querySelector<HTMLInputElement>('#admin-password')!.focus();
+  }
+
+  function showDashboard(message = '') {
+    loginView.hidden = true;
+    dashboardView.hidden = false;
+    dashboardMessage.textContent = message;
+  }
+
+  function renderChart(data) {
+    const chart = document.querySelector<HTMLElement>('#daily-chart')!;
+    chart.replaceChildren();
+    const counts = new Map(data.daily.map((entry) => [entry.day, Number(entry.views)]));
+    const days = [];
+    const end = new Date(`${data.summary.currentDay}T00:00:00Z`);
+    for (let offset = 29; offset >= 0; offset -= 1) {
+      const day = new Date(end);
+      day.setUTCDate(day.getUTCDate() - offset);
+      days.push(day.toISOString().slice(0, 10));
+    }
+    const maximum = Math.max(1, ...days.map((day) => counts.get(day) || 0));
+
+    for (const day of days) {
+      const views = counts.get(day) || 0;
+      const column = document.createElement('div');
+      column.className = 'chart-day';
+      column.dataset.label = day.slice(5);
+      column.title = `${day} · ${numberFormat.format(views)} 次`;
+      column.setAttribute('aria-hidden', 'true');
+      const bar = document.createElement('div');
+      bar.className = 'chart-bar';
+      bar.style.setProperty('--bar-height', `${views ? Math.max(3, (views / maximum) * 100) : 0}%`);
+      column.append(bar);
+      chart.append(column);
+    }
+  }
+
+  function renderPages(pages) {
+    const tbody = document.querySelector<HTMLTableSectionElement>('#pages-table')!;
+    tbody.replaceChildren();
+    if (!pages.length) {
+      const row = document.createElement('tr');
+      const cell = document.createElement('td');
+      cell.className = 'empty-row';
+      cell.colSpan = 2;
+      cell.textContent = '开始累计浏览后，这里会显示热门页面';
+      row.append(cell);
+      tbody.append(row);
+      return;
+    }
+
+    for (const page of pages) {
+      const row = document.createElement('tr');
+      const pathCell = document.createElement('td');
+      const link = document.createElement('a');
+      link.className = 'page-link';
+      link.href = page.path;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.textContent = page.path;
+      pathCell.append(link);
+      const viewsCell = document.createElement('td');
+      viewsCell.textContent = numberFormat.format(Number(page.views));
+      row.append(pathCell, viewsCell);
+      tbody.append(row);
+    }
+  }
+
+  function renderSubmissions(data) {
+    const tbody = document.querySelector<HTMLTableSectionElement>('#submissions-table')!;
+    tbody.replaceChildren();
+    document.querySelector<HTMLElement>('#submission-count')!.textContent = `共 ${numberFormat.format(data.submissionCount)} 条 · 显示最近 ${Math.min(data.submissionCount, data.submissions.length)} 条`;
+    if (!data.submissions.length) {
+      const row = document.createElement('tr');
+      const cell = document.createElement('td');
+      cell.className = 'empty-row';
+      cell.colSpan = 3;
+      cell.textContent = '目前还没有投稿';
+      row.append(cell);
+      tbody.append(row);
+      return;
+    }
+
+    for (const submission of data.submissions) {
+      const row = document.createElement('tr');
+      const nameCell = document.createElement('td');
+      nameCell.textContent = submission.name;
+      const eventCell = document.createElement('td');
+      const eventText = document.createElement('div');
+      eventText.className = 'submission-event';
+      eventText.textContent = submission.event;
+      eventCell.append(eventText);
+      const timeCell = document.createElement('td');
+      timeCell.className = 'submission-time';
+      timeCell.textContent = `${submission.submittedAt} 香港时间`;
+      row.append(nameCell, eventCell, timeCell);
+      tbody.append(row);
+    }
+  }
+
+  async function loadDashboard() {
+    try {
+      const response = await fetch('/api/admin/analytics', { credentials: 'same-origin', cache: 'no-store' });
+      if (response.status === 401) {
+        showLogin();
+        return;
+      }
+      const data = await response.json();
+      if (!response.ok) {
+        showDashboard(data.error || '暂时无法读取统计数据。');
+        return;
+      }
+
+      showDashboard();
+      document.querySelector<HTMLElement>('#stat-total')!.textContent = numberFormat.format(data.summary.total);
+      document.querySelector<HTMLElement>('#stat-today')!.textContent = numberFormat.format(data.summary.today);
+      document.querySelector<HTMLElement>('#stat-week')!.textContent = numberFormat.format(data.summary.last7);
+      document.querySelector<HTMLElement>('#stat-month')!.textContent = numberFormat.format(data.summary.last30);
+      renderChart(data);
+      renderPages(data.pages);
+      renderSubmissions(data);
+    } catch {
+      showDashboard('连接统计服务失败，请检查网络后重试。');
+    }
+  }
+
+  loginForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const button = document.querySelector<HTMLButtonElement>('#login-button')!;
+    const password = new FormData(loginForm).get('password');
+    button.disabled = true;
+    loginMessage.textContent = '正在登录…';
+    try {
+      const response = await fetch('/api/admin/login', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        loginMessage.textContent = data.error || '登录失败。';
+        return;
+      }
+      loginForm.reset();
+      await loadDashboard();
+    } catch {
+      loginMessage.textContent = '连接失败，请稍后重试。';
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  document.querySelector<HTMLButtonElement>('#refresh-button')!.addEventListener('click', loadDashboard);
+  document.querySelector<HTMLButtonElement>('#logout-button')!.addEventListener('click', async () => {
+    try {
+      await fetch('/api/admin/logout', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+      });
+    } finally {
+      showLogin('已退出登录。');
+    }
+  });
+
+  loadDashboard();
+</script>

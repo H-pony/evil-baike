@@ -145,6 +145,8 @@ git push origin feat/new-event
 
 完成后，在同一页面的 **Variables** 中新增 `CF_AUTO_DEPLOY=true`，之后 push 到 `main` 才会通过 GitHub Actions 自动部署。未配置时 Actions 只验证和构建，部署由 `scripts/deploy-cloudflare.sh` 手动执行。
 
+GitHub Actions 和手动部署脚本都会一并部署根目录的 `functions/`。首次启用浏览量与投稿后台前，请按[后台配置说明](ANALYTICS.md)创建并绑定 D1、设置 Secret。
+
 ---
 
 ## 六、配置文件说明
@@ -154,10 +156,13 @@ git push origin feat/new-event
 ```
 .
 ├── .github/workflows/deploy.yml   # GitHub Actions(可选方案)
+├── functions/                     # Pages Functions API（浏览量与投稿）
+├── migrations/                    # D1 表结构
 ├── public/
 │   ├── _headers                   # 自定义 HTTP 头 + 缓存策略
+│   ├── _routes.json               # 仅 /api/* 调用 Functions
 │   └── _redirects                 # URL 重定向
-└── astro.config.mjs               # Astro 配置,纯静态无需 adapter
+└── astro.config.mjs               # Astro 静态内容配置
 ```
 
 ### 6.1 `_headers` 文件
@@ -177,8 +182,7 @@ git push origin feat/new-event
 
 ### 6.3 `astro.config.mjs`
 
-**保持纯静态**(`output: 'static'`)即可,无需开启 cloudflare adapter。
-Cloudflare Pages 原生支持 Astro 静态站点,build 完直接上传 `dist/`。
+内容页保持静态生成,无需开启 cloudflare adapter。浏览量与投稿 API 由根目录 `functions/` 下的 Cloudflare Pages Functions 提供。
 
 ---
 
@@ -230,11 +234,13 @@ A: 偶尔 Cloudflare 部分 IP 段会被干扰,可以在 Cloudflare 控制台 �
 A: 加 Cloudflare Spectrum / Argo(付费);免费版通常够用。
 
 **Q: 需要 SSR 吗?**
-A: 当前项目纯静态够用。如果未来需要评论/搜索后端,再开 cloudflare adapter 走 SSR。
+A: 内容页仍是静态生成；浏览量与投稿通过独立的 Cloudflare Pages Functions 和 D1 提供，无需把整站改为 SSR。
 
 ---
 
 ## 总结
+
+浏览量和投稿后台需要配置 D1 与 Secret，详见[浏览量与投稿后台说明](ANALYTICS.md)。
 
 部署完成后,你的工作流变成:
 

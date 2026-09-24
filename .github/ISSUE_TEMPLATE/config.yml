@@ -1,12 +1,6 @@
-# ============================================================
-# GitHub Issue 表单选择器
-# ============================================================
-# 用户在 New Issue 页面看到的"选择模板"界面由此文件决定。
-# blank_issues_enabled: false → 关闭空白 Issue（确保投稿走表单）
-
 blank_issues_enabled: false
 
 contact_links:
-  - name: 阅读投稿指南
-    url: https://github.com/H-pony/evil-baike/blob/main/docs/CONTRIBUTING.md
-    about: 投稿前请先阅读 CONTRIBUTING.md，了解信源要求、模板与审核流程。
+  - name: 恶人百科投稿表单
+    url: https://schemer.online/submit
+    about: 投稿仅收集姓名和事件内容，请通过网站表单提交。

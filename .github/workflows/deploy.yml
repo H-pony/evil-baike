@@ -5,11 +5,8 @@ on:
     branches:
       - main
     paths-ignore:
-      # 投稿聚合草稿：sync-submissions.yml 每天会 commit 到 main
-      # 这些文件不进 Astro collections（src/content.config.ts 未注册 _drafts），
-      # 所以触发 build 也不会改变 dist/，但能避免浪费 CF Pages 部署配额
+      # 个人草稿不进 Astro collections。
       - 'src/content/_drafts/**'
-      - '.github/workflows/sync-submissions.yml'
   workflow_dispatch:
 
 permissions:
@@ -44,13 +41,14 @@ jobs:
         run: npm run build
         env:
           NODE_ENV: production
-          PUBLIC_SUBMIT_GITHUB: https://github.com/H-pony/evil-baike/issues/new/choose
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: dist
-          path: dist
+          path: |
+            dist
+            functions
           retention-days: 5
           if-no-files-found: error
 
@@ -67,7 +65,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: dist
-          path: dist
+          path: .
 
       - name: Deploy to Cloudflare Pages
         id: deployment
@@ -78,8 +76,7 @@ jobs:
           projectName: evil-baike
           directory: dist
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-          # 纯静态站点，无需 wrangler.toml
-          # 高级路由 / Headers 在 Cloudflare 控制台或 _headers 文件里配
+          # dist 和根目录 functions/ 一起部署；D1 与 Secret 在 Pages 项目设置中绑定。
 
   deploy-preview:
     name: Deploy preview

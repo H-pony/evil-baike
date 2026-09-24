@@ -74,5 +74,20 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).to
     </main>
 
     <Footer />
+
+    <script is:inline>
+      (() => {
+        const path = window.location.pathname.replace(/\/+$/, '') || '/';
+        if (path === '/admin' || path.startsWith('/admin/') || path === '/api' || path.startsWith('/api/')) return;
+
+        fetch('/api/views', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path }),
+          keepalive: true,
+        }).catch(() => {});
+      })();
+    </script>
   </body>
 </html>

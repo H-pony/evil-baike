@@ -12,7 +12,6 @@
     "preview": "astro preview",
     "check": "astro check",
     "validate": "node scripts/validate-content.mjs",
-    "sync:submissions": "node scripts/sync-submissions.mjs",
     "new:event": "node scripts/new-entry.mjs event",
     "new:person": "node scripts/new-entry.mjs person",
     "new:organization": "node scripts/new-entry.mjs organization"

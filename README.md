@@ -11,8 +11,8 @@
 
 - **事件档案馆**：每条事件按时间线 + 信源记录。
 - **人物 / 机构档案**：交叉引用所有相关事件。
-- **开放投稿**：任何人都可提交事件，附信源即可。
-- **公开 Git 历史**：所有修改可追溯、可审计。
+- **开放投稿**：投稿表单只收集姓名和事件内容，记录保存在后台数据库。
+- **公开 Git 历史**：已发布档案的修改可追溯、可审计。
 
 ## 这不是什么
 
@@ -24,7 +24,7 @@
 
 ## 技术栈
 
-- **[Astro 5](https://astro.build)** —— 内容站最佳，零 JS、Markdown 原生、SEO 友好
+- **[Astro 5](https://astro.build)** —— Markdown 原生、SEO 友好，内容页面静态生成
 - **[Tailwind CSS 3](https://tailwindcss.com)** —— 实用 CSS 框架
 - **[Content Collections](https://docs.astro.build/en/guides/content-collections/)** —— 三体（事件/人物/机构）schema 验证
 - **[Cloudflare Pages](https://pages.cloudflare.com)** —— 全球 CDN + 抗审查（部署时启用）
@@ -77,7 +77,7 @@ npm run validate
 │   │   ├── events/                # 事件条目（*.md）
 │   │   ├── people/                # 人物条目
 │   │   ├── organizations/         # 机构条目
-│   │   ├── _drafts/               # 投稿聚合后的草稿（CI 每日同步，已入库但部署忽略）
+│   │   ├── _drafts/               # 编辑审核草稿（不进入公开页面）
 │   │   └── _private/              # 个人草稿（gitignored）
 │   ├── components/                # 卡片/徽章/时间线等组件
 │   ├── layouts/                   # BaseLayout / EntryLayout
@@ -87,24 +87,25 @@ npm run validate
 │   │   ├── people/                # 人物列表 + 详情
 │   │   ├── organizations/         # 机构列表 + 详情
 │   │   ├── tags/                  # 标签列表 + 详情
-│   │   ├── submit.astro           # 投稿入口（按 env 显示 GitHub / Tally / 邮件）
+│   │   ├── submit.astro           # 只收集姓名和事件内容的投稿入口
+│   │   └── admin/index.astro      # 浏览量和投稿后台
 │   │   ├── about.astro
 │   │   ├── disclaimer.astro
 │   │   ├── methodology.astro
 │   │   └── 404.astro
 │   └── styles/global.css          # 档案馆 / 报纸风格
+├── functions/                     # Cloudflare Pages API：浏览量、投稿、后台
+├── migrations/                    # D1 数据库初始化
 ├── .github/
-│   ├── ISSUE_TEMPLATE/            # submission / correction / takedown 三套 Issue 表单
-│   └── workflows/
-│       ├── deploy.yml             # Cloudflare Pages 部署（paths-ignore 排除 _drafts）
-│       └── sync-submissions.yml   # 每日拉带 submission label 的 Issue → _drafts/
+│   ├── ISSUE_TEMPLATE/config.yml  # 将新 Issue 投稿引导到网站表单
+│   └── workflows/deploy.yml       # Cloudflare Pages 部署
 ├── scripts/
 │   ├── new-entry.mjs              # 新条目脚手架
-│   ├── sync-submissions.mjs       # 投稿聚合（GitHub Issue 已实现；Tally / 邮件占位）
 │   ├── deploy-cloudflare.sh       # 一键部署脚本（替代 Pages 直连）
 │   └── validate-content.mjs       # 内容验证 + URL 健康检查
 ├── docs/
-│   └── CONTRIBUTING.md            # 投稿与编辑指南
+│   ├── CONTRIBUTING.md            # 投稿与编辑指南
+│   └── ANALYTICS.md               # 浏览量与投稿后台配置
 ├── astro.config.mjs
 ├── tailwind.config.mjs
 └── tsconfig.json
@@ -151,20 +152,15 @@ npm run new:organization -- --id=acme-corp
 
 简版：
 
-1. 通过 [投稿页](https://schemer.online/submit) 选择入口：
-   - **GitHub Issue**（当前启用，内容公开）
-   - Tally 表单与邮件入口可在配置完成后启用
-2. 填写预设模板，附信源
-3. 主编审核 → 修改 `status: published`
-4. 自动出现在档案馆
+1. 在[投稿页](https://schemer.online/submit)填写姓名和事件
+2. 维护者在 `/admin` 后台查看并人工审核
+3. 审核通过后编辑档案并发布
 
 ---
 
 ## 部署
 
-> ⚠️ 部署相关功能（域名、Cloudflare Pages、CI）暂未配置，由用户后续决定。
-
-待配置项见 `astro.config.mjs` 注释。
+Cloudflare Pages 部署及 D1 后台配置见 [docs/DEPLOY.md](./docs/DEPLOY.md) 和 [docs/ANALYTICS.md](./docs/ANALYTICS.md)。
 
 ---
 

@@ -1,227 +1,87 @@
 ---
-/**
- * 投稿页 - 拆分为"新事件投稿"和"现有条目更正"两类入口
- *
- * 渠道按环境变量配置显示（PUBLIC_SUBMIT_GITHUB / PUBLIC_SUBMIT_TALLY / PUBLIC_SUBMIT_EMAIL）。
- * 任一未配置即不显示对应按钮，避免"假装可用"。
- *
- * 现有条目更正在每篇详情页底部「报告错误 / 补充证据 / 申请更正」入口直接提交。
- */
-
 import BaseLayout from '~/layouts/BaseLayout.astro';
-
-const githubNewUrl = import.meta.env.PUBLIC_SUBMIT_GITHUB ?? '';
-const tallyNewUrl = import.meta.env.PUBLIC_SUBMIT_TALLY ?? '';
-const submitEmail = import.meta.env.PUBLIC_SUBMIT_EMAIL ?? '';
-
-const channels: Array<{
-  kind: 'github' | 'tally' | 'email';
-  label: string;
-  href: string;
-  hint: string;
-  recommended?: boolean;
-}> = [];
-
-if (githubNewUrl) {
-  const body = encodeURIComponent(
-    `## 事件标题\n[一句话描述]\n\n## 事件类型\n[刑事 / 法律 / 企业 / 公共争议 / 公共安全 / 道德 / 人权 / 媒体]\n\n## 时间区间\n[YYYY-MM-DD 起，YYYY-MM-DD 止 / 至今]\n\n## 主体（涉及人物/机构）\n- 人物：[姓名], [角色]\n- 机构：[机构名], [角色]\n\n## 摘要（一句话）\n[一句话总结]\n\n## 时间线（关键节点）\n- YYYY-MM-DD：事件描述 [信源 URL]\n- YYYY-MM-DD：事件描述 [信源 URL]\n...\n\n## 信源（必填）\n1. [标题](URL) - 媒体名 - 发布日期\n2. ...\n\n## 投稿人（可选）\n[署名 / 留空]\n\n## 备注\n[其他说明]\n`
-  );
-  const title = encodeURIComponent('[新事件投稿] ');
-  const sep = githubNewUrl.includes('?') ? '&' : '?';
-  channels.push({
-    kind: 'github',
-    label: 'GitHub Issue',
-    href: `${githubNewUrl}${sep}title=${title}&body=${body}`,
-    hint: '推荐 · 公开讨论便于追踪',
-    recommended: true,
-  });
-}
-
-if (tallyNewUrl) {
-  channels.push({
-    kind: 'tally',
-    label: '在线表单',
-    href: tallyNewUrl,
-    hint: '无需账号',
-  });
-}
-
-if (submitEmail) {
-  const subject = encodeURIComponent('[投稿] 事件标题');
-  const body = encodeURIComponent(
-    `事件标题：\n事件类型：\n时间区间：\n涉及主体：\n摘要：\n时间线：\n信源：\n备注：\n`
-  );
-  channels.push({
-    kind: 'email',
-    label: '邮件投稿',
-    href: `mailto:${submitEmail}?subject=${subject}&body=${body}`,
-    hint: '适合匿名或敏感内容',
-  });
-}
-
-const hasAnyChannel = channels.length > 0;
 ---
 
-<BaseLayout title="投稿 / 更正" description="向恶人百科投稿新事件或更正现有条目">
-  <header class="text-center py-8 border-b-3 border-double border-ink-900 mb-12">
-    <p class="meta-stamp mb-2">投稿入口</p>
-    <h1 class="headline text-4xl lg:text-5xl">提交事件 / 更正条目</h1>
-    <p class="deck mt-3 max-w-2xl mx-auto">
-      所有投稿都将经过人工审核。匿名投稿也可，但需附可验证信源。
-    </p>
-  </header>
+<BaseLayout title="投稿" description="向恶人百科提交事件投稿">
+  <div class="submission-page">
+    <header class="submission-header">
+      <p class="meta-stamp mb-2">投稿入口</p>
+      <h1 class="headline text-4xl lg:text-5xl">提交事件</h1>
+      <p class="deck mt-3 max-w-2xl mx-auto">留下姓名和事件内容，投稿会进入后台等待人工查看。</p>
+    </header>
 
-  <!-- 两条路径：并列对比 -->
-  <section class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto mb-12">
-    <!-- A. 新事件投稿 -->
-    <div class="archive-box">
-      <p class="meta-stamp text-archive-seal mb-2">路径 A</p>
-      <h2 class="font-display font-semibold text-xl mb-2">新事件投稿</h2>
-      <p class="text-sm text-ink-900/80 mb-4 leading-relaxed">
-        提交一个尚未收录的公共事件。<strong>必须附至少 2 条一级或二级信源</strong>。
-        主编审核通过后会创建条目并通知你。
-      </p>
-      <h3 class="meta-stamp mb-2 text-ink-muted">需要材料</h3>
-      <ul class="text-sm space-y-1.5 list-disc list-inside mb-4">
-        <li>事件标题（一句话描述）</li>
-        <li>事件类型与时间区间</li>
-        <li>涉及人物 / 机构（公开身份）</li>
-        <li>时间线关键节点（日期 + 事件 + 信源 URL）</li>
-        <li>至少 2 条信源（官方文件 / 主流媒体 / 公开裁判文书）</li>
-      </ul>
-      <h3 class="meta-stamp mb-2 text-ink-muted">处理步骤</h3>
-      <ol class="text-sm space-y-1.5 list-decimal list-inside mb-4">
-        <li>通过下方任一渠道提交</li>
-        <li>状态变为 <code class="font-mono">submitted</code>，进入审核队列</li>
-        <li>主编 14 天内完成事实核对与信源验证</li>
-        <li>通过后状态变为 <code class="font-mono">published</code>，公开可访问</li>
-      </ol>
-      <h3 class="meta-stamp mb-2 text-ink-muted">反馈方式</h3>
-      <p class="text-sm text-ink-muted">
-        提交后会在 GitHub Issue 内或邮箱收到主编回复。
-      </p>
-    </div>
-
-    <!-- B. 现有条目更正 -->
-    <div class="archive-box">
-      <p class="meta-stamp text-archive-seal mb-2">路径 B</p>
-      <h2 class="font-display font-semibold text-xl mb-2">现有条目更正</h2>
-      <p class="text-sm text-ink-900/80 mb-4 leading-relaxed">
-        在任何事件 / 人物 / 机构详情页底部都有
-        <strong>「报告错误 / 补充证据 / 申请更正」</strong>入口，
-        点击后会带上条目 ID 与页面 URL，无需手动填写。
-      </p>
-      <h3 class="meta-stamp mb-2 text-ink-muted">适合场景</h3>
-      <ul class="text-sm space-y-1.5 list-disc list-inside mb-4">
-        <li>某条事实有误或有遗漏</li>
-        <li>想补充新信源（媒体报道、官方通报、裁判文书等）</li>
-        <li>需要更正当事人姓名匿名化</li>
-        <li>申请整条下架（事实错误或对你造成不当影响）</li>
-      </ul>
-      <h3 class="meta-stamp mb-2 text-ink-muted">需要的材料</h3>
-      <ul class="text-sm space-y-1.5 list-disc list-inside mb-4">
-        <li>条目 ID（详情页 URL 末段）</li>
-        <li>具体错误位置（段落 / 时间线节点 / 信源）</li>
-        <li>你认为正确的内容</li>
-        <li>至少 1 条可验证信源</li>
-      </ul>
-      <h3 class="meta-stamp mb-2 text-ink-muted">处理步骤</h3>
-      <ol class="text-sm space-y-1.5 list-decimal list-inside mb-4">
-        <li>通过详情页底部入口提交</li>
-        <li>主编 14 天内核查与交叉验证</li>
-        <li>更正有效时修订条目并在修订处标注日期</li>
-        <li>重大更正（如整条下架）保留 Git 历史可追溯</li>
-      </ol>
-      <p class="text-xs text-ink-muted mt-3">
-        详见 <a href="/methodology#correction">方法论 · 更正流程</a> 与 <a href="/methodology#takedown">下架与申诉</a>。
-      </p>
-    </div>
-  </section>
-
-  <!-- 投稿必读 -->
-  <section class="archive-box mb-10 max-w-3xl mx-auto">
-    <h2 class="headline text-2xl mb-3">投稿前必读</h2>
-    <ol class="list-decimal list-inside space-y-2 text-sm leading-relaxed">
-      <li><strong>必须有信源。</strong>每条事实须可溯源至官方文件、主流媒体报道或公开裁判文书。</li>
-      <li><strong>仅汇总不评价。</strong>不要写"恶人""罪犯"等定性词，正文只用事实陈述。</li>
-      <li><strong>时间线清晰。</strong>事件应按时间顺序列节点，附日期与信源。</li>
-      <li><strong>避免未经证实信息。</strong>对单一信源的爆料要标注"待交叉核实"。</li>
-      <li><strong>尊重法律。</strong>涉及未审结案件时，避免对嫌疑人作定性。</li>
-    </ol>
-  </section>
-
-  <!-- 可用渠道（按 env 显示） -->
-  <section class="max-w-5xl mx-auto">
-    <h2 class="headline text-2xl mb-4 pb-2 border-b border-ink-900">投稿渠道</h2>
-
-    {hasAnyChannel ? (
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {channels.map((c) => (
-          <div class="archive-box">
-            {c.recommended && (
-              <div class="meta-stamp text-archive-seal mb-2">推荐</div>
-            )}
-            <h3 class="font-display font-semibold text-lg mb-2">{c.label}</h3>
-            <p class="text-sm text-ink-900/80 mb-4 leading-relaxed">{c.hint}</p>
-            <a
-              href={c.href}
-              target={c.kind === 'email' ? '_self' : '_blank'}
-              rel={c.kind === 'email' ? undefined : 'noopener noreferrer'}
-              class="badge border-ink-900 text-ink-900 no-underline hover:border-archive-seal hover:text-archive-seal"
-            >
-              {c.kind === 'github' && '提交 Issue →'}
-              {c.kind === 'tally' && '填写表单 →'}
-              {c.kind === 'email' && submitEmail}
-            </a>
-          </div>
-        ))}
-      </div>
-    ) : (
-      <div class="archive-box p-6">
-        <h3 class="font-display font-semibold text-lg mb-2">投稿渠道暂未配置</h3>
-        <p class="text-sm text-ink-muted leading-relaxed">
-          维护者尚未启用任何投稿渠道；启用后会出现在这里。
-          在那之前，你可以先在仓库 / 邮件列表等外部渠道与维护者联系，约定启用方式。
-        </p>
-      </div>
-    )}
-  </section>
-
-  <!-- 模板预览 -->
-  <section class="mt-12 max-w-3xl mx-auto">
-    <h2 class="headline text-2xl mb-4 pb-2 border-b border-ink-900">新事件投稿模板</h2>
-    <p class="text-sm text-ink-muted mb-4">
-      复制以下模板，按字段填写。已有信源 = 已查证事件。
-    </p>
-    <pre class="paper-texture p-4 overflow-x-auto text-xs font-mono border border-ink-900/30 leading-relaxed"><code>## 事件标题
-[一句话描述]
-
-## 事件类型
-[刑事 / 法律 / 企业 / 公共争议 / 公共安全 / 道德 / 人权 / 媒体]
-
-## 时间区间
-[YYYY-MM-DD 起，YYYY-MM-DD 止 / 至今]
-
-## 主体（涉及人物/机构）
-- 人物：[姓名], [角色]
-- 机构：[机构名], [角色]
-
-## 摘要（一句话）
-[一句话总结]
-
-## 时间线（关键节点）
-- YYYY-MM-DD：事件描述 [信源 URL]
-- YYYY-MM-DD：事件描述 [信源 URL]
-...
-
-## 信源（必填，至少 2 条主流媒体或官方文件）
-1. [标题](URL) - 媒体名 - 发布日期
-2. ...
-
-## 投稿人（可选）
-[署名 / 留空]
-
-## 备注
-[其他说明]</code></pre>
-  </section>
+    <section class="submission-card archive-box" aria-labelledby="submission-title">
+      <h2 id="submission-title" class="headline text-2xl mb-6">投稿信息</h2>
+      <form id="submission-form" class="submission-form">
+        <div class="field-group">
+          <label for="submitter-name">姓名</label>
+          <input id="submitter-name" name="name" type="text" autocomplete="name" maxlength="80" required />
+        </div>
+        <div class="field-group">
+          <label for="event-description">事件</label>
+          <textarea id="event-description" name="event" rows="9" maxlength="5000" required></textarea>
+          <p class="field-help">最多 5000 个字符。请勿填写身份证号、住址等敏感信息。</p>
+        </div>
+        <button id="submit-button" class="submit-button" type="submit">提交投稿</button>
+      </form>
+      <p id="submission-message" class="submission-message" role="status" aria-live="polite"></p>
+    </section>
+  </div>
 </BaseLayout>
+
+<style>
+  .submission-page { max-width: 760px; margin: 0 auto; }
+  .submission-header { text-align: center; padding: 2rem 0; border-bottom: 3px double #211d19; margin-bottom: 2rem; }
+  .submission-card { padding: clamp(1.2rem, 4vw, 2rem); }
+  .submission-form { display: grid; gap: 1.35rem; }
+  .field-group { display: grid; gap: .5rem; }
+  .field-group label { color: #332d26; font: 600 .92rem/1.4 ui-sans-serif, system-ui, sans-serif; }
+  .field-group input, .field-group textarea { width: 100%; border: 1px solid rgb(33 29 25 / 35%); border-radius: 2px; background: #fffefa; padding: .8rem .9rem; color: #211d19; font: 1rem/1.6 ui-sans-serif, system-ui, sans-serif; }
+  .field-group textarea { resize: vertical; min-height: 190px; }
+  .field-group input:focus, .field-group textarea:focus { outline: 2px solid #8a6846; outline-offset: 1px; }
+  .field-help { margin: 0; color: #776f65; font: .78rem/1.5 ui-sans-serif, system-ui, sans-serif; }
+  .submit-button { justify-self: start; min-height: 44px; border: 1px solid #211d19; background: #211d19; color: #fffefa; padding: .65rem 1.2rem; font: 600 .88rem ui-sans-serif, system-ui, sans-serif; cursor: pointer; }
+  .submit-button:hover { background: #59442e; }
+  .submit-button:disabled { opacity: .6; cursor: wait; }
+  .submission-message { min-height: 1.4em; margin: .8rem 0 0; color: #75634c; font: .88rem/1.5 ui-sans-serif, system-ui, sans-serif; }
+</style>
+
+<script>
+  const submissionForm = document.querySelector<HTMLFormElement>('#submission-form')!;
+  const submissionMessage = document.querySelector<HTMLParagraphElement>('#submission-message')!;
+  const submitButton = document.querySelector<HTMLButtonElement>('#submit-button')!;
+  const eventField = document.querySelector<HTMLTextAreaElement>('#event-description')!;
+  const prefilledEvent = new URLSearchParams(window.location.search).get('event');
+
+  if (prefilledEvent) eventField.value = prefilledEvent.slice(0, 5000);
+
+  submissionForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const values = new FormData(submissionForm);
+    const name = String(values.get('name') || '').trim();
+    const eventText = String(values.get('event') || '').trim();
+    submitButton.disabled = true;
+    submissionMessage.textContent = '正在提交…';
+
+    try {
+      const response = await fetch('/api/submissions', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, event: eventText }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        submissionMessage.textContent = result.error || '暂时无法提交，请稍后重试。';
+        return;
+      }
+
+      submissionForm.reset();
+      submissionMessage.textContent = '投稿已收到，感谢提交。';
+    } catch {
+      submissionMessage.textContent = '连接失败，请检查网络后重试。';
+    } finally {
+      submitButton.disabled = false;
+    }
+  });
+</script>

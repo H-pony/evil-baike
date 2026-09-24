@@ -5,7 +5,7 @@
 #      权限: Account > Cloudflare Pages > Edit
 #      Account Resources: 你的账户
 #   2. 在 https://dash.cloudflare.com 右侧栏复制 Account ID
-#   3. 跑本脚本,把两个值粘贴进去；Wrangler 会上传 dist/
+#   3. 跑本脚本,把两个值粘贴进去；Wrangler 会上传 dist/ 与 Pages Functions
 
 set -euo pipefail
 
@@ -89,14 +89,13 @@ ok "目标账户的 Pages 权限可用"
 PROJECT_NAME="${CF_PROJECT_NAME:-evil-baike}"
 step "项目名: $PROJECT_NAME"
 
-# ---------- 5. 检测 dist/ ----------
-step "检查构建产物"
-if [[ ! -f "$DIST_DIR/index.html" ]]; then
-  warn "dist/index.html 不存在,正在构建..."
-  cd "$PROJECT_DIR"
+# ---------- 5. 构建 ----------
+step "构建站点和管理页面"
+cd "$PROJECT_DIR"
+if [[ ! -d "$PROJECT_DIR/node_modules" ]]; then
   npm ci
-  npm run build
 fi
+npm run build
 SIZE=$(du -sh "$DIST_DIR" | awk '{print $1}')
 FILE_COUNT=$(find "$DIST_DIR" -type f | wc -l | tr -d ' ')
 ok "dist/ 已就绪 ($SIZE, $FILE_COUNT 个文件)"
