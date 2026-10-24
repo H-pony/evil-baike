@@ -1,128 +1,197 @@
 ---
-/**
- * Header - 报头：栏目 + 报名 + 简介
- *
- * P2 改造：移动端汉堡菜单（< md 隐藏导航，点击展开）
- */
 import Search from './Search.astro';
-
 const navItems = [
-  { href: '/', label: '首页' },
-  { href: '/events', label: '事件档案' },
-  { href: '/people', label: '人物' },
-  { href: '/organizations', label: '机构' },
-  { href: '/tags', label: '标签' },
-  { href: '/favorites', label: '收藏' },
-  { href: '/methodology', label: '方法论' },
-  { href: '/submit', label: '投稿' },
+  { href: '/', label: '首页', english: 'HOME' },
+  { href: '/events', label: '事件', english: 'EVENTS' },
+  { href: '/people', label: '人物', english: 'PEOPLE' },
+  { href: '/organizations', label: '机构', english: 'ORGANIZATIONS' },
+  { href: '/about', label: '关于恶人百科', english: 'ABOUT' },
 ];
-
 const currentPath = Astro.url.pathname;
+const isCurrent = (href: string) => href === '/' ? currentPath === '/' : currentPath.startsWith(href);
 ---
 
-<header class="border-b-3 border-double border-ink-900 bg-archive-paper/80 backdrop-blur-sm sticky top-0 z-50">
-  <div class="container mx-auto px-4 max-w-6xl">
-    <!-- 报名 + 搜索 + 移动端汉堡按钮 -->
-    <div class="flex items-center justify-between py-4 border-b border-ink-900/30 gap-2">
-      <button
-        type="button"
-        id="nav-toggle"
-        class="md:hidden inline-flex items-center justify-center w-10 h-10 border border-ink-900/30 hover:border-archive-seal hover:text-archive-seal transition-colors"
-        aria-label="打开导航菜单"
-        aria-controls="nav-menu"
-        aria-expanded="false"
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <line x1="3" y1="6" x2="21" y2="6"/>
-          <line x1="3" y1="12" x2="21" y2="12"/>
-          <line x1="3" y1="18" x2="21" y2="18"/>
-        </svg>
-      </button>
-
-      <a href="/" class="no-underline flex-1 text-center min-w-0">
-        <h1 class="headline text-3xl lg:text-4xl tracking-[0.2em]">恶人百科</h1>
-        <p class="meta-stamp mt-1 text-ink-muted hidden sm:block">公共事件的永久档案馆</p>
-      </a>
-
-      <div class="w-10 md:w-32 flex justify-end">
-        <Search />
-      </div>
+<header class:list={["journal-header no-print", { "home-header": currentPath === "/" }]}>
+  <div class="header-inner">
+    {currentPath !== '/' && <a href="/" class="journal-brand" aria-label="恶人百科首页"><span class="brand-name">恶人百科</span><span class="brand-by">THE PUBLIC ARCHIVE</span></a>}
+    <div class="header-actions">
+      <Search />
+      <button id="nav-toggle" class="menu-button" type="button" aria-label="打开导航菜单" aria-expanded="false" aria-haspopup="dialog" aria-controls="nav-menu"><span>MENU</span><span class="menu-orb" aria-hidden="true"><img src="/icons/dots.svg" alt="" /></span></button>
     </div>
-
-    <!-- 桌面端栏目导航 -->
-    <nav class="py-2 hidden md:block" aria-label="主导航">
-      <ul class="flex flex-wrap justify-center gap-x-4 gap-y-1 lg:gap-x-6 text-sm font-mono uppercase tracking-wider">
-        {navItems.map((item) => {
-          const isActive = item.href === '/'
-            ? currentPath === '/'
-            : currentPath.startsWith(item.href);
-          return (
-            <li>
-              <a
-                href={item.href}
-                class:list={[
-                  'no-underline transition-colors',
-                  isActive
-                    ? 'text-archive-seal font-semibold border-b-2 border-archive-seal pb-0.5'
-                    : 'text-ink-900/70 hover:text-archive-seal'
-                ]}
-              >
-                {item.label}
-              </a>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
   </div>
-
-  <!-- 移动端抽屉式导航 -->
-  <nav
-    id="nav-menu"
-    class="md:hidden hidden border-t border-ink-900/30 bg-archive-paper/95 backdrop-blur-sm"
-    aria-label="移动端导航"
-  >
-    <ul class="container mx-auto px-4 max-w-6xl py-2 flex flex-col text-sm font-mono uppercase tracking-wider">
-      {navItems.map((item) => {
-        const isActive = item.href === '/'
-          ? currentPath === '/'
-          : currentPath.startsWith(item.href);
-        return (
-          <li>
-            <a
-              href={item.href}
-              class:list={[
-                'block py-2.5 border-b border-ink-900/10 no-underline transition-colors',
-                isActive ? 'text-archive-seal font-semibold' : 'text-ink-900/80 hover:text-archive-seal'
-              ]}
-            >
-              {item.label}
-            </a>
-          </li>
-        );
-      })}
-    </ul>
-  </nav>
 </header>
 
+<dialog id="nav-menu" class="navigation-dialog" aria-labelledby="menu-title">
+  <div class="dialog-top"><p id="menu-title" class="eyebrow">EXPLORE THE ARCHIVE</p><button data-close-dialog class="close-control" type="button" aria-label="关闭菜单"><span>CLOSE</span><span class="close-orb" aria-hidden="true"><img src="/icons/close.svg" alt="" /></span></button></div>
+  <div class="menu-content">
+    <nav aria-label="全部页面">{navItems.map((item, index) => <a href={item.href} aria-current={isCurrent(item.href) ? 'page' : undefined}><span class="nav-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><span class="nav-label"><small>{item.english}</small><strong>{item.label}</strong></span><span class="nav-arrow" aria-hidden="true"><img src="/icons/arrow.svg" alt="" /></span></a>)}</nav>
+    <div class="menu-secondary"><p>每一个事件，<br />都值得完整记录。</p><div class="secondary-links"><a href="/tags">全部话题</a><a href="/favorites">我的收藏</a><a href="/submit">投稿 / 更正</a><a href="/methodology">收录方法论</a><a href="/disclaimer">免责声明</a><a href="/rss.xml">RSS 订阅</a></div><div class="menu-tools"><button id="guide-trigger" class="guide-trigger" type="button" aria-label="档案导航" aria-haspopup="dialog" aria-controls="guide-panel" aria-expanded="false"><span>档案导航</span><img class="direction-icon" src="/icons/arrow.svg" alt="" /></button><button id="motion-toggle" class="motion-toggle" type="button" aria-pressed="false" aria-label="暂停自动播放和页面动画"><span data-motion-label>暂停动画</span><span class="motion-symbol"><img src="/icons/pause.svg" alt="" /></span></button></div></div>
+  </div>
+  <div class="menu-baseline"><span>PUBLIC RECORD. OPEN MEMORY.</span><button data-close-dialog class="menu-close-bottom" type="button">关闭菜单 <img class="direction-icon" src="/icons/arrow.svg" alt="" /></button></div>
+</dialog>
+
+<dialog id="guide-panel" class="guide-dialog" aria-labelledby="guide-title">
+  <div class="dialog-top"><p class="eyebrow">ARCHIVE GUIDE</p><button data-close-dialog class="close-control" type="button" aria-label="关闭档案导航"><span class="close-orb" aria-hidden="true"><img src="/icons/close.svg" alt="" /></span></button></div>
+  <h2 id="guide-title">从哪里开始？</h2><p>沿着事件、人物和机构，找到完整的时间线与原始信源。</p>
+  <div class="guide-links"><a href="/events"><span>01</span><div><strong>浏览事件</strong><small>按类型、年份和更新时间查阅</small></div><img class="direction-icon" src="/icons/arrow.svg" alt="" /></a><a href="/people"><span>02</span><div><strong>认识相关人物</strong><small>从人物档案回看相关事件</small></div><img class="direction-icon" src="/icons/arrow.svg" alt="" /></a><a href="/organizations"><span>03</span><div><strong>查看机构记录</strong><small>连接机构与公开报道</small></div><img class="direction-icon" src="/icons/arrow.svg" alt="" /></a></div>
+  <a href="/methodology" class="text-link">了解我们如何收录与核对信源 <img class="direction-icon" src="/icons/arrow.svg" alt="" /></a>
+</dialog>
+
+<style>
+  .journal-header { position: sticky; top: 0; width: 100%; z-index: 50; color: var(--text,#f4f2e9); background: rgb(17 18 20 / .94); backdrop-filter: blur(12px); transition: transform .28s ease,background .2s; }
+  .journal-header.home-header { position: fixed; inset: 0 0 auto; background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; pointer-events: none; transition: transform .28s ease; }
+  :global(html:not(.flip-stage-visible)) .journal-header.home-header.is-scrolled { background: rgb(17 18 20 / .92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+  :global(html.flip-stage-visible) .journal-header.home-header { background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; }
+  .home-header .header-actions { pointer-events: auto; }
+  .journal-header.home-header.is-hidden { transform: none; }
+  .journal-header.is-hidden { transform: translateY(-110%); }
+  .journal-header.is-hidden:focus-within { transform: none; }
+  .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 24px; min-height: 104px; padding: 24px 40px; }
+  .journal-brand { display: flex; align-items: center; flex-shrink: 0; gap: 16px; margin: 0; text-decoration: none; }
+  .brand-name { font-size: 22px; font-weight: 800; line-height: 1.2; letter-spacing: -.05em; }
+  .brand-by { padding: 0; font: 600 9px/1.4 Geist,sans-serif; color: var(--muted,#aaa9a4); letter-spacing: .12em; }
+  .header-actions { display: flex; align-items: center; gap: 26px; margin-left: auto; flex-shrink: 0; }
+  .menu-button { display: inline-flex; align-items: center; justify-content: center; gap: 12px; width: auto; height: auto; min-height: 48px; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--text,#f4f2e9); font-size: 11px; font-weight: 650; letter-spacing: .11em; }
+  .menu-orb,.close-orb { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; gap: 4px; width: 48px; height: 48px; border: 1px solid currentColor; border-radius: 50%; transition: color .2s,background .2s,border-color .2s; }
+  .menu-orb img,.close-orb img { width:23px; height:23px; filter:brightness(0) invert(1); }
+  .nav-arrow img { width:25px; height:25px; transform:rotate(-45deg); filter:brightness(0) invert(1); }
+  .direction-icon { width:15px; height:15px; transform:rotate(-45deg); filter:brightness(0) invert(1); }
+  .menu-orb i { width: 3px; height: 3px; border-radius: 50%; background: currentColor; }
+  .menu-button:hover { background: transparent; color: var(--accent,#d7ff36); }
+  :global(html.flip-on-green) .home-header .menu-button { color: var(--page,#111214); }
+  :global(html.flip-on-green) .home-header .menu-orb img { filter: brightness(0); }
+  :global(html.flip-on-green) .home-header .menu-button:focus-visible { outline-color: var(--page,#111214); }
+  .close-control { display: inline-flex; align-items: center; gap: 12px; min-height: 48px; padding: 0; color: var(--text,#f4f2e9); background: none; border: 0; font-size: 11px; letter-spacing: .1em; }
+  .close-control:hover { color: var(--accent,#d7ff36); }
+  .close-orb { font-size: 29px; font-weight: 300; line-height: 1; letter-spacing: 0; }
+  .navigation-dialog { position: fixed; inset: 0; width: 100%; height: 100dvh; max-width: none; max-height: 100dvh; margin: 0; padding: 30px clamp(24px,5vw,80px); border: 0; border-radius: 0; overflow-y: auto; overscroll-behavior: contain; background: var(--page,#111214); color: var(--text,#f4f2e9); }
+  .navigation-dialog[open] { display: flex; flex-direction: column; }
+  .navigation-dialog::backdrop { background: #111214; backdrop-filter: none; }
+  .dialog-top { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 28px; }
+  .eyebrow { font: 600 11px/1.5 Geist,sans-serif; letter-spacing: .14em; color: var(--muted,#aaa9a4); }
+  .navigation-dialog .dialog-top .eyebrow { font-size: 11px; }
+  .menu-content { display: grid; grid-template-columns: minmax(0,1fr) minmax(220px,.38fr); gap: clamp(36px,8vw,130px); flex: 1; align-items: center; padding-block: 20px 36px; }
+  .menu-content nav { display: flex; flex-direction: column; }
+  .menu-content nav a { display: grid; grid-template-columns: 54px 1fr 40px; align-items: center; gap: 18px; padding: 16px 0; border-bottom: 1px solid var(--line,#37383b); text-decoration: none; color: var(--text,#f4f2e9); }
+  .menu-content nav a:hover,.menu-content nav a[aria-current='page'] { color: var(--accent,#d7ff36); padding-left: 0; }
+  .nav-number { font-size: clamp(18px,2.5vw,36px); font-weight: 400; letter-spacing: -.06em; color: var(--muted,#aaa9a4); }
+  .nav-label { display: grid; gap: 4px; }
+  .nav-label small { font-size: 10px; line-height: 1.3; letter-spacing: .14em; font-weight: 500; }
+  .nav-label strong { font-size: clamp(27px,4.2vw,62px); line-height: 1.2; letter-spacing: -.045em; font-weight: 600; }
+  .nav-arrow { font-size: 31px; font-weight: 400; justify-self: end; }
+  .menu-secondary { display: flex; flex-direction: column; align-items: stretch; gap: 28px; padding: 0; }
+  .menu-secondary > p { margin: 0; font-size: clamp(20px,2vw,28px); line-height: 1.6; font-weight: 500; letter-spacing: -.03em; }
+  .secondary-links { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 20px; }
+  .menu-secondary a { display: flex; align-items: center; min-height: 44px; font-size: 13px; color: var(--muted,#aaa9a4); text-decoration: none; }
+  .menu-secondary a:hover { color: var(--accent,#d7ff36); text-decoration: underline; }
+  .menu-tools { display: grid; gap: 2px; border-top: 1px solid var(--line,#37383b); padding-top: 18px; }
+  .guide-trigger,.motion-toggle { display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%; min-height: 44px; padding: 8px 0; margin: 0; border: 0; border-radius: 0; color: var(--text,#f4f2e9); background: none; font-size: 13px; }
+  .guide-trigger:hover,.motion-toggle:hover { color: var(--accent,#d7ff36); }
+  .motion-toggle:disabled,.motion-toggle:disabled:hover { color: var(--muted,#aaa9a4); cursor: default; }
+  .guide-trigger span,.motion-toggle [data-motion-label] { display: inline; }
+  .motion-symbol { display: grid; place-items: center; width: 26px; height: 26px; border: 1px solid var(--line,#37383b); border-radius: 50%; background: transparent; }
+  .motion-symbol img { width: 10px; height: 10px; filter: brightness(0) invert(1); }
+  .menu-baseline { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid var(--line,#37383b); padding-top: 14px; }
+  .menu-baseline > span { color: var(--muted,#aaa9a4); font-size: 10px; letter-spacing: .1em; }
+  .menu-close-bottom { display: inline-flex; align-items: center; gap: 20px; width: auto; min-height: 44px; margin: 0; padding: 0; border: 0; background: none; color: var(--text,#f4f2e9); font-size: 12px; }
+  .menu-close-bottom:hover { color: var(--accent,#d7ff36); }
+  .guide-dialog { width: min(620px,calc(100% - 32px)); max-height: calc(100dvh - 32px); padding: 32px; border: 1px solid var(--line,#37383b); border-radius: 6px; background: var(--surface,#1c1d21); color: var(--text,#f4f2e9); }
+  .guide-dialog::backdrop { background: rgb(0 0 0 / .78); backdrop-filter: blur(10px); }
+  .guide-dialog h2 { font-size: clamp(28px,4vw,42px); font-weight: 600; letter-spacing: -.05em; margin-bottom: 16px; }
+  .guide-dialog > p { color: var(--muted,#aaa9a4); font-size: 14px; }
+  .guide-links { display: grid; gap: 0; margin-block: 28px; border-top: 1px solid var(--line,#37383b); }
+  .guide-links a { display: flex; align-items: center; gap: 20px; padding: 20px 0; background: none; border: 0; border-bottom: 1px solid var(--line,#37383b); border-radius: 0; text-decoration: none; }
+  .guide-links a:hover { color: var(--accent,#d7ff36); }
+  .guide-links a > span { font: 400 22px/1 Geist,sans-serif; color: var(--accent,#d7ff36); }
+  .guide-links a div { flex: 1; }
+  .guide-links strong,.guide-links small { display: block; }
+  .guide-links strong { font-size: 17px; }
+  .guide-links small { color: var(--muted,#aaa9a4); font-size: 12px; margin-top: 7px; }
+  .guide-dialog .text-link { display: inline-flex; align-items: center; min-height: 44px; gap: 16px; font-size: 13px; text-decoration: underline; }
+  button:focus-visible,a:focus-visible { outline: 2px solid var(--accent,#d7ff36); outline-offset: 5px; }
+  @media (max-width: 700px) {
+    .header-inner { min-height: 88px; padding: 20px; gap: 16px; }
+    .brand-by { display: none; }
+    .brand-name { font-size: 20px; }
+    .header-actions { gap: 18px; }
+    .menu-content { grid-template-columns: 1fr; gap: 36px; align-items: start; padding-block: 4px 28px; }
+    .menu-content nav a { grid-template-columns: 36px 1fr 28px; gap: 12px; padding-block: 13px; }
+    .nav-label strong { font-size: clamp(27px,7vw,42px); }
+    .nav-number { font-size: 20px; }
+    .nav-arrow { font-size: 26px; }
+    .menu-secondary { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 24px; }
+    .menu-secondary > p { grid-column: 1 / -1; font-size: 20px; }
+    .menu-tools { padding-top: 0; border-top: 0; align-content: start; }
+    .secondary-links { grid-template-columns: 1fr; gap: 0; }
+    .guide-dialog { padding: 22px; }
+    .guide-links a { gap: 14px; }
+  }
+  @media (max-width: 380px) { .header-inner { padding-inline: 16px; } .header-actions { gap: 12px; } .menu-button { gap: 8px; } .menu-baseline > span { max-width: 150px; line-height: 1.6; } }
+  @media (prefers-reduced-motion:reduce) { .journal-header,.menu-orb,.close-orb { transition: none; } }
+  @media print { .journal-header { display: none; } }
+</style>
+
 <script>
-  function initNavToggle() {
-    const btn = document.getElementById('nav-toggle');
-    const menu = document.getElementById('nav-menu');
-    if (!btn || !menu) return;
-    btn.addEventListener('click', () => {
-      const open = menu.classList.contains('hidden');
-      menu.classList.toggle('hidden');
-      btn.setAttribute('aria-expanded', String(open));
-      btn.setAttribute('aria-label', open ? '关闭导航菜单' : '打开导航菜单');
+  const header = document.querySelector<HTMLElement>('.journal-header')!;
+  let lastScroll = window.scrollY;
+  const updateHeader = () => {
+    const currentScroll = window.scrollY;
+    header.classList.toggle('is-scrolled', currentScroll > 24);
+    if (Math.abs(currentScroll - lastScroll) > 5 || currentScroll < 160) {
+      header.classList.toggle('is-hidden', currentScroll > 160 && currentScroll > lastScroll);
+      lastScroll = currentScroll;
+    }
+  };
+  window.addEventListener('scroll', updateHeader, { passive: true });
+  updateHeader();
+  const motionButton = document.querySelector<HTMLButtonElement>('#motion-toggle')!;
+  const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let preference: string | null = null;
+  try { preference = localStorage.getItem('archive-motion'); } catch {}
+  let paused = false;
+  function applyMotion() {
+    const systemReduced = media.matches;
+    paused = systemReduced || preference === 'paused';
+    document.documentElement.classList.toggle('motion-paused', paused);
+    document.documentElement.classList.toggle('motion-playing', !paused);
+    motionButton.disabled = systemReduced;
+    motionButton.setAttribute('aria-pressed', String(paused));
+    motionButton.setAttribute('aria-label', systemReduced ? '系统已减少动态效果' : paused ? '播放页面动画' : '暂停页面动画');
+    if (systemReduced) motionButton.title = '由系统“减少动态效果”设置控制；关闭该设置后恢复站内动画偏好。';
+    else motionButton.removeAttribute('title');
+    motionButton.querySelector('[data-motion-label]')!.textContent = systemReduced ? '系统已减少动态效果' : paused ? '播放动画' : '暂停动画';
+    motionButton.querySelector('img')!.src = paused && !systemReduced ? '/icons/play.svg' : '/icons/pause.svg';
+    window.dispatchEvent(new CustomEvent('archive:motion', { detail: { paused } }));
+  }
+  applyMotion();
+  motionButton.addEventListener('click', () => {
+    if (media.matches) return;
+    preference = paused ? 'playing' : 'paused';
+    try { localStorage.setItem('archive-motion', preference); } catch {}
+    applyMotion();
+  });
+  media.addEventListener('change', applyMotion);
+
+  for (const [triggerId, dialogId] of [['nav-toggle', 'nav-menu'], ['guide-trigger', 'guide-panel']]) {
+    const trigger = document.getElementById(triggerId) as HTMLButtonElement;
+    const dialog = document.getElementById(dialogId) as HTMLDialogElement;
+    trigger.addEventListener('click', () => {
+      if (dialog.open) return;
+      document.querySelectorAll<HTMLDialogElement>('dialog[open]').forEach(other => other.close());
+      dialog.showModal();
+      document.body.classList.add('dialog-open');
+      trigger.setAttribute('aria-expanded', 'true');
     });
-    // 点击链接后自动收起
-    menu.querySelectorAll('a').forEach((a) => {
-      a.addEventListener('click', () => {
-        menu.classList.add('hidden');
-        btn.setAttribute('aria-expanded', 'false');
-      });
+    dialog.querySelectorAll('[data-close-dialog]').forEach(button => button.addEventListener('click', () => dialog.close()));
+    dialog.addEventListener('click', e => { if (e.target === dialog) { const rect = dialog.getBoundingClientRect(); if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) dialog.close(); } });
+    dialog.addEventListener('close', () => {
+      const anotherDialogOpen = !!document.querySelector('dialog[open]');
+      document.body.classList.toggle('dialog-open', anotherDialogOpen);
+      trigger.setAttribute('aria-expanded', 'false');
+      if (!anotherDialogOpen) {
+        const returnTo = trigger.closest('dialog:not([open])') ? document.getElementById('nav-toggle') : trigger;
+        returnTo?.focus();
+      }
     });
   }
-  initNavToggle();
 </script>

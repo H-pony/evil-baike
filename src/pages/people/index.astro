@@ -19,6 +19,7 @@ import PersonCard from '~/components/PersonCard.astro';
 import FilterBar from '~/components/FilterBar.astro';
 import { getCollection } from 'astro:content';
 import { isIndexable } from '~/content.config';
+import { eventHasPerson } from '~/lib/relations';
 
 const allEvents = await getCollection('events', (e) => isIndexable(e.data.status));
 const allPeople = await getCollection('people', (p) => isIndexable(p.data.status));
@@ -34,10 +35,8 @@ for (const event of allEvents) {
 
 // 人物卡 eventCount = 涉及事件数（用于卡片显示）
 const eventCountMap = new Map<string, number>();
-for (const event of allEvents) {
-  for (const personId of event.data.people) {
-    eventCountMap.set(personId, (eventCountMap.get(personId) ?? 0) + 1);
-  }
+for (const person of allPeople) {
+  eventCountMap.set(person.id, allEvents.filter(event => eventHasPerson(event, person)).length);
 }
 
 // 仅主人物进入列表
@@ -59,8 +58,7 @@ const filters: Array<{ name: string; label: string; options: Array<{ value: stri
       共 {people.length} 位 · 当前显示 <span data-current-count>{people.length}</span> 位 · 按主人物事件数排序
     </p>
     <p class="meta-stamp mt-3 max-w-2xl mx-auto text-ink-faded">
-      每个事件展示其主人物（事件 frontmatter 的 <code class="font-mono">people</code> 字段首位）。
-      其他当事人仍收录于档案，可经事件详情页 / 收藏夹 / 直接 URL 访问。
+      此处展示各事件的主要人物。其他相关人物可在事件详情和站内搜索中查阅。
     </p>
   </header>
 

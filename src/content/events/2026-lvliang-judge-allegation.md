@@ -54,7 +54,7 @@ pendingVerification:
   - 纪检监察部门的调查结论与最终处分情况。
   - 法院系统对类似实名举报处理流程的整改措施。
 
-verifiedAt: 2026-09-22
+verifiedAt: 2026-09-24
 contested: uncontested
 
 tags:
@@ -110,32 +110,10 @@ timeline:
     tags: [首次举报]
     nature: official-action
 
-  - date: 2025-09
-    title: 涉事法官继续正常履职
-    description: |
-      据后续媒体梳理，王女士首次举报后曾两次补充材料、再次举报，均未获得进展。
-      涉事法官吕某某在此期间依旧正常履职，未受任何影响。
-    sources:
-      - https://api.app.anhuinews.com/content/9213668.html
-    tags: [履职异常]
-    nature: media-claim
-
-  - date: 2025-09
-    title: 至 2026-04 长达 7 个月举报未获处理
-    description: |
-      从首次举报到媒体曝光，王女士在长达约 7 个月的时间里多次补充材料，
-      均未获得有效处理。涉事法官继续正常履职。
-      期间法院内部的监督机制是否失灵、举报材料是否被"压"在某个环节、
-      是否存在"家丑不可外扬"的袒护心理，成为后续舆论追问的核心。
-    sources:
-      - https://api.app.anhuinews.com/content/9213668.html
-    tags: [监督机制失灵]
-    nature: media-claim
-
   - date: 2026-04-10
-    title: 王女士向媒体曝光事件
+    title: 王女士向媒体曝光事件及此前举报经过
     description: |
-      王女士向媒体求助，将事件经过与关键录音公之于众。
+      王女士向媒体求助，将事件经过与关键录音公之于众。她向媒体表示，自己自 2025 年 9 月起多次实名举报、补充材料，至媒体报道时仍未获得有效处理；媒体报道同时称涉事法官此前继续履职。此处日期标记媒体曝光日；此前各次补充举报的具体日期未公开。
     sources:
       - https://api.app.anhuinews.com/content/9213668.html
     tags: [媒体曝光]
@@ -151,33 +129,19 @@ timeline:
     tags: [行政立案, 停职, 纪检介入]
     nature: official-action
 
-  - date: 2026-04
-    title: 程序争议：为何"按闹分配"
-    description: |
-      实名举报 7 个月未获处理，媒体曝光后相关部门雷厉风行，警方立案、法官停职、
-      纪检介入等一系列动作在短短几天内"高效"完成。舆论追问：正规渠道 7 个月
-      推不动的事，媒体一报道，几天就解决了。这种"舆论倒逼"模式反映出
-      "不闹不解决，小闹小解决，大闹大解决"的怪象。当"上热搜"成为解决问题的关键一步，
-      当"媒体曝光"比"法律程序"更有效，本身即是对法治精神的一种伤害。
-      司法公信力的损害与公众维权方式的扭曲，成为本次事件的延伸议题。
-    sources:
-      - https://api.app.anhuinews.com/content/9213668.html
-    tags: [舆论倒逼, 程序争议]
-    nature: media-claim
-
 sources:
   - url: https://api.app.anhuinews.com/content/9213668.html
     title: 山西一女子遭法官猥亵，实名举报 7 个月没结果，找媒体曝光后立即立案
     publisher: 中安在线
     publishedAt: 2026-04
-    accessedAt: 2026-09-22
+    accessedAt: 2026-09-24
     note: 综合报道，含事件经过、录音证据要点、立案告知书截图、吕梁中院吕某某汇报席发言图
 
   - url: https://api.app.anhuinews.com/content/9213668.html
     title: 立案告知书（吕梁市公安局吕公分局）
     publisher: 吕梁市公安局
     publishedAt: 2026-04
-    accessedAt: 2026-09-22
+    accessedAt: 2026-09-24
     note: 公安立案告知书原件截图
 
 authors:
@@ -197,7 +161,7 @@ notes: |
   7. 涉事举报人姓名按媒体公开报道呈现，未做化名处理。
 
 createdAt: 2026-09-22
-updatedAt: 2026-09-22
+updatedAt: 2026-09-24
 riskLevel: high
 legalReview: true
 ---

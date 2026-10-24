@@ -4,6 +4,9 @@
  * 用法：<EntityLink type="person" id="zhang-san">张三</EntityLink>
  */
 
+import { getEntry } from 'astro:content';
+import { isPubliclyVisible } from '~/content.config';
+
 interface Props {
   type: 'event' | 'person' | 'organization';
   id: string;
@@ -12,14 +15,24 @@ interface Props {
 
 const { type, id, showIcon = true } = Astro.props;
 
+const collection = type === 'event' ? 'events' : type === 'person' ? 'people' : 'organizations';
+const entry = await getEntry(collection, id);
+const visible = entry && isPubliclyVisible(entry.data.status);
+
 const path = `/${type === 'event' ? 'events' : type === 'person' ? 'people' : 'organizations'}/${id}`;
 
-const icon = type === 'event' ? '◆' : type === 'person' ? '👤' : '⌬';
+const icon = type === 'event' ? '◆' : type === 'person' ? '○' : '□';
 const typeLabel = type === 'event' ? '事件' : type === 'person' ? '人物' : '机构';
 ---
 
-<a href={path} class="inline-flex items-center gap-1.5 px-2 py-0.5 border border-ink-900/30 hover:border-archive-seal hover:text-archive-seal no-underline transition-colors font-mono text-xs uppercase tracking-wider">
-  {showIcon && <span class="text-ink-muted">{icon}</span>}
-  <span class="text-ink-faded">{typeLabel}</span>
+{visible && <a href={path} class="entity-link">
+  {showIcon && <span class="entity-link-icon">{icon}</span>}
+  <span class="entity-link-type">{typeLabel}</span>
   <span class="font-medium"><slot /></span>
-</a>
+</a>}
+<style>
+  .entity-link { display: inline-flex; align-items: center; gap: 7px; max-width: 100%; min-height: 36px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface-raised); color: var(--text); font-size: 11px; line-height: 1.5; text-decoration: none; transition: border-color .2s ease, color .2s ease; }
+  .entity-link:hover { border-color: var(--accent); color: var(--accent); }
+  .entity-link-icon, .entity-link-type { flex-shrink: 0; color: var(--muted); }
+  .entity-link > span:last-child { overflow-wrap: anywhere; }
+</style>

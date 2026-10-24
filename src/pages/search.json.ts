@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
 import { isIndexable } from '~/content.config';
+import { getEventPeople, getEventOrganizations } from '~/lib/relations';
 
 export const GET: APIRoute = async () => {
   const events = await getCollection('events', (e) => isIndexable(e.data.status));
@@ -13,7 +14,11 @@ export const GET: APIRoute = async () => {
       id: e.id,
       title: e.data.title,
       summary: e.data.summary,
-      aliases: e.data.aliases,
+      aliases: [...new Set([
+        ...e.data.aliases,
+        ...getEventPeople(e, people).flatMap(person => [person.data.name, ...person.data.aliases]),
+        ...getEventOrganizations(e, orgs).flatMap(org => [org.data.name, ...org.data.aliases]),
+      ])],
       tags: e.data.tags,
       url: `/events/${e.id}`,
       dateStart: e.data.dateStart?.toISOString() ?? null,

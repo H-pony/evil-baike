@@ -13,6 +13,9 @@
  */
 
 import BaseLayout from '~/layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+import { isIndexable } from '~/content.config';
+import { eventCover, typeLabels } from '~/lib/journal';
 import StatusBadge from '~/components/StatusBadge.astro';
 import Breadcrumbs from '~/components/Breadcrumbs.astro';
 import SourceList from '~/components/SourceList.astro';
@@ -80,7 +83,17 @@ const {
   showDisclaimer = true,
 } = Astro.props;
 
+// Only published entries create tag result pages. Archived-only topics stay readable text.
+const indexedEntries = [
+  ...await getCollection('events', entry => isIndexable(entry.data.status)),
+  ...await getCollection('people', entry => isIndexable(entry.data.status)),
+  ...await getCollection('organizations', entry => isIndexable(entry.data.status)),
+];
+const indexedTags = new Set(indexedEntries.flatMap(entry => entry.data.tags));
+
 // canonical URL（分享 / 引用都用）
+const orgTypeLabels: Record<string, string> = { government: '公共机构', academic: '教育机构', company: '企业', ngo: '社会组织', media: '媒体机构', other: '其他机构' };
+const displayType = type ? ((entryType === 'event' ? typeLabels : orgTypeLabels)[type] ?? type) : undefined;
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://schemer.online').toString();
 ---
 
@@ -99,8 +112,8 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://schemer.
       <div class="flex flex-wrap items-center gap-2 mb-3">
         <StatusBadge status={status} />
         {type && (
-          <span class="meta-stamp border border-ink-900/30 px-2 py-0.5">
-            {type}
+          <span class="badge bg-white">
+            {displayType}
           </span>
         )}
         {/* riskLevel 已从公开 UI 移除：保留在 schema 作为内部编辑字段，不展示 */}
@@ -119,19 +132,23 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://schemer.
       {tags.length > 0 && (
         <div class="flex flex-wrap gap-2 mt-5">
           {tags.map((tag) => (
-            <a href={`/tags/${encodeURIComponent(tag)}`} class="tag">#{tag}</a>
+            indexedTags.has(tag)
+              ? <a href={`/tags/${encodeURIComponent(tag)}`} class="tag">#{tag}</a>
+              : <span class="tag">#{tag}</span>
           ))}
         </div>
       )}
 
       <!-- 操作栏：收藏 / 分享（仅 published 显示） -->
-      {status === 'published' && (
+      {(status === 'published' || status === 'archived') && (
         <div class="mt-6 pt-4 border-t border-ink-900/20 flex flex-wrap items-start gap-3">
           <FavoriteButton type={entryType} id={entryId} title={title} />
           <ShareBar url={canonicalUrl} title={title} summary={summary} />
         </div>
       )}
     </header>
+
+    {entryType === 'event' && <figure class="entry-cover"><img src={eventCover(entryId).src} alt={eventCover(entryId).alt} width="1200" height="675" /><figcaption>主题示意配图 · 不作为事件事实或信源证据</figcaption></figure>}
 
     <!-- 顶部状态横幅：verifiedAt / contested / archived -->
     <EntryStatusBanner
@@ -152,18 +169,10 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://schemer.
       <aside class="mt-12 pt-6 border-t border-ink-900/30 archive-box">
         <h3 class="meta-stamp mb-3 text-ink-muted">档案元数据</h3>
         <dl class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm font-mono">
-          {meta.authors && meta.authors.length > 0 && (
-            <div>
-              <dt class="text-ink-muted inline">撰写：</dt>
-              <dd class="inline">{meta.authors.join(', ')}</dd>
-            </div>
-          )}
-          {meta.reviewers && meta.reviewers.length > 0 && (
-            <div>
-              <dt class="text-ink-muted inline">审核：</dt>
-              <dd class="inline">{meta.reviewers.join(', ')}</dd>
-            </div>
-          )}
+          <div>
+            <dt class="text-ink-muted inline">撰写：</dt>
+            <dd class="inline">侠名</dd>
+          </div>
           {meta.submittedBy && (
             <div>
               <dt class="text-ink-muted inline">投稿：</dt>
@@ -209,8 +218,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://schemer.
           type={entryType}
           id={entryId}
           title={title}
-          authors={meta?.authors}
-          reviewers={meta?.reviewers}
+          authors={['侠名']}
           createdAt={meta?.createdAt}
           updatedAt={meta?.updatedAt}
           url={canonicalUrl}

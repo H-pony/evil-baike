@@ -3,7 +3,7 @@
  * CitationBox - 学术引用盒（APA / Chicago / BibTeX）
  *
  * 默认从 entry frontmatter 自动推断：
- *   - 标题 / 作者 / 审校 / 创建日期
+ *   - 标题 / 匿名作者 / 创建日期
  *   - URL = Astro.site + canonical path
  *   - 站点名 = '恶人百科'
  *   - 访问日期 = 当前日期（"Web 资源"必须）
@@ -14,13 +14,12 @@ interface Props {
   id: string;            // slug
   title: string;
   authors?: string[];
-  reviewers?: string[];
   createdAt?: Date;
   updatedAt?: Date;
   url?: string;          // 不传时使用当前 canonical URL
 }
 
-const { type, id, title, authors = [], reviewers = [], createdAt, updatedAt } = Astro.props;
+const { type, id, title, authors = [], createdAt, updatedAt } = Astro.props;
 
 const siteName = '恶人百科';
 const slugPath = type === 'event' ? 'events' : type === 'person' ? 'people' : 'organizations';
@@ -32,16 +31,15 @@ const pubDate = (createdAt ?? new Date()).toISOString().slice(0, 10);
 const updDate = updatedAt ? updatedAt.toISOString().slice(0, 10) : pubDate;
 
 const authorList = authors.length > 0 ? authors.join(', ') : 'Anonymous';
-const reviewerNote = reviewers.length > 0 ? ` (Reviewed by ${reviewers.join(', ')})` : '';
 
 // APA 7
-const apa = `${authorList}${reviewerNote}. (${pubYear}). ${title}. ${siteName}. Retrieved ${accessDate}, from ${canonicalUrl}`;
+const apa = `${authorList}. (${pubYear}). ${title}. ${siteName}. Retrieved ${accessDate}, from ${canonicalUrl}`;
 
 // Chicago (Author-Date)
-const chicago = `${authorList}${reviewerNote}. ${pubYear}. "${title}." ${siteName}. Last modified ${updDate}. ${canonicalUrl}.`;
+const chicago = `${authorList}. ${pubYear}. "${title}." ${siteName}. Last modified ${updDate}. ${canonicalUrl}.`;
 
 // MLA 9
-const mla = `${authorList}${reviewerNote}. "${title}." ${siteName}, ${updDate}, ${canonicalUrl}. Accessed ${accessDate}.`;
+const mla = `${authorList}. "${title}." ${siteName}, ${updDate}, ${canonicalUrl}. Accessed ${accessDate}.`;
 
 // BibTeX
 const bibKey = `evilbaike-${type}-${id}-${pubYear}`.toLowerCase();
@@ -52,11 +50,11 @@ const bibtex = `@misc{${bibKey},
   month   = {${(createdAt ?? new Date()).toISOString().slice(5, 7)}},
   url     = {${canonicalUrl}},
   urldate = {${accessDate}},
-  note    = {${siteName}; Reviewed by ${reviewers.join(', ') || 'N/A'}}
+  note    = {${siteName}}
 }`;
 ---
 
-<details class="archive-box mt-6 group" data-cite-box>
+<details class="archive-box cite-box mt-6 group" data-cite-box>
   <summary class="cursor-pointer flex items-center justify-between">
     <span class="meta-stamp">引用此条目</span>
     <span class="meta-stamp text-ink-faded group-open:hidden">[展开]</span>
@@ -67,7 +65,7 @@ const bibtex = `@misc{${bibKey},
     <div>
       <div class="flex items-center justify-between mb-1">
         <span class="meta-stamp">APA 7</span>
-        <button type="button" data-cite-copy={apa} class="meta-stamp text-archive-seal hover:underline">复制</button>
+        <button type="button" data-cite-copy={apa} class="pill-button" aria-label="复制 APA 7 引用">复制</button>
       </div>
       <blockquote class="blockquote">{apa}</blockquote>
     </div>
@@ -75,7 +73,7 @@ const bibtex = `@misc{${bibKey},
     <div>
       <div class="flex items-center justify-between mb-1">
         <span class="meta-stamp">Chicago (Author-Date)</span>
-        <button type="button" data-cite-copy={chicago} class="meta-stamp text-archive-seal hover:underline">复制</button>
+        <button type="button" data-cite-copy={chicago} class="pill-button" aria-label="复制 Chicago 引用">复制</button>
       </div>
       <blockquote class="blockquote">{chicago}</blockquote>
     </div>
@@ -83,7 +81,7 @@ const bibtex = `@misc{${bibKey},
     <div>
       <div class="flex items-center justify-between mb-1">
         <span class="meta-stamp">MLA 9</span>
-        <button type="button" data-cite-copy={mla} class="meta-stamp text-archive-seal hover:underline">复制</button>
+        <button type="button" data-cite-copy={mla} class="pill-button" aria-label="复制 MLA 9 引用">复制</button>
       </div>
       <blockquote class="blockquote">{mla}</blockquote>
     </div>
@@ -91,11 +89,13 @@ const bibtex = `@misc{${bibKey},
     <div>
       <div class="flex items-center justify-between mb-1">
         <span class="meta-stamp">BibTeX</span>
-        <button type="button" data-cite-copy={bibtex} class="meta-stamp text-archive-seal hover:underline">复制</button>
+        <button type="button" data-cite-copy={bibtex} class="pill-button" aria-label="复制 BibTeX 引用">复制</button>
       </div>
       <pre class="archive-box overflow-x-auto text-xs font-mono whitespace-pre">{bibtex}</pre>
     </div>
 
+    <p data-cite-status class="text-xs text-ink-muted" role="status" aria-live="polite"></p>
+    <label data-cite-manual hidden class="text-xs text-ink-muted">手动复制引用<textarea readonly rows="5" class="manual-copy-field"></textarea></label>
     <p class="text-xs text-ink-muted">
       提示：引用网络资源时必须包含访问日期（urldate / Retrieved / Accessed）。
       本档案馆所有事实均标注信源，建议同时引用 <a href="#sources">信源章节</a> 中对应的原始报道。
@@ -107,8 +107,13 @@ const bibtex = `@misc{${bibKey},
   document.querySelectorAll<HTMLButtonElement>('[data-cite-copy]').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const text = btn.dataset.citeCopy ?? '';
+      const box = btn.closest('[data-cite-box]')!;
+      const status = box.querySelector<HTMLElement>('[data-cite-status]')!;
+      const manual = box.querySelector<HTMLElement>('[data-cite-manual]')!;
+      let copied = false;
       try {
         await navigator.clipboard.writeText(text);
+        copied = true;
       } catch {
         const ta = document.createElement('textarea');
         ta.value = text;
@@ -116,12 +121,35 @@ const bibtex = `@misc{${bibKey},
         ta.style.opacity = '0';
         document.body.appendChild(ta);
         ta.select();
-        document.execCommand('copy');
+        try { copied = document.execCommand('copy'); } catch {}
         ta.remove();
+        btn.focus();
       }
-      const orig = btn.textContent;
-      btn.textContent = '✓ 已复制';
-      setTimeout(() => { btn.textContent = orig; }, 2000);
+      if (copied) {
+        manual.hidden = true;
+        status.textContent = `${btn.getAttribute('aria-label')?.replace(/^复制\s*/, '') ?? '引用'}已复制。`;
+      } else {
+        status.textContent = '未能自动复制，请在下方选择并复制引用。';
+        manual.hidden = false;
+        const field = manual.querySelector('textarea')!;
+        field.value = text;
+        field.focus();
+        field.select();
+      }
     });
   });
 </script>
+
+<style>
+  .cite-box { min-width: 0; padding: 22px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--text); }
+  .cite-box > summary { min-height: 44px; gap: 18px; color: var(--text); }
+  .cite-box > summary > span:first-child { font-size: 13px; font-weight: 600; letter-spacing: .04em; }
+  .cite-box > summary > span:not(:first-child) { color: var(--muted); font-size: 10px; }
+  .cite-box .blockquote { margin: 10px 0 0; padding: 16px 18px; border-left: 2px solid var(--line); border-radius: 0 8px 8px 0; background: var(--surface-raised); color: var(--muted); font-size: 13px; line-height: 1.9; overflow-wrap: anywhere; }
+  .cite-box pre { max-width: 100%; padding: 18px; border: 1px solid var(--line); border-radius: 10px; background: var(--page); color: var(--muted); font-size: 12px; line-height: 1.8; }
+  .cite-box .pill-button { min-height: 44px; padding: 7px 13px; border-color: var(--line); background: var(--surface-raised); color: var(--text); font-size: 11px; }
+  .cite-box .pill-button:hover { border-color: var(--accent); }
+  .cite-box p, .cite-box label { color: var(--muted); line-height: 1.8; }
+  .cite-box a { color: var(--accent); }
+  .manual-copy-field { display: block; width: 100%; margin-top: 8px; padding: 13px; border: 1px solid var(--line); border-radius: 8px; background: var(--page); color: var(--text); font-size: 12px; }
+</style>

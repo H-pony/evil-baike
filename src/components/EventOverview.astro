@@ -52,7 +52,7 @@ const hasAny = confirmedFacts.length > 0
           ))}
         </ul>
         <p class="meta-stamp mt-2">
-          事实以法院判决书、武大通报、官方通报等一级信源为准。
+          请结合下方信源阅读；处置动作、当事人陈述与调查结论分别记录。
         </p>
       </div>
     )}
@@ -105,9 +105,21 @@ const hasAny = confirmedFacts.length > 0
           ))}
         </ul>
         <p class="meta-stamp mt-2">
-          如掌握新信源，可通过页面底部「报告错误 / 补充证据 / 申请更正」入口反馈。
+          如掌握新信源，可通过页面底部「补充 / 更正 / 申诉」入口反馈。
         </p>
       </div>
     )}
   </section>
 )}
+
+<style>
+  [data-event-overview] { padding: clamp(23px, 4vw, 34px); border: 1px solid var(--line); border-radius: 18px; background: var(--surface); color: var(--text); }
+  [data-event-overview] > h2.meta-stamp { margin-bottom: 26px; color: var(--accent); font-size: 11px; letter-spacing: .08em; line-height: 1.8; }
+  [data-event-overview] > div { border-color: var(--line); }
+  [data-event-overview] h3 { margin-bottom: 13px; color: var(--text); font-size: 21px; font-weight: 600; line-height: 1.5; letter-spacing: -.035em; }
+  [data-event-overview] h3 > span { color: var(--muted); font-size: 11px; font-weight: 400; }
+  [data-event-overview] li, [data-event-overview] p { color: var(--muted); line-height: 1.95; }
+  [data-event-overview] .meta-stamp { color: var(--muted); font-size: 10px; }
+  [data-event-overview] .blockquote { margin: 10px 0; padding: 16px 18px; border-left: 2px solid var(--line); border-radius: 0 9px 9px 0; background: var(--surface-raised); color: var(--text); font-size: 14px; line-height: 1.95; }
+  [data-event-overview] a { color: var(--accent); }
+</style>

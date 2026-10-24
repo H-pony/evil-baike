@@ -27,7 +27,7 @@ export default defineConfig({
         if (url.startsWith('/people/_')) return false;
         if (url.startsWith('/organizations/_')) return false;
         // RSS / search.json / 内部文件不进 sitemap
-        if (url === '/rss.xml' || url === '/search.json') return false;
+        if (['/rss.xml', '/search.json', '/published-entries.json', '/admin', '/favorites', '/404'].includes(url.replace(/\/$/, ''))) return false;
         return true;
       },
     }),

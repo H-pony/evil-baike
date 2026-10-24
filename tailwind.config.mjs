@@ -6,35 +6,13 @@ export default {
   ],
   theme: {
     extend: {
-      // 档案馆 / 报纸风格：衬线 + 等宽
       fontFamily: {
-        // 正文：传统衬线（类似 NYT / 大公报）
-        serif: [
-          '"Source Serif 4"',
-          '"Source Serif Pro"',
-          '"Noto Serif SC"',
-          'Georgia',
-          '"Times New Roman"',
-          'serif',
-        ],
-        // 标题：黑体衬线（类似档案馆匾额）
-        display: [
-          '"Noto Serif SC"',
-          '"Source Han Serif SC"',
-          'Georgia',
-          '"Times New Roman"',
-          'serif',
-        ],
-        // 元数据 / 来源 / 时间戳：等宽（打字机感）
-        mono: [
-          '"JetBrains Mono"',
-          '"SF Mono"',
-          '"Menlo"',
-          '"Cascadia Code"',
-          'monospace',
-        ],
+        sans: ['Geist', '"PingFang SC"', '"Microsoft YaHei"', 'sans-serif'],
+        serif: ['Geist', '"PingFang SC"', '"Microsoft YaHei"', 'sans-serif'],
+        display: ['Geist', '"PingFang SC"', '"Microsoft YaHei"', 'sans-serif'],
+        mono: ['Geist', '"PingFang SC"', '"Microsoft YaHei"', 'sans-serif'],
       },
-      // 报纸版面色调：CSS 变量支持深色模式
+      // Dark archive theme: shared CSS tokens
       colors: {
         ink: {
           50: 'rgb(var(--ink-50) / <alpha-value>)',

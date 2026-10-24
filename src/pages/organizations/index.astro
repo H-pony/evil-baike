@@ -9,15 +9,12 @@ import OrgCard from '~/components/OrgCard.astro';
 import FilterBar from '~/components/FilterBar.astro';
 import { getCollection } from 'astro:content';
 import { isIndexable } from '~/content.config';
+import { eventHasOrganization } from '~/lib/relations';
 
 const allOrgs = await getCollection('organizations', (o) => isIndexable(o.data.status));
 
-const eventCountMap = new Map<string, number>();
-for (const event of await getCollection('events', (e) => isIndexable(e.data.status))) {
-  for (const orgId of event.data.organizations) {
-    eventCountMap.set(orgId, (eventCountMap.get(orgId) ?? 0) + 1);
-  }
-}
+const events = await getCollection('events', (e) => isIndexable(e.data.status));
+const eventCountMap = new Map(allOrgs.map(org => [org.id, events.filter(event => eventHasOrganization(event, org)).length]));
 
 const typeCount: Record<string, number> = {};
 for (const o of allOrgs) {
@@ -153,11 +150,3 @@ const filters = [
   window.addEventListener('evil-baike:filter-changed', applyFilter);
   applyFilter();
 </script>
-
-<style is:global>
-  [data-filter-bar] a.is-active {
-    border-color: rgb(168 57 46) !important;
-    background-color: rgb(168 57 46 / 0.1) !important;
-    color: rgb(168 57 46) !important;
-  }
-</style>

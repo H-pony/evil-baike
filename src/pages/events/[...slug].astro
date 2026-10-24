@@ -11,6 +11,7 @@ import Timeline from '~/components/Timeline.astro';
 import EntityLink from '~/components/EntityLink.astro';
 import { getCollection, render } from 'astro:content';
 import { isPubliclyVisible, isIndexable } from '~/content.config';
+import { getEventPeople, getEventOrganizations } from '~/lib/relations';
 import type { GetStaticPaths } from 'astro';
 
 export const getStaticPaths = (async () => {
@@ -28,31 +29,31 @@ const allEvents = await getCollection('events', (e) => isIndexable(e.data.status
 const people = await getCollection('people', (p) => isPubliclyVisible(p.data.status));
 const orgs = await getCollection('organizations', (o) => isPubliclyVisible(o.data.status));
 
-const peopleMap = new Map(people.map((p) => [p.id, p]));
-const orgsMap = new Map(orgs.map((o) => [o.id, o]));
 const eventsMap = new Map(allEvents.map((e) => [e.id, e]));
 
 // 解析手动指定的关联事件
-const manualRelated = event.data.related
+const manualRelated = [...new Set(event.data.related)].filter(id => id !== event.id)
   .map((id) => eventsMap.get(id))
   .filter((e): e is NonNullable<typeof e> => Boolean(e));
 
 // 自动推荐：涉及同一人物或机构的其他事件
-const myPeople = new Set(event.data.people);
-const myOrgs = new Set(event.data.organizations);
+const eventPeople = getEventPeople(event, people);
+const eventOrgs = getEventOrganizations(event, orgs);
+const myPeople = new Set(eventPeople.map(person => person.id));
+const myOrgs = new Set(eventOrgs.map(org => org.id));
+const sharedPeopleFor = (related: typeof event) => getEventPeople(related, people).filter(person => myPeople.has(person.id));
+const sharedOrgsFor = (related: typeof event) => getEventOrganizations(related, orgs).filter(org => myOrgs.has(org.id));
 
 const autoRelated = allEvents
   .filter((e) => e.id !== event.id)
   .filter((e) => {
-    const sharedPeople = e.data.people.some((p) => myPeople.has(p));
-    const sharedOrgs = e.data.organizations.some((o) => myOrgs.has(o));
+    const sharedPeople = sharedPeopleFor(e).length > 0;
+    const sharedOrgs = sharedOrgsFor(e).length > 0;
     return sharedPeople || sharedOrgs;
   })
   .sort((a, b) => {
-    const aShared = a.data.people.filter((p) => myPeople.has(p)).length
-      + a.data.organizations.filter((o) => myOrgs.has(o)).length;
-    const bShared = b.data.people.filter((p) => myPeople.has(p)).length
-      + b.data.organizations.filter((o) => myOrgs.has(o)).length;
+    const aShared = sharedPeopleFor(a).length + sharedOrgsFor(a).length;
+    const bShared = sharedPeopleFor(b).length + sharedOrgsFor(b).length;
     return bShared - aShared || b.data.dateStart.getTime() - a.data.dateStart.getTime();
   })
   .slice(0, 6);
@@ -115,26 +116,16 @@ const typeLabels: Record<string, string> = {
   <Content />
 
   <!-- 涉及人物 / 机构 -->
-  {(event.data.people.length > 0 || event.data.organizations.length > 0) && (
+  {(eventPeople.length > 0 || eventOrgs.length > 0) && (
     <section class="mt-10 pt-6 border-t border-ink-900/30">
       <h2 class="headline text-xl mb-4">涉及主体</h2>
       <div class="flex flex-wrap gap-2">
-        {event.data.people.map((id) => {
-          const p = peopleMap.get(id);
-          return (
-            <EntityLink type="person" id={id}>
-              {p?.data.name ?? id}
-            </EntityLink>
-          );
-        })}
-        {event.data.organizations.map((id) => {
-          const o = orgsMap.get(id);
-          return (
-            <EntityLink type="organization" id={id}>
-              {o?.data.name ?? id}
-            </EntityLink>
-          );
-        })}
+        {eventPeople.map(person => (
+          <EntityLink type="person" id={person.id}>{person.data.name}</EntityLink>
+        ))}
+        {eventOrgs.map(org => (
+          <EntityLink type="organization" id={org.id}>{org.data.name}</EntityLink>
+        ))}
       </div>
     </section>
   )}
@@ -158,19 +149,19 @@ const typeLabels: Record<string, string> = {
       <div class="flex items-baseline justify-between mb-4">
         <h2 class="headline text-2xl">关联事件</h2>
         <span class="meta-stamp">
-          {manualRelated.length} 手动 · {autoRelated.length} 自动推荐 · 共 {relatedEvents.length}
+          共 {relatedEvents.length} 条相关档案
         </span>
       </div>
       <ul class="space-y-3">
         {relatedEvents.map((e, idx) => {
           const isManual = idx < manualRelated.length;
-          const sharedPeople = e.data.people.filter((p) => myPeople.has(p));
-          const sharedOrgs = e.data.organizations.filter((o) => myOrgs.has(o));
+          const sharedPeople = sharedPeopleFor(e);
+          const sharedOrgs = sharedOrgsFor(e);
           return (
-            <li>
+            <li class="archive-box">
               <a
                 href={`/events/${e.id}`}
-                class="block archive-box hover:border-archive-seal transition-colors no-underline"
+                class="block hover:text-archive-seal transition-colors no-underline"
               >
                 <div class="flex items-center gap-2 mb-2 flex-wrap">
                   <span class="meta-stamp border border-ink-900/30 px-2 py-0.5">
@@ -190,22 +181,22 @@ const typeLabels: Record<string, string> = {
                   {e.data.title}
                 </h3>
                 <p class="text-sm text-ink-muted line-clamp-2">{e.data.summary}</p>
+                </a>
                 {(sharedPeople.length > 0 || sharedOrgs.length > 0) && (
                   <div class="flex flex-wrap gap-1.5 mt-2 text-xs">
                     <span class="meta-stamp text-ink-faded">共同主体：</span>
-                    {sharedPeople.map((pid) => (
-                      <EntityLink type="person" id={pid}>
-                        {peopleMap.get(pid)?.data.name ?? pid}
+                    {sharedPeople.map((person) => (
+                      <EntityLink type="person" id={person.id}>
+                        {person.data.name}
                       </EntityLink>
                     ))}
-                    {sharedOrgs.map((oid) => (
-                      <EntityLink type="organization" id={oid}>
-                        {orgsMap.get(oid)?.data.name ?? oid}
+                    {sharedOrgs.map((org) => (
+                      <EntityLink type="organization" id={org.id}>
+                        {org.data.name}
                       </EntityLink>
                     ))}
                   </div>
                 )}
-              </a>
             </li>
           );
         })}

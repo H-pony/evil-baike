@@ -44,27 +44,21 @@ const buildOnly = args['build-only'] ?? false;
 // 收集所有条目
 // ============================================================
 
-async function readCollection(subdir) {
-  const dir = join(CONTENT_DIR, subdir);
-  const files = await readdir(dir).catch(() => []);
+async function readCollection(subdir, includePlaceholders = false, relative = '') {
+  const dir = join(CONTENT_DIR, subdir, relative);
+  const files = await readdir(dir, { withFileTypes: true });
   const entries = [];
-
   for (const file of files) {
-    if (!file.endsWith('.md') && !file.endsWith('.mdx')) continue;
-    if (file.startsWith('_')) continue; // 跳过占位
-
-    const full = join(dir, file);
-    const raw = await readFile(full, 'utf-8');
-    const { data, content } = matter(raw);
-    entries.push({
-      id: file.replace(/\.mdx?$/, ''),
-      file: full,
-      collection: subdir,
-      data,
-      content,
-    });
+    if (file.isDirectory()) {
+      entries.push(...await readCollection(subdir, includePlaceholders, join(relative, file.name)));
+      continue;
+    }
+    if (!/\.mdx?$/.test(file.name)) continue;
+    if (!includePlaceholders && file.name.startsWith('_')) continue;
+    const full = join(dir, file.name);
+    const { data, content } = matter(await readFile(full, 'utf-8'));
+    entries.push({ id: join(relative, file.name).replace(/\.mdx?$/, ''), file: full, collection: subdir, data, content });
   }
-
   return entries;
 }
 
@@ -88,6 +82,31 @@ if (!buildOnly) {
   const personIds = new Set(people.map((p) => p.id));
   const orgIds = new Set(orgs.map((o) => o.id));
   const eventIds = new Set(events.map((e) => e.id));
+
+  const collectionEntries = { events, people, organizations: orgs };
+  const publiclyVisible = entry => ['published', 'archived'].includes(entry.data.status);
+  for (const entry of [...events, ...people, ...orgs]) {
+    const { data, collection, id } = entry;
+    const parseDate = value => value === undefined ? undefined : new Date(value).getTime();
+    for (const field of ['createdAt', 'updatedAt', 'verifiedAt', 'dateStart', 'dateEnd']) {
+      if (data[field] !== undefined && !Number.isFinite(parseDate(data[field]))) report('error', collection, id, `${field} 不是有效日期`);
+    }
+    if (parseDate(data.updatedAt) < parseDate(data.createdAt)) report('error', collection, id, 'updatedAt 早于 createdAt');
+    if (parseDate(data.dateEnd) < parseDate(data.dateStart)) report('error', collection, id, 'dateEnd 早于 dateStart');
+    if (!publiclyVisible(entry)) continue;
+    for (const field of ['events', 'people', 'organizations']) {
+      for (const ref of data[field] ?? []) {
+        const target = collectionEntries[field].find(candidate => candidate.id === ref);
+        if (target && !publiclyVisible(target)) report('warn', collection, id, `${field}/${ref} 尚未公开，公开页面将隐藏该关联`);
+      }
+    }
+    for (const ref of data.related ?? []) {
+      if (ref === id) report('error', collection, id, 'related 不可关联自身');
+      const target = events.find(candidate => candidate.id === ref);
+      if (target && target.data.status !== 'published') report('warn', collection, id, `关联事件 ${ref} 未列入公开索引，推荐中将隐藏`);
+    }
+    if (data.status === 'archived' && !data.archivedReason && !data.archivedNote) report('warn', collection, id, '归档条目缺少归档原因');
+  }
 
   // 事件
   for (const e of events) {
@@ -271,38 +290,18 @@ async function scanBuild() {
     distExists = false;
   }
   if (!distExists) {
-    console.log('⚠️  dist/ 不存在，跳过构建产物扫描。请先运行 npm run build。');
-    return { ok: true, issues: [] };
+    console.error('❌ dist/ 不存在，无法验证构建产物。请先运行 npm run build。');
+    process.exit(1);
   }
 
   console.log('🔍 扫描构建产物：确保草稿 / 占位条目未发布...');
 
   // 2. 找出所有非公开 / 占位条目
-  async function readAllCollection(subdir) {
-    const dir = join(CONTENT_DIR, subdir);
-    const files = await readdir(dir).catch(() => []);
-    const entries = [];
-    for (const file of files) {
-      if (!file.endsWith('.md') && !file.endsWith('.mdx')) continue;
-      const full = join(dir, file);
-      const raw = await readFile(full, 'utf-8');
-      const { data } = matter(raw);
-      entries.push({ id: file.replace(/\.mdx?$/, ''), collection: subdir, status: data.status, type: data.type });
-    }
-    return entries;
-  }
-
-  const allEntries = [
-    ...(await readAllCollection('events')),
-    ...(await readAllCollection('people')),
-    ...(await readAllCollection('organizations')),
-  ];
+  const allEntries = (await Promise.all(['events', 'people', 'organizations'].map(collection => readCollection(collection, true))))
+    .flat().map(entry => ({ ...entry, status: entry.data.status ?? 'draft' }));
 
   const hiddenEntries = allEntries.filter((e) =>
-    e.status === 'draft' ||
-    e.status === 'submitted' ||
-    e.status === 'reviewing' ||
-    e.status === 'withdrawn' ||
+    !['published', 'archived'].includes(e.status) ||
     e.id.startsWith('_')
   );
 
@@ -328,20 +327,41 @@ async function scanBuild() {
       }
     }
   } catch {
-    console.log('   (sitemap-0.xml 暂未生成)');
+    report('error', 'sitemap-0.xml 缺失或不可读，无法验证发布边界');
   }
 
   // 4. search.json 中不应包含占位 / 非 published
   try {
     const searchRaw = await readFile(join(DIST_DIR, 'search.json'), 'utf-8');
     const searchDocs = JSON.parse(searchRaw);
-    for (const e of hiddenEntries) {
-      if (searchDocs.some((d) => d.id === e.id)) {
+    for (const e of allEntries.filter(entry => entry.status !== 'published' || entry.id.startsWith('_'))) {
+      const type = { events: 'event', people: 'person', organizations: 'organization' }[e.collection];
+      if (searchDocs.some((d) => d.id === e.id && d.type === type)) {
         report('error', `search.json 不应包含 ${e.id}（status=${e.status} 或以 _ 开头）`);
       }
     }
   } catch {
-    console.log('   (search.json 暂未生成)');
+    report('error', 'search.json 缺失或格式不正确，无法验证发布边界');
+  }
+
+  // Traverse every HTML href so broken tags, entity links and archived references cannot pass silently.
+  async function htmlFiles(dir) {
+    const files = await readdir(dir, { withFileTypes: true });
+    const nested = await Promise.all(files.map(file => file.isDirectory() ? htmlFiles(join(dir, file.name)) : file.name.endsWith('.html') ? [join(dir, file.name)] : []));
+    return nested.flat();
+  }
+  const checked = new Map();
+  for (const file of await htmlFiles(DIST_DIR)) {
+    const html = await readFile(file, 'utf-8');
+    for (const match of html.matchAll(/href=["'](\/[^"']*)["']/g)) {
+      if (match[1].startsWith('//')) continue;
+      const path = decodeURIComponent(match[1].split(/[?#]/)[0]);
+      if (!checked.has(path)) {
+        const full = join(DIST_DIR, path);
+        checked.set(path, await stat(full).then(result => result.isFile() || stat(join(full, 'index.html')).then(inner => inner.isFile(), () => false), () => false));
+      }
+      if (!checked.get(path)) report('error', `${file.slice(DIST_DIR.length + 1)} 含无效站内链接 ${path}`);
+    }
   }
 
   console.log('━'.repeat(60));

@@ -1,61 +1,57 @@
 ---
-/**
- * 标签详情页 - 该标签下的所有事件
- *
- * P0 改造：只对 published events 生成 /tags/:tag 页面。
- *           archived 条目不再生成对应 tag 页面（archived 已不计入公开列表）。
- */
 import BaseLayout from '~/layouts/BaseLayout.astro';
 import EventCard from '~/components/EventCard.astro';
+import PersonCard from '~/components/PersonCard.astro';
+import OrgCard from '~/components/OrgCard.astro';
 import { getCollection } from 'astro:content';
 import { isIndexable } from '~/content.config';
+import { eventHasPerson, eventHasOrganization } from '~/lib/relations';
 import type { GetStaticPaths } from 'astro';
 
 export const getStaticPaths = (async () => {
-  const events = await getCollection('events', (e) => isIndexable(e.data.status));
-  const tagSet = new Set<string>();
-  for (const e of events) {
-    for (const t of e.data.tags) tagSet.add(t);
-  }
-
-  return [...tagSet].map((tag) => ({
+  const events = await getCollection('events', entry => isIndexable(entry.data.status));
+  const people = await getCollection('people', entry => isIndexable(entry.data.status));
+  const organizations = await getCollection('organizations', entry => isIndexable(entry.data.status));
+  const tags = new Set([...events, ...people, ...organizations].flatMap(entry => entry.data.tags));
+  return [...tags].map(tag => ({
     params: { tag },
     props: {
       tag,
-      events: events
-        .filter((e) => e.data.tags.includes(tag))
-        .sort((a, b) => b.data.dateStart.getTime() - a.data.dateStart.getTime()),
+      allEvents: events,
+      events: events.filter(entry => entry.data.tags.includes(tag)).sort((a, b) => b.data.dateStart.getTime() - a.data.dateStart.getTime()),
+      people: people.filter(entry => entry.data.tags.includes(tag)),
+      organizations: organizations.filter(entry => entry.data.tags.includes(tag)),
     },
   }));
 }) satisfies GetStaticPaths;
 
-const { tag, events } = Astro.props;
+const { tag, events, people, organizations, allEvents } = Astro.props;
+const total = events.length + people.length + organizations.length;
+const orgTypes: Record<string, string> = { company: '企业', government: '公共机构', 'political-party': '政党', ngo: '社会组织', academic: '教育机构', media: '媒体', religious: '宗教', military: '军事', other: '其他机构' };
 ---
 
-<BaseLayout
-  title={`#${tag}`}
-  description={`标签 #${tag} 下的所有事件`}
->
+<BaseLayout title={`#${tag}`} description={`话题 #${tag} 下的事件、人物与机构档案`}>
   <header class="py-8 border-b-3 border-double border-ink-900 mb-8">
-    <p class="meta-stamp mb-2">标签</p>
+    <p class="meta-stamp mb-2"><a href="/tags">全部话题</a></p>
     <h1 class="headline text-4xl lg:text-5xl">#{tag}</h1>
-    <p class="deck mt-2">共 {events.length} 条归档</p>
+    <p class="deck mt-2">共 {total} 条档案 · {events.length} 个事件 · {people.length} 位人物 · {organizations.length} 家机构</p>
   </header>
-
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-    {events.map((event) => (
-      <EventCard
-        id={event.id}
-        title={event.data.title}
-        summary={event.data.summary}
-        type={event.data.type}
-        dateStart={event.data.dateStart}
-        dateEnd={event.data.dateEnd}
-        status={event.data.status}
-        tags={event.data.tags}
-        sourceCount={event.data.sources.length}
-        timelineCount={event.data.timeline.length}
-      />
-    ))}
-  </div>
+  {events.length > 0 && <section class="mb-10" aria-labelledby="tag-events">
+    <h2 id="tag-events" class="headline text-2xl mb-4">事件档案 <span class="meta-stamp">{events.length}</span></h2>
+    <div class="event-card-grid">
+      {events.map(event => <EventCard id={event.id} title={event.data.title} summary={event.data.summary} type={event.data.type} dateStart={event.data.dateStart} dateEnd={event.data.dateEnd} status={event.data.status} tags={event.data.tags} sourceCount={event.data.sources.length} timelineCount={event.data.timeline.length} />)}
+    </div>
+  </section>}
+  {people.length > 0 && <section class="mb-10" aria-labelledby="tag-people">
+    <h2 id="tag-people" class="headline text-2xl mb-4">人物 <span class="meta-stamp">{people.length}</span></h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      {people.map(person => <PersonCard id={person.id} name={person.data.name} summary={person.data.summary} status={person.data.status} aliases={person.data.aliases} eventCount={allEvents.filter(event => eventHasPerson(event, person)).length} />)}
+    </div>
+  </section>}
+  {organizations.length > 0 && <section class="mb-10" aria-labelledby="tag-organizations">
+    <h2 id="tag-organizations" class="headline text-2xl mb-4">机构 <span class="meta-stamp">{organizations.length}</span></h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      {organizations.map(org => <OrgCard id={org.id} name={org.data.name} summary={org.data.summary} type={orgTypes[org.data.type] ?? org.data.type} status={org.data.status} aliases={org.data.aliases} eventCount={allEvents.filter(event => eventHasOrganization(event, org)).length} />)}
+    </div>
+  </section>}
 </BaseLayout>

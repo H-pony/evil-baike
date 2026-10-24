@@ -1,14 +1,5 @@
 ---
-/**
- * PersonCard - 人物卡片（列表页用）
- *
- * 含匿名化头像（基于 id 哈希从档案中性色板中选色）。
- * - 中文姓名：取首字
- * - 英文姓名：取首字母组合
- * - 括号内注解（如"肖某某（武汉大学图书馆事件被指控人）"的注解部分）不参与计算
- * - 配色：基于档案色板（archive-aged / ink-50 / ink-100 / archive-paper），
- *   避开朱砂红（archive-seal），避免给真人贴"红/危险"暗示。
- */
+/** Person card with a neutral initial tile; colors do not imply a judgment. */
 
 import StatusBadge from './StatusBadge.astro';
 
@@ -36,40 +27,23 @@ function getInitials(name: string): string {
   return (parts[0][0] + (parts[1]?.[0] ?? '')).toUpperCase();
 }
 
-/**
- * 基于 id 哈希分配稳定背景色。
- * 同一 id 始终同一颜色——切页 / 刷新 / 跨页面都一致。
- * 仅在档案中性色板内选，避开 archive-seal（朱砂红）。
- */
-function getAvatarStyle(id: string): { bg: string; text: string; border: string } {
-  const palette = [
-    { bg: 'bg-archive-aged', text: 'text-ink-900', border: 'border-ink-900/40' },
-    { bg: 'bg-ink-50', text: 'text-ink-900', border: 'border-ink-900/30' },
-    { bg: 'bg-ink-100', text: 'text-ink-900', border: 'border-ink-900/40' },
-    { bg: 'bg-archive-paper', text: 'text-ink-900', border: 'border-ink-900/50' },
-  ];
+/** Stable neutral tile tones keep the same person recognizable across pages. */
+function getAvatarTone(id: string): number {
   let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = ((hash << 5) - hash) + id.charCodeAt(i);
-    hash |= 0;
-  }
-  return palette[Math.abs(hash) % palette.length];
+  for (let i = 0; i < id.length; i++) hash = ((hash << 5) - hash + id.charCodeAt(i)) | 0;
+  return Math.abs(hash) % 3;
 }
 
 const initials = getInitials(name);
-const avatar = getAvatarStyle(id);
+const avatarTone = getAvatarTone(id);
 ---
 
-<a href={`/people/${id}`} class="card-link block archive-box hover:border-archive-seal transition-colors">
+<a href={`/people/${id}`} class="entity-card card-link block archive-box hover:border-archive-seal transition-colors">
   <div class="flex items-start gap-3 mb-2">
     <!-- 匿名化头像：首字方块 -->
     <div
-      class:list={[
-        'shrink-0 w-14 h-14 flex items-center justify-center font-display font-bold text-2xl border-2 rounded-sm select-none',
-        avatar.bg,
-        avatar.text,
-        avatar.border,
-      ]}
+      class="person-avatar"
+      data-avatar-tone={avatarTone}
       aria-hidden="true"
       data-person-avatar={id}
     >
@@ -78,7 +52,7 @@ const avatar = getAvatarStyle(id);
 
     <div class="flex-1 min-w-0">
       <div class="flex items-start justify-between gap-2 mb-2">
-        <span class="meta-stamp border border-ink-900/30 px-2 py-0.5">人物</span>
+        <span class="entity-kind">人物</span>
         <StatusBadge status={status} size="sm" />
       </div>
       <h3 class="card-title font-display font-semibold text-xl leading-tight">
@@ -88,12 +62,26 @@ const avatar = getAvatarStyle(id);
   </div>
 
   {aliases.length > 0 && (
-    <p class="meta-stamp text-ink-faded mb-2">又称：{aliases.join(' · ')}</p>
+    <p class="entity-aliases">又称：{aliases.join(' · ')}</p>
   )}
 
-  <p class="text-sm text-ink-900/80 line-clamp-3 mb-3">{summary}</p>
+  <p class="entity-summary">{summary}</p>
 
-  <div class="text-xs font-mono text-ink-muted text-right">
+  <div class="entity-count">
     涉及事件 {eventCount}
   </div>
 </a>
+
+<style>
+  .entity-card { display: flex; flex-direction: column; height: 100%; min-width: 0; padding: 26px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--text); text-decoration: none; transition: border-color .2s ease; }
+  .entity-card:hover { border-color: var(--accent); }
+  .person-avatar { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 56px; height: 66px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-raised); color: var(--text); font-size: 30px; font-weight: 700; line-height: 1; }
+  .person-avatar[data-avatar-tone="1"] { background: color-mix(in srgb, var(--text) 5%, var(--surface-raised)); }
+  .person-avatar[data-avatar-tone="2"] { background: color-mix(in srgb, var(--text) 10%, var(--surface-raised)); }
+  .entity-kind { color: var(--muted); font-size: 10px; letter-spacing: .08em; }
+  .card-title { color: var(--text); margin-top: 8px; font-size: 27px; line-height: 1.3; letter-spacing: -.05em; font-weight: 700; }
+  .entity-aliases { margin: 10px 0 14px; color: var(--muted); font-size: 11px; line-height: 1.8; }
+  .entity-summary { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; margin: 12px 0 24px; color: var(--muted); font-size: 13px; line-height: 1.9; }
+  .entity-count { margin-top: auto; padding-top: 15px; border-top: 1px solid var(--line); color: var(--text); font-size: 11px; text-align: right; }
+  @media (max-width: 600px) { .entity-card { padding: 22px; } }
+</style>

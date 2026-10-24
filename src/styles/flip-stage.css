@@ -1,0 +1,69 @@
+/* Keep native document scrolling. Only the face clips; 3D parents must not flatten. */
+.flip-story.is-enhanced { height:100svh; position:relative; overflow:visible; }
+.flip-story.is-enhanced .flip-stage { position:relative; top:0; height:100svh; width:100%; }
+.flip-render { position:absolute; inset:8px 10px; perspective:1400px; perspective-origin:50% 50%; pointer-events:none; z-index:1; }
+.flip-tile { position:absolute; transform-style:preserve-3d; will-change:transform; }
+.flip-face { position:absolute; inset:0; overflow:hidden; border-radius:9px; backface-visibility:hidden; -webkit-backface-visibility:hidden; background:var(--surface); box-shadow:0 4px 10px #0005; }
+.flip-face::after { content:''; position:absolute; inset:0; background:#000; opacity:var(--face-shade,0); pointer-events:none; }
+.flip-face--back { transform:rotateX(180deg); background:var(--accent); }
+.flip-artwork { position:absolute; width:var(--frame-width); height:var(--frame-height); pointer-events:none; }
+.is-enhanced .flip-stage > .archive-portal,.is-enhanced .flip-stage > .archive-manifesto { position:absolute; inset:0; width:100%; margin:0; height:100%; min-height:0; background:transparent; pointer-events:none; z-index:2; }
+.is-enhanced .flip-stage > .archive-portal .portal-brand,.is-enhanced .flip-stage > .archive-manifesto .manifesto-outline,.is-enhanced .flip-stage > .archive-manifesto .manifesto-content > :not(a),.is-enhanced .flip-stage > .archive-manifesto .manifesto-stats { opacity:0; }
+.is-enhanced .flip-stage > .archive-portal .portal-tiles,.is-enhanced .flip-stage > .archive-portal .portal-seams { display:none; }
+.is-enhanced .flip-stage > .archive-portal a,.is-enhanced .flip-stage > .archive-manifesto a { pointer-events:auto; }
+.is-enhanced .flip-stage > .archive-portal[inert] a,.is-enhanced .flip-stage > .archive-manifesto[inert] a { pointer-events:none; }
+.is-enhanced .flip-stage > .archive-portal[inert] .scroll-orbit,.is-enhanced .flip-stage > .archive-portal[inert] .portal-bottom { opacity:0; }
+.is-enhanced .flip-stage > .archive-manifesto[inert] .manifesto-link { opacity:0; }
+.is-enhanced .flip-stage.pointer-active .scroll-orbit { pointer-events:none; transition:opacity .2s; }
+.is-enhanced .flip-artwork .archive-portal { width:100%; height:100%; min-height:0; margin:0; }
+.is-enhanced .archive-manifesto { display:flex; flex-direction:column; justify-content:center; padding:40px 5vw 90px; }
+.is-enhanced .manifesto-outline { font-size:clamp(36px,7vw,118px); flex-shrink:0; }
+.is-enhanced .manifesto-content { padding:3vh 0; }
+.is-enhanced .manifesto-content h2 { font-size:clamp(28px,3.7vw,58px); margin:2vh 0; line-height:1.55; }
+.is-enhanced .manifesto-content > p:not(.eyebrow) { font-size:13px; }
+.is-enhanced .manifesto-stats { margin:1vh auto 0; padding-top:2vh; width:min(100%,960px); }
+.is-enhanced .manifesto-stats strong { font-size:clamp(26px,3vw,42px); }
+.is-enhanced .manifesto-link { position:absolute; bottom:30px; left:50%; transform:translateX(-50%); margin:0; }
+.is-enhanced .flip-artwork .archive-manifesto { width:100%; height:100%; margin:0; background:transparent; border-radius:0; }
+@media(max-width:600px) {
+ .flip-story.is-enhanced { height:100svh; }
+ .flip-render { inset-inline:6px; perspective:900px; }
+ .is-enhanced .archive-manifesto { padding:30px 20px 90px; }
+ .is-enhanced .manifesto-outline { font-size:8vw; }
+ .is-enhanced .manifesto-content { padding:22px 0; }
+ .is-enhanced .manifesto-content h2 { font-size:clamp(24px,6.8vw,30px); }
+ .is-enhanced .manifesto-content > p:not(.eyebrow) { font-size:11px; }
+ .is-enhanced .manifesto-stats { gap:18px 10px; }
+ .is-enhanced .manifesto-stats > span { font-size:9px; }
+ .is-enhanced .manifesto-stats strong { font-size:28px; }
+}
+@media print { .flip-story,.flip-render { display:none !important; } }
+
+.is-enhanced[data-flip-side="back"] .flip-stage { background:var(--accent); }
+.is-enhanced[data-flip-side="back"] .flip-face { box-shadow:none; }
+.is-enhanced[data-flip-side="turning"] .flip-stage > .archive-portal .scroll-orbit,
+.is-enhanced[data-flip-side="turning"] .flip-stage > .archive-portal .portal-bottom,
+.is-enhanced[data-flip-side="turning"] .flip-stage > .archive-manifesto .manifesto-link { opacity:0; pointer-events:none; }
+.is-enhanced[data-flip-side="back"] .portal-copyright { color:var(--page); }
+
+/* At rest, a single real text layer fills the seams; it returns to tile slices
+   before pointer/scroll motion so small labels never remain cut in half. */
+.is-enhanced .flip-stage > .archive-manifesto { inset:8px 10px; width:calc(100% - 20px); height:calc(100% - 16px); }
+.is-enhanced.is-back-readable .flip-stage > .archive-manifesto .manifesto-outline,
+.is-enhanced.is-back-readable .flip-stage > .archive-manifesto .manifesto-content > :not(a),
+.is-enhanced.is-back-readable .flip-stage > .archive-manifesto .manifesto-stats { opacity:1; }
+.is-enhanced.is-back-readable .flip-artwork--back { visibility:hidden; }
+@media(max-width:600px) { .is-enhanced .flip-stage > .archive-manifesto { inset-inline:6px; width:calc(100% - 12px); } }
+
+/* The back grows into the seam as each panel lands, matching the continuous
+   green scene. Its artwork offset compensates the bleed, so text stays aligned. */
+.flip-face--back { inset:calc(-1 * var(--back-bleed, 0px)); border-radius:var(--back-radius,9px); box-shadow:none; }
+.flip-face--back > .flip-artwork { margin-left:var(--back-bleed,0px); margin-top:var(--back-bleed,0px); }
+.is-enhanced .flip-stage > .flip-cursor { display:none; z-index:4; pointer-events:none !important; }
+.is-enhanced .flip-stage.pointer-active > .flip-cursor { display:grid; }
+.is-enhanced .pointer-active > .archive-portal .scroll-orbit { opacity:0; }
+html.flip-on-green .flip-cursor { color:var(--page); }
+html.flip-on-green .flip-cursor .orbit-core img { filter:brightness(0); }
+
+.is-enhanced .flip-stage.pointer-active { cursor:none; }
+.is-enhanced .flip-stage > .flip-cursor .orbit-core { display:none; }

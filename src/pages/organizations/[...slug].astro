@@ -8,6 +8,7 @@ import EntryLayout from '~/layouts/EntryLayout.astro';
 import EntityLink from '~/components/EntityLink.astro';
 import { getCollection, render } from 'astro:content';
 import { isPubliclyVisible, isIndexable } from '~/content.config';
+import { eventHasOrganization, personHasOrganization, getEventPeople } from '~/lib/relations';
 import type { GetStaticPaths } from 'astro';
 
 export const getStaticPaths = (async () => {
@@ -23,11 +24,11 @@ const { Content } = await render(org);
 
 const allEvents = await getCollection('events', (e) => isIndexable(e.data.status));
 const relatedEvents = allEvents
-  .filter((e) => e.data.organizations.includes(org.id))
+  .filter((e) => eventHasOrganization(e, org))
   .sort((a, b) => b.data.dateStart.getTime() - a.data.dateStart.getTime());
 
 const people = await getCollection('people', (p) => isPubliclyVisible(p.data.status));
-const peopleMap = new Map(people.map((p) => [p.id, p]));
+const relatedPeople = people.filter(person => personHasOrganization(person, org));
 
 const typeLabels: Record<string, string> = {
   criminal: '刑事',
@@ -81,18 +82,13 @@ const orgTypeLabels: Record<string, string> = {
 >
   <Content />
 
-  {org.data.people.length > 0 && (
+  {relatedPeople.length > 0 && (
     <section class="mt-10 pt-6 border-t border-ink-900/30">
       <h2 class="headline text-xl mb-4">关联人物</h2>
       <div class="flex flex-wrap gap-2">
-        {org.data.people.map((id) => {
-          const p = peopleMap.get(id);
-          return (
-            <EntityLink type="person" id={id}>
-              {p?.data.name ?? id}
-            </EntityLink>
-          );
-        })}
+        {relatedPeople.map(person => (
+          <EntityLink type="person" id={person.id}>{person.data.name}</EntityLink>
+        ))}
       </div>
     </section>
   )}
@@ -105,10 +101,10 @@ const orgTypeLabels: Record<string, string> = {
       </div>
       <ul class="space-y-3">
         {relatedEvents.map((e) => (
-          <li>
+          <li class="archive-box">
             <a
               href={`/events/${e.id}`}
-              class="block archive-box hover:border-archive-seal transition-colors no-underline"
+              class="block hover:text-archive-seal transition-colors no-underline"
             >
               <div class="flex items-center gap-2 mb-2 flex-wrap">
                 <span class="meta-stamp border border-ink-900/30 px-2 py-0.5">
@@ -123,17 +119,15 @@ const orgTypeLabels: Record<string, string> = {
                 {e.data.title}
               </h3>
               <p class="text-sm text-ink-muted line-clamp-2">{e.data.summary}</p>
-              {e.data.people.length > 0 && (
+              </a>
+              {getEventPeople(e, people).length > 0 && (
                 <div class="flex flex-wrap gap-1.5 mt-2">
                   <span class="meta-stamp text-ink-faded text-xs">涉及人物：</span>
-                  {e.data.people.map((pid) => (
-                    <EntityLink type="person" id={pid}>
-                      {peopleMap.get(pid)?.data.name ?? pid}
-                    </EntityLink>
+                  {getEventPeople(e, people).map(person => (
+                    <EntityLink type="person" id={person.id}>{person.data.name}</EntityLink>
                   ))}
                 </div>
               )}
-            </a>
           </li>
         ))}
       </ul>

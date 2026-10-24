@@ -5,7 +5,7 @@ export async function onRequestGet({ request, env }) {
   if (!env.ANALYTICS_DB) return jsonResponse({ error: '还没有连接浏览量数据库。' }, 503);
 
   try {
-    const [summary, daily, pages, submissionCount, submissions] = await Promise.all([
+    const [summary, daily, pages] = await Promise.all([
       env.ANALYTICS_DB.prepare(`
         SELECT
           strftime('%Y-%m-%d', 'now', '+8 hours') AS currentDay,
@@ -30,13 +30,6 @@ export async function onRequestGet({ request, env }) {
         ORDER BY views DESC, path ASC
         LIMIT 10
       `).all(),
-      env.ANALYTICS_DB.prepare('SELECT COUNT(*) AS count FROM submissions').first(),
-      env.ANALYTICS_DB.prepare(`
-        SELECT id, name, event, submitted_at AS submittedAt
-        FROM submissions
-        ORDER BY id DESC
-        LIMIT 50
-      `).all(),
     ]);
 
     return jsonResponse({
@@ -49,8 +42,6 @@ export async function onRequestGet({ request, env }) {
       },
       daily: daily.results || [],
       pages: pages.results || [],
-      submissionCount: Number(submissionCount?.count || 0),
-      submissions: submissions.results || [],
       timezone: 'Asia/Hong_Kong',
     });
   } catch {

@@ -1,0 +1,224 @@
+
+> evil-baike@0.1.0 check:all
+> npm run check && npm test && npm run build && npm run validate -- --build
+
+
+> evil-baike@0.1.0 check
+> astro check
+
+20:54:01 [content] Syncing content
+20:54:01 [content] Synced content
+20:54:01 [types] Generated 214ms
+20:54:01 [check] Getting diagnostics for Astro files in /Users/kongwo/Documents/项目/恶人百科...
+src/components/CitationBox.astro:124:33 - warning ts(6387): The signature '(commandId: string, showUI?: boolean | undefined, value?: string | undefined): boolean' of 'document.execCommand' is deprecated.
+
+124         try { copied = document.execCommand('copy'); } catch {}
+                                    ~~~~~~~~~~~
+
+src/components/Search.astro:140:27 - warning ts(6385): 'keyCode' is deprecated.
+
+140     if(e.isComposing || e.keyCode === 229) return;
+                              ~~~~~~~
+
+src/components/ShareBar.astro:101:35 - warning ts(6387): The signature '(commandId: string, showUI?: boolean | undefined, value?: string | undefined): boolean' of 'document.execCommand' is deprecated.
+
+101           try { copied = document.execCommand('copy'); } catch {}
+                                      ~~~~~~~~~~~
+
+src/pages/admin/index.astro:198:111 - warning ts(6385): 'returnValue' is deprecated.
+
+198   window.addEventListener('beforeunload', (event) => { if (reviewDrafts.size) { event.preventDefault(); event.returnValue = ''; } });
+                                                                                                                  ~~~~~~~~~~~
+
+Result (67 files):
+- 0 errors
+- 0 warnings
+- 4 hints
+
+
+> evil-baike@0.1.0 test
+> node --test tests/*.test.mjs && node scripts/test-archive-logic.mjs && node scripts/test-submissions.mjs
+
+✔ clamp and easing have bounded, finite endpoints (0.815375ms)
+✔ 3×6: the wave stays front-facing until 0.12 and completes at 0.82 (0.196083ms)
+✔ 3×6: midpoint shows the weighted diagonal stagger (0.074ms)
+✔ 3×6: every tile is monotonic and stays finite (3.010333ms)
+✔ 3×6: reverse sampling produces exactly the same frames (0.435208ms)
+✔ 6×6: the wave stays front-facing until 0.12 and completes at 0.82 (0.045542ms)
+✔ 6×6: midpoint shows the weighted diagonal stagger (0.035125ms)
+✔ 6×6: every tile is monotonic and stays finite (1.347208ms)
+✔ 6×6: reverse sampling produces exactly the same frames (0.105334ms)
+✔ single-axis grids and malformed numeric inputs never produce NaN (0.158958ms)
+✔ editor scaffolds create safe drafts and never overwrite existing work (215.937291ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 272.664666
+Archive relation and favorite regressions passed.
+Submission workflow passed: migrations, idempotency, privacy, authentication, validation, review history, published-link checks, withdrawal, filtering and >50-record pagination.
+
+> evil-baike@0.1.0 build
+> astro build
+
+20:54:05 [content] Syncing content
+20:54:05 [content] Synced content
+20:54:05 [types] Generated 164ms
+20:54:05 [build] output: "static"
+20:54:05 [build] mode: "static"
+20:54:05 [build] directory: /Users/kongwo/Documents/项目/恶人百科/dist/
+20:54:05 [build] Collecting build info...
+20:54:05 [build] ✓ Completed in 186ms.
+20:54:05 [build] Building static entrypoints...
+20:54:06 [vite] ✓ built in 778ms
+20:54:06 [build] ✓ Completed in 793ms.
+
+ building client (vite)
+20:54:06 [vite] transforming...
+20:54:06 [vite] ✓ 17 modules transformed.
+20:54:06 [vite] rendering chunks...
+20:54:06 [vite] computing gzip size...
+20:54:06 [vite] dist/_astro/favorites.BinoMd-a.js                                             0.80 kB │ gzip:  0.47 kB
+20:54:06 [vite] dist/_astro/FavoriteButton.astro_astro_type_script_index_0_lang.n63p5arQ.js   1.01 kB │ gzip:  0.60 kB
+20:54:06 [vite] dist/_astro/favorites.astro_astro_type_script_index_0_lang.Be0hRVhZ.js        2.09 kB │ gzip:  0.97 kB
+20:54:06 [vite] dist/_astro/submit.astro_astro_type_script_index_0_lang.TxiVcmxs.js           4.61 kB │ gzip:  2.18 kB
+20:54:06 [vite] dist/_astro/index.astro_astro_type_script_index_0_lang.BQEZwhF5.js            8.89 kB │ gzip:  3.50 kB
+20:54:06 [vite] dist/_astro/index.astro_astro_type_script_index_0_lang.BUE8apuG.js           10.44 kB │ gzip:  3.85 kB
+20:54:06 [vite] dist/_astro/Search.astro_astro_type_script_index_0_lang.D252XEPk.js          30.63 kB │ gzip: 11.28 kB
+20:54:06 [vite] ✓ built in 62ms
+
+ generating static routes
+20:54:06 ▶ src/pages/404.astro
+20:54:06   └─ /404.html (+3ms)
+20:54:06 ▶ src/pages/about.astro
+20:54:06   └─ /about/index.html (+1ms)
+20:54:06 ▶ src/pages/admin/index.astro
+20:54:06   └─ /admin/index.html (+1ms)
+20:54:06 ▶ src/pages/disclaimer.astro
+20:54:06   └─ /disclaimer/index.html (+1ms)
+20:54:06 ▶ src/pages/events/[...slug].astro
+20:54:06   ├─ /events/2026-wu-keai-pdf-report/index.html (+5ms)
+20:54:06   ├─ /events/2026-lvliang-judge-allegation/index.html (+3ms)
+20:54:06   ├─ /events/2023-wu-library-allegation/index.html (+3ms)
+20:54:06   └─ /events/2026-bit-peiyi-feminism-course/index.html (+5ms)
+20:54:06 ▶ src/pages/events/index.astro
+20:54:06   └─ /events/index.html (+2ms)
+20:54:06 ▶ src/pages/favorites.astro
+20:54:06   └─ /favorites/index.html (+3ms)
+20:54:06 ▶ src/pages/index.astro
+20:54:06   └─ /index.html (+7ms)
+20:54:06 ▶ src/pages/methodology.astro
+20:54:06   └─ /methodology/index.html (+1ms)
+20:54:06 ▶ src/pages/organizations/[...slug].astro
+20:54:06   ├─ /organizations/bit-law-school/index.html (+2ms)
+20:54:06   ├─ /organizations/lvliang-intermediate-court/index.html (+2ms)
+20:54:06   ├─ /organizations/lvliang-discipline-commission/index.html (+1ms)
+20:54:06   ├─ /organizations/anhui-university/index.html (+1ms)
+20:54:06   ├─ /organizations/wuhan-intermediate-court/index.html (+1ms)
+20:54:06   ├─ /organizations/lvliang-public-security-bureau/index.html (+1ms)
+20:54:06   ├─ /organizations/wuhan-chemistry-school/index.html (+3ms)
+20:54:06   ├─ /organizations/wuhan-economic-development-zone-court/index.html (+2ms)
+20:54:06   └─ /organizations/wuhan-university/index.html (+1ms)
+20:54:06 ▶ src/pages/organizations/index.astro
+20:54:06   └─ /organizations/index.html (+1ms)
+20:54:06 ▶ src/pages/people/[...slug].astro
+20:54:06   ├─ /people/lv-moumou-judge/index.html (+2ms)
+20:54:06   ├─ /people/fu-lei/index.html (+2ms)
+20:54:06   ├─ /people/wang-lushi-complainant/index.html (+2ms)
+20:54:06   ├─ /people/zeng-mengqi/index.html (+1ms)
+20:54:06   ├─ /people/yang-jingyuan/index.html (+1ms)
+20:54:06   ├─ /people/pei-yi/index.html (+1ms)
+20:54:06   └─ /people/xiao-moumo/index.html (+2ms)
+20:54:06 ▶ src/pages/people/index.astro
+20:54:06   └─ /people/index.html (+1ms)
+20:54:06 λ src/pages/published-entries.json.ts
+20:54:06   └─ /published-entries.json (+1ms)
+20:54:06 λ src/pages/rss.xml.ts
+20:54:06   └─ /rss.xml (+4ms)
+20:54:06 λ src/pages/search.json.ts
+20:54:06   └─ /search.json (+1ms)
+20:54:06 ▶ src/pages/submit.astro
+20:54:06   └─ /submit/index.html (+1ms)
+20:54:06 ▶ src/pages/tags/[tag].astro
+20:54:06   ├─ /tags/武汉大学/index.html (+1ms)
+20:54:06   ├─ /tags/安徽大学/index.html (+0ms)
+20:54:06   ├─ /tags/高校教师/index.html (+0ms)
+20:54:06   ├─ /tags/实名举报/index.html (+1ms)
+20:54:06   ├─ /tags/学术规范/index.html (+0ms)
+20:54:06   ├─ /tags/柯哀党/index.html (+1ms)
+20:54:06   ├─ /tags/公职人员违纪/index.html (+1ms)
+20:54:06   ├─ /tags/司法人员违法/index.html (+1ms)
+20:54:06   ├─ /tags/媒体推动/index.html (+0ms)
+20:54:06   ├─ /tags/监督机制失灵/index.html (+0ms)
+20:54:06   ├─ /tags/2026立案/index.html (+0ms)
+20:54:06   ├─ /tags/校园纠纷/index.html (+0ms)
+20:54:06   ├─ /tags/性骚扰指控/index.html (+0ms)
+20:54:06   ├─ /tags/司法反转/index.html (+0ms)
+20:54:06   ├─ /tags/网络暴力/index.html (+0ms)
+20:54:06   ├─ /tags/2026持续发酵/index.html (+0ms)
+20:54:06   ├─ /tags/课程争议/index.html (+0ms)
+20:54:06   ├─ /tags/性别议题/index.html (+0ms)
+20:54:06   ├─ /tags/师德师风/index.html (+0ms)
+20:54:06   ├─ /tags/男女对立/index.html (+0ms)
+20:54:06   ├─ /tags/学生抵制/index.html (+0ms)
+20:54:06   ├─ /tags/北京理工大学/index.html (+0ms)
+20:54:06   ├─ /tags/2026年争议/index.html (+0ms)
+20:54:06   ├─ /tags/公职人员/index.html (+1ms)
+20:54:06   ├─ /tags/司法人员/index.html (+0ms)
+20:54:06   ├─ /tags/在任法官/index.html (+0ms)
+20:54:06   ├─ /tags/高校行政/index.html (+1ms)
+20:54:06   ├─ /tags/国家杰青/index.html (+1ms)
+20:54:06   ├─ /tags/实名举报人/index.html (+1ms)
+20:54:06   ├─ /tags/离婚诉讼当事人/index.html (+5ms)
+20:54:06   ├─ /tags/学术不端指控/index.html (+1ms)
+20:54:06   ├─ /tags/持续发酵/index.html (+4ms)
+20:54:06   ├─ /tags/被网暴当事人/index.html (+3ms)
+20:54:06   ├─ /tags/985高校/index.html (+0ms)
+20:54:06   ├─ /tags/工业和信息化部直属/index.html (+0ms)
+20:54:06   ├─ /tags/课程争议涉及方/index.html (+0ms)
+20:54:06   ├─ /tags/中级法院/index.html (+0ms)
+20:54:06   ├─ /tags/纪检监察/index.html (+0ms)
+20:54:06   ├─ /tags/公职人员监督/index.html (+0ms)
+20:54:06   ├─ /tags/211高校/index.html (+0ms)
+20:54:06   ├─ /tags/安徽省属/index.html (+0ms)
+20:54:06   ├─ /tags/部省共建/index.html (+0ms)
+20:54:06   ├─ /tags/涉事机构/index.html (+0ms)
+20:54:06   ├─ /tags/二审法院/index.html (+1ms)
+20:54:06   ├─ /tags/公安局/index.html (+0ms)
+20:54:06   ├─ /tags/基层派出所/index.html (+0ms)
+20:54:06   ├─ /tags/教育部直属/index.html (+0ms)
+20:54:06   ├─ /tags/化学学院/index.html (+0ms)
+20:54:06   ├─ /tags/基层法院/index.html (+0ms)
+20:54:06   ├─ /tags/一审法院/index.html (+0ms)
+20:54:06   └─ /tags/校园纠纷涉及方/index.html (+0ms)
+20:54:06 ▶ src/pages/tags/index.astro
+20:54:06   └─ /tags/index.html (+1ms)
+20:54:06 ✓ Completed in 153ms.
+
+20:54:06 [@astrojs/sitemap] `sitemap-index.xml` created at `dist`
+20:54:06 [build] 83 page(s) built in 1.23s
+20:54:06 [build] Complete!
+
+> evil-baike@0.1.0 validate
+> node scripts/validate-content.mjs --build
+
+📚 加载：4 事件 / 7 人物 / 9 机构
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 内容验证结果
+   ❌ 错误：0
+   ⚠️  警告：0
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ 通过内容验证（完美）
+🔍 扫描构建产物：确保草稿 / 占位条目未发布...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 构建产物扫描结果
+   ❌ 错误：0
+   ⚠️  警告：0
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ 构建产物扫描通过：所有草稿 / 占位条目均未出现在公开产物中

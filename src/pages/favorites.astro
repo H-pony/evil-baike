@@ -13,7 +13,8 @@ import EventCard from '~/components/EventCard.astro';
 import PersonCard from '~/components/PersonCard.astro';
 import OrgCard from '~/components/OrgCard.astro';
 import { getCollection } from 'astro:content';
-import { isPubliclyVisible } from '~/content.config';
+import { isPubliclyVisible, isIndexable } from '~/content.config';
+import { eventHasPerson, eventHasOrganization } from '~/lib/relations';
 
 const events = await getCollection('events', (e) => isPubliclyVisible(e.data.status));
 const people = await getCollection('people', (p) => isPubliclyVisible(p.data.status));
@@ -31,12 +32,10 @@ const orgTypeLabels: Record<string, string> = {
   religious: '宗教', military: '军事', other: '其他',
 };
 
-// 事件计数（人物/机构卡显示）
-const eventCountMap = new Map<string, number>();
-for (const e of events) {
-  for (const pid of e.data.people) eventCountMap.set(pid, (eventCountMap.get(pid) ?? 0) + 1);
-  for (const oid of e.data.organizations) eventCountMap.set(oid, (eventCountMap.get(oid) ?? 0) + 1);
-}
+// Counts use the same indexed-event relationship union as entity detail pages.
+const indexedEvents = events.filter(event => isIndexable(event.data.status));
+const personEventCounts = new Map(people.map(person => [person.id, indexedEvents.filter(event => eventHasPerson(event, person)).length]));
+const orgEventCounts = new Map(orgs.map(org => [org.id, indexedEvents.filter(event => eventHasOrganization(event, org)).length]));
 
 // 按时间倒序（收藏夹里最新收藏在前，先按时间排序作为 tiebreaker）
 events.sort((a, b) => b.data.dateStart.getTime() - a.data.dateStart.getTime());
@@ -44,16 +43,22 @@ events.sort((a, b) => b.data.dateStart.getTime() - a.data.dateStart.getTime());
 
 <BaseLayout title="我的收藏" description="你加入收藏的事件 / 人物 / 机构（仅存储在本地浏览器）">
   <header class="text-center py-8 border-b-3 border-double border-ink-900 mb-8">
-    <p class="meta-stamp mb-2">LOCAL · 0 KB 服务器存储</p>
+    <p class="meta-stamp mb-2">我的阅读清单</p>
     <h1 class="headline text-4xl lg:text-5xl">我的收藏</h1>
     <p class="deck mt-2">
-      数据存储于 <code>localStorage</code>，不与服务器同步 · 清空浏览器数据会丢失
+      收藏仅保存在当前浏览器 · 清空浏览器数据会丢失
     </p>
   </header>
 
+  <noscript><p class="archive-box p-4 mb-4">启用 JavaScript 后可查看本机收藏。</p></noscript>
+  <p data-fav-feedback role="status" class="text-sm text-ink-muted mb-4"></p>
+  <div data-fav-unavailable hidden class="archive-box p-4 mb-4">
+    <p>有 <strong data-fav-unavailable-count>0</strong> 条收藏已下线或暂不可访问，未显示在下方。</p>
+    <button type="button" data-fav-remove-unavailable class="pill-button mt-3">移除不可访问的收藏</button>
+  </div>
   <!-- 空态：未收藏任何条目 -->
   <div data-fav-empty class="archive-box p-8 text-center">
-    <p class="text-2xl font-display mb-2">尚未收藏任何条目</p>
+    <p class="text-2xl font-display mb-2">暂无可显示的收藏</p>
     <p class="text-sm text-ink-muted mb-4">
       在任何事件 / 人物 / 机构详情页点击右上角的「☆ 收藏」按钮即可加入此处。
     </p>
@@ -88,7 +93,7 @@ events.sort((a, b) => b.data.dateStart.getTime() - a.data.dateStart.getTime());
     <h2 class="headline text-2xl mb-4 pb-2 border-b border-ink-900">
       收藏的事件 <span class="font-mono text-base text-ink-faded ml-2" data-fav-section-count>[0]</span>
     </h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+    <div class="event-card-grid">
       {events.map((event) => (
         <div
           data-fav-card="event"
@@ -107,6 +112,7 @@ events.sort((a, b) => b.data.dateStart.getTime() - a.data.dateStart.getTime());
             sourceCount={event.data.sources.length}
             timelineCount={event.data.timeline.length}
           />
+          <button type="button" data-fav-remove="event" data-fav-id={event.id} class="pill-button mt-3" aria-label={`取消收藏：${event.data.title}`}>取消收藏</button>
         </div>
       ))}
     </div>
@@ -130,8 +136,9 @@ events.sort((a, b) => b.data.dateStart.getTime() - a.data.dateStart.getTime());
             summary={person.data.summary}
             status={person.data.status}
             aliases={person.data.aliases}
-            eventCount={eventCountMap.get(person.id) ?? 0}
+            eventCount={personEventCounts.get(person.id) ?? 0}
           />
+          <button type="button" data-fav-remove="person" data-fav-id={person.id} class="pill-button mt-3" aria-label={`取消收藏：${person.data.name}`}>取消收藏</button>
         </div>
       ))}
     </div>
@@ -156,8 +163,9 @@ events.sort((a, b) => b.data.dateStart.getTime() - a.data.dateStart.getTime());
             type={orgTypeLabels[org.data.type] ?? org.data.type}
             status={org.data.status}
             aliases={org.data.aliases}
-            eventCount={eventCountMap.get(org.id) ?? 0}
+            eventCount={orgEventCounts.get(org.id) ?? 0}
           />
+          <button type="button" data-fav-remove="organization" data-fav-id={org.id} class="pill-button mt-3" aria-label={`取消收藏：${org.data.name}`}>取消收藏</button>
         </div>
       ))}
     </div>
@@ -165,94 +173,53 @@ events.sort((a, b) => b.data.dateStart.getTime() - a.data.dateStart.getTime());
 </BaseLayout>
 
 <script>
-  const KEY = 'evil-baike-favs';
-  type FavType = 'event' | 'person' | 'organization';
-
-  function readFavs(): Record<FavType, Array<{ id: string; title: string; ts: number }>> {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (!raw) return { event: [], person: [], organization: [] };
-      const parsed = JSON.parse(raw);
-      return {
-        event: Array.isArray(parsed.event) ? parsed.event : [],
-        person: Array.isArray(parsed.person) ? parsed.person : [],
-        organization: Array.isArray(parsed.organization) ? parsed.organization : [],
-      };
-    } catch {
-      return { event: [], person: [], organization: [] };
-    }
-  }
+  import { FAVORITES_KEY, FAVORITES_CHANGED, favoriteTypes, readFavorites, saveFavorites, type FavoriteType, type Favorites } from '~/lib/favorites';
+  const available = Object.fromEntries(favoriteTypes.map(type => [type, new Set(Array.from(document.querySelectorAll<HTMLElement>(`[data-fav-card="${type}"]`)).map(card => card.dataset.favId!))])) as Record<FavoriteType, Set<string>>;
 
   function render() {
-    const favs = readFavs();
-    const counts: Record<FavType, number> = {
-      event: favs.event.length,
-      person: favs.person.length,
-      organization: favs.organization.length,
-    };
-    const total = counts.event + counts.person + counts.organization;
-
-    const empty = document.querySelector<HTMLElement>('[data-fav-empty]');
-    const stats = document.querySelector<HTMLElement>('[data-fav-stats]');
-    const totalEl = document.querySelector<HTMLElement>('[data-fav-total]');
-    const evCount = document.querySelector<HTMLElement>('[data-fav-event-count]');
-    const peCount = document.querySelector<HTMLElement>('[data-fav-person-count]');
-    const orCount = document.querySelector<HTMLElement>('[data-fav-org-count]');
-
-    if (total === 0) {
-      empty?.removeAttribute('hidden');
-      stats?.setAttribute('hidden', '');
-    } else {
-      empty?.setAttribute('hidden', '');
-      stats?.removeAttribute('hidden');
-      if (totalEl) totalEl.textContent = String(total);
-      if (evCount) evCount.textContent = String(counts.event);
-      if (peCount) peCount.textContent = String(counts.person);
-      if (orCount) orCount.textContent = String(counts.organization);
-    }
-
-    // 按 type 显示/隐藏 cards + section
-    const types: FavType[] = ['event', 'person', 'organization'];
-    for (const t of types) {
-      const section = document.querySelector<HTMLElement>(`[data-fav-section="${t}"]`);
-      const sectionCountEl = section?.querySelector<HTMLElement>('[data-fav-section-count]');
-      const ids = new Set(favs[t].map((f) => f.id));
-      let visible = 0;
-      document.querySelectorAll<HTMLElement>(`[data-fav-card="${t}"]`).forEach((card) => {
-        const id = card.dataset.favId ?? '';
-        if (ids.has(id)) {
-          card.removeAttribute('hidden');
-          visible++;
-        } else {
-          card.setAttribute('hidden', '');
-        }
-      });
-      if (visible > 0) {
-        section?.removeAttribute('hidden');
-        if (sectionCountEl) sectionCountEl.textContent = `[${visible}]`;
-      } else {
-        section?.setAttribute('hidden', '');
-      }
+    const favorites = readFavorites();
+    const visibleFavorites = Object.fromEntries(favoriteTypes.map(type => [type, favorites[type].filter(item => available[type].has(item.id))])) as Favorites;
+    const counts = favoriteTypes.map(type => visibleFavorites[type].length);
+    const total = counts.reduce((sum, count) => sum + count, 0);
+    const unavailable = favoriteTypes.reduce((sum, type) => sum + favorites[type].length - visibleFavorites[type].length, 0);
+    document.querySelector<HTMLElement>('[data-fav-empty]')!.hidden = total > 0;
+    document.querySelector<HTMLElement>('[data-fav-stats]')!.hidden = total === 0;
+    document.querySelector<HTMLElement>('[data-fav-unavailable]')!.hidden = unavailable === 0;
+    document.querySelector('[data-fav-unavailable-count]')!.textContent = String(unavailable);
+    document.querySelector('[data-fav-total]')!.textContent = String(total);
+    ['event', 'person', 'org'].forEach((type, i) => { document.querySelector(`[data-fav-${type}-count]`)!.textContent = String(counts[i]); });
+    for (const type of favoriteTypes) {
+      const timestamps = new Map(visibleFavorites[type].map(item => [item.id, item.ts]));
+      const section = document.querySelector<HTMLElement>(`[data-fav-section="${type}"]`)!;
+      section.hidden = timestamps.size === 0;
+      section.querySelector('[data-fav-section-count]')!.textContent = `[${timestamps.size}]`;
+      const cards = Array.from(section.querySelectorAll<HTMLElement>('[data-fav-card]'));
+      cards.sort((a, b) => (timestamps.get(b.dataset.favId!) ?? 0) - (timestamps.get(a.dataset.favId!) ?? 0));
+      for (const card of cards) { card.hidden = !timestamps.has(card.dataset.favId!); card.parentElement!.append(card); }
     }
   }
-
-  function bindClear() {
-    const clearBtn = document.querySelector<HTMLButtonElement>('[data-fav-clear]');
-    clearBtn?.addEventListener('click', () => {
-      if (!confirm('确定清空所有收藏？此操作不可撤销。')) return;
-      localStorage.removeItem(KEY);
-      window.dispatchEvent(new CustomEvent('evil-baike:favs-changed'));
-      render();
-    });
+  function save(favorites: Favorites, success: string) {
+    const saved = saveFavorites(favorites);
+    document.querySelector('[data-fav-feedback]')!.textContent = saved ? success : '修改未保存，请允许浏览器存储后重试。';
+    if (saved) render();
   }
-
-  render();
-  bindClear();
-
-  // 跨组件同步：fav 页打开时其它 tab/页面 toggle 也会刷新
-  window.addEventListener('evil-baike:favs-changed', render);
-  // 跨 tab：storage 事件
-  window.addEventListener('storage', (e) => {
-    if (e.key === KEY) render();
+  document.querySelector('[data-fav-clear]')?.addEventListener('click', () => {
+    if (confirm('确定清空所有收藏？此操作不可撤销。')) save({ event: [], person: [], organization: [] }, '已清空所有收藏');
   });
+  document.querySelector('[data-fav-remove-unavailable]')?.addEventListener('click', () => {
+    const favorites = readFavorites();
+    for (const type of favoriteTypes) favorites[type] = favorites[type].filter(item => available[type].has(item.id));
+    save(favorites, '已移除不可访问的收藏');
+  });
+  document.querySelectorAll<HTMLButtonElement>('[data-fav-remove]').forEach(button => {
+    button.addEventListener('click', () => {
+      const type = button.dataset.favRemove as FavoriteType;
+      const favorites = readFavorites();
+      favorites[type] = favorites[type].filter(item => item.id !== button.dataset.favId);
+      save(favorites, '已取消收藏');
+    });
+  });
+  window.addEventListener(FAVORITES_CHANGED, render);
+  window.addEventListener('storage', event => { if (event.key === FAVORITES_KEY || event.key === null) render(); });
+  render();
 </script>

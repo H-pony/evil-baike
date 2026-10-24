@@ -5,7 +5,7 @@
  */
 ---
 
-<aside class="archive-box border-l-4 border-archive-seal">
+<aside class="disclaimer-notice">
   <div class="flex items-start gap-3">
     <div class="shrink-0 mt-0.5">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-archive-seal">
@@ -18,10 +18,17 @@
       <p class="font-semibold mb-1">声明：本档案馆为中立事件记录，不作道德定性</p>
       <p class="text-ink-muted leading-relaxed">
         本站仅汇总各方报道的时间线与信源，所有事实均标注原始来源链接。
-        条目标题中的"恶人"系出于档案分类需要，不构成对当事人的法律或道德评价。
+        站名不代表对被收录人物或机构的判断；事件涉及的指控与调查结论应分别阅读。
         如你认为某条目存在事实错误或法律问题，请参阅
         <a href="/methodology#takedown">下架与申诉</a>流程。
       </p>
     </div>
   </div>
 </aside>
+<style>
+  .disclaimer-notice { padding: 22px 25px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--text); }
+  .disclaimer-notice svg { color: var(--muted); }
+  .disclaimer-notice p:first-child { margin-bottom: 8px; color: var(--text); font-size: 13px; font-weight: 600; line-height: 1.8; }
+  .disclaimer-notice p:last-child { color: var(--muted); font-size: 12px; line-height: 1.9; }
+  .disclaimer-notice a { color: var(--accent); text-underline-offset: 3px; }
+</style>

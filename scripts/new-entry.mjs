@@ -49,28 +49,21 @@ aliases: []
 type: controversy
 status: draft
 dateStart: ${new Date().toISOString().slice(0, 10)}
-dateEnd: null
 
 summary: |
-  待撰写。
+  此条目正在整理，事实与信源仍待编辑核实。
 
 tags: []
 people: []
 organizations: []
 
 timeline: []
-sources:
-  - url: https://example.com
-    title: ''
-    publisher: ''
-    publishedAt: ${new Date().toISOString().slice(0, 10)}
+sources: []
 
 authors:
   - ${process.env.USER ?? 'unknown'}
 reviewers: []
-submittedBy: null
 related: []
-notes: null
 
 createdAt: ${new Date().toISOString()}
 updatedAt: ${new Date().toISOString()}
@@ -91,20 +84,17 @@ aliases: []
 status: draft
 
 summary: |
-  待撰写。
+  此条目正在整理，事实与信源仍待编辑核实。
 
 tags: []
 events: []
 organizations: []
 
-sources:
-  - url: https://example.com
-    title: ''
+sources: []
 
 authors:
   - ${process.env.USER ?? 'unknown'}
 reviewers: []
-notes: null
 
 createdAt: ${new Date().toISOString()}
 updatedAt: ${new Date().toISOString()}
@@ -126,20 +116,17 @@ type: company
 status: draft
 
 summary: |
-  待撰写。
+  此条目正在整理，事实与信源仍待编辑核实。
 
 tags: []
 events: []
 people: []
 
-sources:
-  - url: https://example.com
-    title: ''
+sources: []
 
 authors:
   - ${process.env.USER ?? 'unknown'}
 reviewers: []
-notes: null
 
 createdAt: ${new Date().toISOString()}
 updatedAt: ${new Date().toISOString()}
@@ -174,7 +161,7 @@ if (!id) {
 }
 
 // 校验 ID 格式
-if (!/^[a-z0-9][a-z0-9-]*$/.test(id)) {
+if (typeof id !== 'string' || !/^[a-z0-9][a-z0-9-]+$/.test(id)) {
   console.error('❌ ID 必须是 kebab-case（小写字母、数字、连字符）');
   process.exit(1);
 }
@@ -183,8 +170,14 @@ const filePath = join(ROOT, targetDir, `${id}.md`);
 const tmpl = type === 'event' ? templateEvent(id) : type === 'person' ? templatePerson(id) : templateOrg(id);
 
 await mkdir(dirname(filePath), { recursive: true });
-await writeFile(filePath, tmpl, 'utf-8');
+try {
+  await writeFile(filePath, tmpl, { encoding: 'utf-8', flag: 'wx' });
+} catch (error) {
+  if (error.code !== 'EEXIST') throw error;
+  console.error('❌ 同名条目已存在，请使用新 ID；原文件未修改。');
+  process.exit(1);
+}
 
 console.log(`✅ 创建：${filePath}`);
 console.log(`   状态：draft（待撰写）`);
-console.log(`   下一步：填写字段 → 修改 status 为 published`);
+console.log(`   下一步：补齐事实与信源 → 人工核实 → npm run validate → 审核通过后发布`);

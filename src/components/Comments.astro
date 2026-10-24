@@ -6,7 +6,7 @@
  *   - 配置了 PUBLIC_GISCUS_REPO / PUBLIC_GISCUS_REPO_ID / PUBLIC_GISCUS_CATEGORY_ID 时：
  *     渲染 Giscus 评论框（基于 GitHub Discussions）。
  *   - 未配置时：完全不在公开页面展示 Giscus 占位说明，
- *     改为简洁提示"暂未配置 · 可用页面底部更正入口反馈"，不向访客透露技术配置细节。
+ *     显示可直达更正入口的简洁提示。
  */
 
 interface Props {
@@ -46,7 +46,7 @@ const mapTerm = term ?? Astro.url.pathname;
       data-reactions-enabled="1"
       data-emit-metadata="0"
       data-input-position="top"
-      data-theme="preferred_color_scheme"
+      data-theme="dark"
       data-lang="zh-CN"
       data-loading="lazy"
       crossorigin="anonymous"
@@ -56,6 +56,6 @@ const mapTerm = term ?? Astro.url.pathname;
 ) : null}
 {!enabled && (
   <section class="mt-12 pt-6 border-t border-ink-900/30 text-sm text-ink-muted" data-giscus-disabled>
-    评论功能暂未启用。如对条目内容有反馈，请使用页面底部的「报告错误 / 补充证据 / 申请更正」入口。
+    评论功能暂未启用。如对条目内容有反馈，可<a href="#correction" class="underline">报告错误、补充证据或申请更正</a>。
   </section>
 )}

@@ -45,12 +45,7 @@ const showBanner = status === 'archived' || status === 'published';
 
 {showBanner && (
   <aside
-    class:list={[
-      'mb-6 archive-box p-4 text-sm leading-relaxed',
-      status === 'archived' && 'border-l-4 border-archive-seal',
-      status === 'published' && contested === 'partial' && 'border-l-4 border-archive-seal/60',
-      status === 'published' && contested === 'contested' && 'border-l-4 border-archive-seal',
-    ]}
+    class="entry-status-banner mb-6"
     data-entry-status={status}
     data-contested={contested}
   >
@@ -81,3 +76,12 @@ const showBanner = status === 'archived' || status === 'published';
     )}
   </aside>
 )}
+
+<style>
+  .entry-status-banner { padding: 20px 23px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--text); font-size: 13px; line-height: 1.9; }
+  .entry-status-banner .meta-stamp { color: var(--muted); font-size: 10px; letter-spacing: .08em; }
+  .entry-status-banner p:not(.meta-stamp) { color: var(--text); }
+  .entry-status-banner p > span.block { color: var(--muted); }
+  .entry-status-banner[data-entry-status="archived"] { border-style: dashed; }
+  .entry-status-banner time { color: var(--text); }
+</style>

@@ -7,6 +7,3 @@
 # RSS / sitemap 兼容
 /rss /rss.xml 301
 /sitemap /sitemap-index.xml 301
-
-# 投稿页可放在 /submit
-/submit* /submit/:splat 200

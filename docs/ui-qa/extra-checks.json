@@ -1,0 +1,66 @@
+[
+  {
+    "name": "Automatic playback advances",
+    "passed": true
+  },
+  {
+    "name": "Pause preference persists",
+    "passed": true
+  },
+  {
+    "name": "Respects system reduced motion",
+    "passed": true
+  },
+  {
+    "name": "Header hides on downward scroll",
+    "passed": true
+  },
+  {
+    "name": "Header returns on upward scroll",
+    "passed": true
+  },
+  {
+    "name": "Back to top works",
+    "passed": true
+  },
+  {
+    "name": "Home fits 320 px",
+    "passed": true
+  },
+  {
+    "name": "Home fits 360 px",
+    "passed": true
+  },
+  {
+    "name": "Home fits 390 px",
+    "passed": true
+  },
+  {
+    "name": "Home fits 768 px",
+    "passed": true
+  },
+  {
+    "name": "Home fits 1024 px",
+    "passed": true
+  },
+  {
+    "name": "Home fits 1440 px",
+    "passed": true
+  },
+  {
+    "name": "Favorite toggles on",
+    "passed": true
+  },
+  {
+    "name": "Favorite appears in saved list",
+    "passed": true
+  },
+  {
+    "name": "Favorite toggles off",
+    "passed": true
+  },
+  {
+    "name": "Extra interactions have no JavaScript exceptions",
+    "passed": true
+  }
+]

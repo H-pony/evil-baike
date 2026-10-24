@@ -11,7 +11,7 @@
 
 - **事件档案馆**：每条事件按时间线 + 信源记录。
 - **人物 / 机构档案**：交叉引用所有相关事件。
-- **开放投稿**：投稿表单只收集姓名和事件内容，记录保存在后台数据库。
+- **开放投稿**：投稿表单收集称呼和事件内容，私密回执用于查询人工处理结果。
 - **公开 Git 历史**：已发布档案的修改可追溯、可审计。
 
 ## 这不是什么
@@ -33,13 +33,13 @@
 
 ## 部署
 
-完整部署指南见 **[docs/DEPLOY.md](./docs/DEPLOY.md)**。
+完整部署指南见 **[docs/DEPLOY.md](./docs/DEPLOY.md)**。含投稿功能的版本需先按 [后台配置](docs/SUBMISSIONS_SETUP.md) 应用 D1 迁移，再部署。
 
 简版:
 1. 推代码到 GitHub
 2. 在 Cloudflare 控制台创建 Pages 项目,选 `Astro` preset
 3. Build command = `npm run build`,output = `dist`
-4. push 到 main 自动部署
+4. 配置 Cloudflare 原生 Git 部署，或设置 GitHub 仓库变量 `CF_AUTO_DEPLOY=true` 并配置 Actions 凭证后，push 到 main 才会自动部署。当前 Actions 默认仅构建检查，不发布。
 
 零成本、无限流量、全球 CDN。
 
@@ -48,21 +48,25 @@
 ## 快速开始
 
 ```bash
-# 1. 确认 Node 20+（推荐 24 LTS）
+# 1. 确认 Node 22.13+（推荐 24 LTS）
 node -v
 
 # 2. 安装依赖
 npm install
 
-# 3. 启动开发服务器
+# 3. 启动前端开发服务器（不包含后台 API）
 npm run dev
 # → http://localhost:4321
 
 # 4. 构建生产版本
 npm run build
 
-# 5. 验证内容
-npm run validate
+# 5. 完整校验：类型、回归、构建和站内链接
+npm run check:all
+
+# 6. 完整本地预览：包括投稿、审核后台与本地数据库
+npm run dev:full
+# → http://127.0.0.1:8788
 ```
 
 ---
@@ -87,13 +91,13 @@ npm run validate
 │   │   ├── people/                # 人物列表 + 详情
 │   │   ├── organizations/         # 机构列表 + 详情
 │   │   ├── tags/                  # 标签列表 + 详情
-│   │   ├── submit.astro           # 只收集姓名和事件内容的投稿入口
+│   │   ├── submit.astro           # 投稿、更正与私密回执查询
 │   │   └── admin/index.astro      # 浏览量和投稿后台
 │   │   ├── about.astro
 │   │   ├── disclaimer.astro
 │   │   ├── methodology.astro
 │   │   └── 404.astro
-│   └── styles/global.css          # 档案馆 / 报纸风格
+│   └── styles/global.css          # Journal UI / 全站视觉样式
 ├── functions/                     # Cloudflare Pages API：浏览量、投稿、后台
 ├── migrations/                    # D1 数据库初始化
 ├── .github/
@@ -141,7 +145,7 @@ npm run new:organization -- --id=acme-corp
 | `summary` | ✅ | 一句话摘要（10-500 字符） |
 | `sources` | ✅（发布时 ≥2） | 信源列表 |
 | `timeline` | 推荐 | 时间线节点数组 |
-| `riskLevel` | ✅ | `low` / `medium` / `high`（决定前端风险徽章颜色） |
+| `riskLevel` | ✅ | `low` / `medium` / `high`（仅内部编辑审核，不在公开页显示） |
 | `legalReview` | ✅ | 是否经过法律审查 |
 
 ---
@@ -152,9 +156,10 @@ npm run new:organization -- --id=acme-corp
 
 简版：
 
-1. 在[投稿页](https://schemer.online/submit)填写姓名和事件
-2. 维护者在 `/admin` 后台查看并人工审核
-3. 审核通过后编辑档案并发布
+1. 在[投稿页](https://schemer.online/submit)填写称呼和事件，保存私密回执
+2. 维护者在 `/admin` 按状态、分页查看投稿，记录核查进度和处理说明
+3. 审核通过后人工编辑档案并部署，再关联真实公开页面
+4. 投稿者凭回执查询结果；更正、暂不收录也有处理说明
 
 ---
 
@@ -181,6 +186,18 @@ Cloudflare Pages 部署及 D1 后台配置见 [docs/DEPLOY.md](./docs/DEPLOY.md)
 
 ---
 
+## 界面与交互
+
+全站界面参考 [JUNNI](https://junni.co.jp/)，采用深色分块网格、暖白巨字、荧光黄绿强调和全屏菜单。首页品牌与荧光宣言构成真实 CSS 3D 正反面切片舞台：桌面36块、手机18块，舞台统一为100svh。舞台顶部的一次向下滚轮、竖向触摸、ArrowDown / PageDown或空格触发整组约1秒的对角180°翻转；消费本次手势惯性后，下一次下滚自然浏览后续页面，返回顶部上滚可翻回品牌面。精细指针悬停可触发单片360°翻转、邻近倾斜和装饰文字圆环跟随；停止移动后倾斜归零，单片翻完停止动画帧。顶部导航区的滚轮也能触发；触摸从首个竖向移动判定，并保留控件原生点击。
+
+翻转舞台范围内，右上导航全过程透明，无全宽深色遮罩；荧光面按钮切为黑色。背面按各瓦片翻转阶段向边缘延展填缝，悬停时也保留这一处理，避免固定粗黑网格切断小字；静止时另外显示唯一原始文案层。
+
+菜单内可暂停动画；系统减少动态效果优先于用户保存设置，并显示不可点击的系统状态。系统减少动态效果、短屏或无JavaScript时，首屏与宣言恢复为上下正文。舞台离屏或页面隐藏后停止持续动画帧，代码包含锚点焦点、浏览器前进后退恢复、尺寸变化、字体加载及打印前后的处理。站内搜索支持 `⌘K / Ctrl+K`。以上是当前实现说明，验收结论以对应检查记录为准。视觉规范见 [docs/DESIGN-SYSTEM.md](docs/DESIGN-SYSTEM.md)，最新原站与本地实操证据见 [docs/motion-review-2026-10-24](docs/motion-review-2026-10-24)。
+
+首页、事件列表、话题页与事件收藏使用同一套紧凑事件卡：1200px及以上4列、900–1199px为3列、600–899px为2列。手机599px及以下改为单列横排卡，左侧84×104px配图、右侧正文；359px及以下配图缩为68×88px。桌面图片采用2.4:1浅幅裁切，标题完整换行，摘要最多两行，保留分类、状态、日期、时间节点与信源数。
+
+事件封面为主题示意配图，不作为事实或信源证据。素材及提示词记录见 [docs/ui-assets.md](docs/ui-assets.md)，视觉与交互检查见 [design-qa.md](design-qa.md)。
+
 ## 致谢
 
 本站风格受以下启发：
@@ -189,3 +206,11 @@ Cloudflare Pages 部署及 D1 后台配置见 [docs/DEPLOY.md](./docs/DEPLOY.md)
 - Wikipedia 的引用规范
 - Internet Archive 的内容保存理念
 - 维基解密以来各类文档档案站的设计
+
+## 本地完整预览与审核
+
+`npm run dev:full` 会构建页面、应用尚未执行的本地 D1 迁移，并启动 Pages Functions。数据库、运行配置和随机后台凭证位于 `.wrangler/local-preview/`，与生产环境隔离；脚本不会读取项目根目录的生产 `.env`。修改后重新运行即可。可用 `PORT=8790 npm run dev:full` 改端口。
+
+本地后台密码见 `.wrangler/local-preview/.dev.vars` 中 `ADMIN_PASSWORD`，仅限本地测试。首次生成后会保留，文件不进入 Git。不要把本地凭证用于部署。
+
+界面规范见 [docs/DESIGN-SYSTEM.md](docs/DESIGN-SYSTEM.md)；本轮产品逻辑与闭环审核见 [docs/audit-2026-10-23/report.md](docs/audit-2026-10-23/report.md)。

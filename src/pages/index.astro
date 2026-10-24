@@ -1,163 +1,61 @@
 ---
-/**
- * 首页 - 档案馆门面
- */
 import BaseLayout from '~/layouts/BaseLayout.astro';
+import '~/styles/flip-stage.css';
 import EventCard from '~/components/EventCard.astro';
+import PersonCard from '~/components/PersonCard.astro';
+import OrgCard from '~/components/OrgCard.astro';
 import { getCollection } from 'astro:content';
 import { isIndexable } from '~/content.config';
-
-// 仅展示已发布
-const allEvents = await getCollection('events', (e) => isIndexable(e.data.status));
-// 首页"最近归档"按档案更新时间（updatedAt）倒序——与列表页默认"事件发生时间"明确区分
-const published = allEvents.sort(
-  (a, b) => b.data.updatedAt.getTime() - a.data.updatedAt.getTime()
-);
-const recent = published.slice(0, 6);
-
-const allPeople = await getCollection('people', (p) => isIndexable(p.data.status));
-const recentPeople = allPeople.slice(0, 3);
-
-const allOrgs = await getCollection('organizations', (o) => isIndexable(o.data.status));
-const recentOrgs = allOrgs.slice(0, 3);
+import { eventHasPerson, eventHasOrganization } from '~/lib/relations';
+const events = (await getCollection('events', e => isIndexable(e.data.status))).sort((a,b) => b.data.updatedAt.getTime() - a.data.updatedAt.getTime() || b.data.dateStart.getTime() - a.data.dateStart.getTime());
+const people = await getCollection('people', e => isIndexable(e.data.status));
+const organizations = await getCollection('organizations', e => isIndexable(e.data.status));
+const tags = [...new Set(events.flatMap(e => e.data.tags))].slice(0,10);
+const sourceCount = events.reduce((count,event) => count + event.data.sources.length,0);
+const orbit = Array.from('SCROLL DOWN · SCROLL DOWN · ');
 ---
-
-<BaseLayout
-  title="恶人百科"
-  description="公共事件的永久档案馆 · 档案式记录，不作道德定性"
->
-  <!-- 报头宣传语 -->
-  <section class="text-center py-12 lg:py-16 border-b-3 border-double border-ink-900">
-    <p class="meta-stamp mb-4">公元 2024 年起 · 民间档案馆</p>
-    <h1 class="headline text-5xl lg:text-7xl tracking-tight mb-4">
-      恶人百科
-    </h1>
-    <p class="deck text-xl lg:text-2xl max-w-2xl mx-auto leading-relaxed">
-      网络没有记忆。普通人的精力是有限的。<br/>
-      这里，是那些事件的永久档案。
-    </p>
-
-    <div class="flex flex-wrap justify-center gap-3 mt-8">
-      <a href="/events" class="badge badge-published text-base px-4 py-2 no-underline hover:bg-archive-seal transition-colors">
-        浏览事件档案 →
-      </a>
-      <a href="/submit" class="badge border-ink-900 text-ink-900 text-base px-4 py-2 no-underline hover:border-archive-seal hover:text-archive-seal transition-colors">
-        投稿 / 更正
-      </a>
-    </div>
+<BaseLayout title="恶人百科" description="公共事件的永久档案馆 · 沿时间线阅读，循着信源理解事实" fullBleed>
+  <div class="flip-story" data-flip-story><div class="flip-stage">
+  <section class="archive-portal" aria-labelledby="portal-title" data-portal>
+    <div class="portal-tiles" aria-hidden="true">{Array.from({length:36},(_,index)=><div class="portal-tile" style={`--tile-index:${index}`}></div>)}</div>
+    <div class="portal-seams" aria-hidden="true">{Array.from({length:36},()=> <span></span>)}</div>
+    <a class="scroll-orbit" href="#archive" aria-label="向下浏览档案">
+      <span class="orbit-letters" aria-hidden="true">{orbit.map((letter,index)=><span style={`--letter-angle:${index * 360 / orbit.length}deg`}>{letter}</span>)}</span>
+      <span class="orbit-core" aria-hidden="true"><img src="/icons/arrow.svg" alt="" /></span>
+    </a>
+    <div class="portal-brand"><h1 id="portal-title">恶人百科</h1><p class="portal-signature">让事实，留下来。</p></div>
+    <div class="portal-bottom"><span>PUBLIC EVENTS.<br />PERMANENT RECORDS.</span><a href="#archive">探索档案 <img src="/icons/arrow.svg" alt="" /></a><span>独立记录 / 持续核查</span></div>
+    <span class="portal-copyright" aria-hidden="true">© {new Date().getFullYear()} EVIL BAIKE · THE PUBLIC ARCHIVE</span>
   </section>
 
-  <!-- 三大承诺 -->
-  <section class="grid grid-cols-1 md:grid-cols-3 gap-6 py-12 border-b border-ink-900/30">
-    <div class="archive-box">
-      <h3 class="meta-stamp mb-2 text-archive-seal">不作定性</h3>
-      <p class="text-sm leading-relaxed">
-        本站仅汇总事件经过与各方报道，不对当事人作道德或法律定性。
-        "恶人"系档案分类标签。
-      </p>
-    </div>
-    <div class="archive-box">
-      <h3 class="meta-stamp mb-2 text-archive-seal">严格信源</h3>
-      <p class="text-sm leading-relaxed">
-        所有事实须附可溯源链接（官方文件 / 主流媒体 / 公开裁判文书等）。
-        无信源不入档。
-      </p>
-    </div>
-    <div class="archive-box">
-      <h3 class="meta-stamp mb-2 text-archive-seal">开放申诉</h3>
-      <p class="text-sm leading-relaxed">
-        如认为某条目事实错误或存在法律问题，可通过页面底部「报告错误 / 补充证据 / 申请更正」入口反馈。
-      </p>
-    </div>
+  <section class="archive-manifesto" id="archive" aria-labelledby="manifesto-title">
+    <p class="manifesto-outline" aria-hidden="true">FACTS × CONTEXT</p>
+    <div class="manifesto-content"><p class="eyebrow">01 / WHY WE RECORD</p><h2 id="manifesto-title">网络会遗忘。<br />记录，让事实留下来。</h2><p>从一条报道，到完整的来龙去脉。<br />沿着时间线回看经过，循着原始信源理解事实。</p><a href="/events" class="manifesto-link">开始阅读档案 <img src="/icons/arrow.svg" alt="" /></a></div>
+    <div class="manifesto-stats"><span><strong>{events.length.toString().padStart(2,'0')}</strong>事件档案</span><span><strong>{people.length.toString().padStart(2,'0')}</strong>相关人物</span><span><strong>{organizations.length.toString().padStart(2,'0')}</strong>相关机构</span><span><strong>{sourceCount}</strong>可溯信源</span></div>
   </section>
 
-  <!-- 最新事件 -->
-  {recent.length > 0 && (
-    <section class="py-12">
-      <div class="flex items-baseline justify-between mb-6 border-b border-ink-900 pb-2">
-        <h2 class="headline text-3xl">最近归档</h2>
-        <span class="meta-stamp text-ink-muted">按档案更新时间倒序</span>
-      </div>
+  </div></div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {recent.map((event) => (
-          <EventCard
-            id={event.id}
-            title={event.data.title}
-            summary={event.data.summary}
-            type={event.data.type}
-            dateStart={event.data.dateStart}
-            dateEnd={event.data.dateEnd}
-            status={event.data.status}
-            tags={event.data.tags}
-            sourceCount={event.data.sources.length}
-            timelineCount={event.data.timeline.length}
-          />
-        ))}
-      </div>
+  <section class="archive-section archive-records" aria-labelledby="records-heading">
+    <div class="section-masthead"><h2 id="records-heading">RECORDS<span>事件档案</span></h2><p>02 / RECENTLY UPDATED</p></div>
+    <div class="records-grid">{events.slice(0,4).map(event=><EventCard id={event.id} title={event.data.title} summary={event.data.summary} type={event.data.type} dateStart={event.data.dateStart} dateEnd={event.data.dateEnd} status={event.data.status} tags={event.data.tags} sourceCount={event.data.sources.length} timelineCount={event.data.timeline.length}/>)}</div>
+    {events.length === 0 && <p class="archive-box">档案正在整理中。<a href="/submit">提交事件或信源</a></p>}
+    <a href="/events?sort=updated" class="section-text-link">全部事件档案 <img src="/icons/arrow.svg" alt="" /></a>
+  </section>
 
-      <div class="text-center mt-6">
-        <a href="/events" class="meta-stamp text-ink-muted hover:text-archive-seal no-underline">
-          查看全部 [{published.length}] →
-        </a>
-      </div>
-    </section>
-  )}
+  <section class="archive-section" aria-labelledby="index-heading"><div class="section-masthead"><h2 id="index-heading">INDEX<span>人物与机构</span></h2><p>03 / CONNECT THE DOTS</p></div>
+    <div class="index-intro"><p>事件之间，<br />有迹可循。</p><div>从一个名字出发，连接人物、机构与公开记录。收录仅为呈现事件关系，不代表对任何人的定性。</div></div>
+    <div class="index-switch"><h3>相关人物 <span>PEOPLE</span></h3><a href="/people">查看全部 <img src="/icons/arrow.svg" alt="" /></a></div>
+    <div class="entity-grid">{people.slice(0,3).map(person=><PersonCard id={person.id} name={person.data.name} summary={person.data.summary} status={person.data.status} aliases={person.data.aliases} eventCount={events.filter(event=>eventHasPerson(event,person)).length}/>)}</div>
+    <div class="index-switch"><h3>机构记录 <span>ORGANIZATIONS</span></h3><a href="/organizations">查看全部 <img src="/icons/arrow.svg" alt="" /></a></div>
+    <div class="entity-grid org-grid">{organizations.slice(0,4).map(org=><OrgCard id={org.id} name={org.data.name} summary={org.data.summary} type={org.data.type === 'academic' ? '教育机构' : org.data.type === 'government' ? '公共机构' : org.data.type} status={org.data.status} aliases={org.data.aliases} eventCount={events.filter(event=>eventHasOrganization(event,org)).length}/>)}</div>
+  </section>
 
-  <!-- 占位状态 -->
-  {published.length === 0 && (
-    <section class="py-20 text-center">
-      <p class="meta-stamp mb-3">档案馆状态</p>
-      <h2 class="headline text-3xl mb-3">尚无已发布条目</h2>
-      <p class="text-ink-muted max-w-md mx-auto">
-        骨架已建好。首批 3 个占位条目已就位，等待你提供真实事件内容或审核通过第一篇投稿。
-      </p>
-      <a href="/submit" class="inline-block mt-6 badge border-ink-900 text-ink-900 text-base px-4 py-2 no-underline hover:border-archive-seal">
-        成为第一个投稿者 →
-      </a>
-    </section>
-  )}
+  <section class="archive-section archive-topics" aria-labelledby="topics-heading"><div class="section-masthead"><h2 id="topics-heading">TOPICS<span>话题索引</span></h2><p>04 / FOLLOW THE THREAD</p></div><div class="topic-directory">{tags.map((tag,index)=><a href={`/tags/${encodeURIComponent(tag)}`}><span>{String(index+1).padStart(2,'0')}</span><strong>{tag}</strong><img src="/icons/arrow.svg" alt="" /></a>)}</div><a href="/tags" class="section-text-link">全部话题 <img src="/icons/arrow.svg" alt="" /></a></section>
 
-  <!-- 人物与机构入口 -->
-  {(recentPeople.length > 0 || recentOrgs.length > 0) && (
-    <section class="py-12 border-t border-ink-900/30 grid grid-cols-1 md:grid-cols-2 gap-8">
-      {recentPeople.length > 0 && (
-        <div>
-          <div class="flex items-baseline justify-between mb-4 border-b border-ink-900 pb-2">
-            <h2 class="headline text-2xl">人物</h2>
-            <a href="/people" class="meta-stamp text-ink-muted hover:text-archive-seal no-underline">全部 →</a>
-          </div>
-          <ul class="space-y-3">
-            {recentPeople.map((p) => (
-              <li>
-                <a href={`/people/${p.id}`} class="block py-2 hover:text-archive-seal no-underline">
-                  <span class="font-medium">{p.data.name}</span>
-                  <span class="block text-xs text-ink-muted line-clamp-1">{p.data.summary}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {recentOrgs.length > 0 && (
-        <div>
-          <div class="flex items-baseline justify-between mb-4 border-b border-ink-900 pb-2">
-            <h2 class="headline text-2xl">机构</h2>
-            <a href="/organizations" class="meta-stamp text-ink-muted hover:text-archive-seal no-underline">全部 →</a>
-          </div>
-          <ul class="space-y-3">
-            {recentOrgs.map((o) => (
-              <li>
-                <a href={`/organizations/${o.id}`} class="block py-2 hover:text-archive-seal no-underline">
-                  <span class="font-medium">{o.data.name}</span>
-                  <span class="block text-xs text-ink-muted line-clamp-1">{o.data.summary}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </section>
-  )}
+  <section class="archive-values" aria-label="收录原则"><a href="/methodology"><span>01 / SOURCES</span><h2>严格信源</h2><p>事实附可溯源链接。<br />无信源，不入档。</p><img src="/icons/arrow.svg" alt="" /></a><a href="/disclaimer"><span>02 / CONTEXT</span><h2>中立记录</h2><p>保留各方公开陈述。<br />区分指控与调查结论。</p><img src="/icons/arrow.svg" alt="" /></a><a href="/submit"><span>03 / CORRECTIONS</span><h2>开放更正</h2><p>欢迎补充证据、报告错误。<br />让记录持续接近事实。</p><img src="/icons/arrow.svg" alt="" /></a></section>
 </BaseLayout>
+<script>
+  import { initFlipStage } from '~/lib/flip-stage';
+  initFlipStage();
+</script>

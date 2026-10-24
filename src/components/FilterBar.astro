@@ -33,17 +33,9 @@ const { filters, current, basePath, ...attrs } = Astro.props;
 
 function buildUrl(name: string, value: string | null): string {
   const params = new URLSearchParams();
-  for (const [k, v] of Object.entries(current)) {
-    if (!v) continue;
-    if (k === name) {
-      if (value !== null && v !== value) params.set(k, value);
-    } else {
-      params.set(k, v);
-    }
-  }
-  if (!Object.prototype.hasOwnProperty.call(current, name) && value !== null) {
-    params.set(name, value);
-  }
+  for (const [key, entry] of Object.entries(current)) if (entry) params.set(key, entry);
+  if (value === null) params.delete(name);
+  else params.set(name, value);
   const qs = params.toString();
   return qs ? `${basePath}?${qs}` : basePath;
 }
@@ -60,15 +52,14 @@ function activeFilterCount(): number {
 <div class="archive-box mb-6 p-4" {...attrs}>
   <div class="flex items-baseline gap-2 mb-3">
     <span class="meta-stamp">筛选</span>
-    {activeFilterCount() > 0 && (
       <a
         href={basePath}
         data-filter-clear
+        hidden={activeFilterCount() === 0}
         class="meta-stamp text-archive-seal hover:underline no-underline"
       >
-        [清空全部]
+        清除筛选
       </a>
-    )}
   </div>
 
   <div class="space-y-3">
@@ -101,70 +92,47 @@ function activeFilterCount(): number {
   </div>
 </div>
 
+<noscript><p class="text-sm text-ink-muted mb-4">筛选需要启用 JavaScript；当前展示全部档案。</p></noscript>
 <script>
-  /**
-   * FilterBar 点击行为：
-   * 1. preventDefault 阻止默认导航
-   * 2. 读取 link 的 data-* 计算「切换该 filter」后的新 URL：
-   *    - 保留当前 URL 中所有其他 filter 参数
-   *    - 本 filter 参数：点击「全部」→ 删除；点击同名 chip → 切换；点击新 filter → 设置
-   * 3. history.replaceState 不刷新页面
-   * 4. 派发 evil-baike:filter-changed 事件
-   *
-   * 委托到所有 [data-filter-bar] 容器内 a[data-filter-chip] / a[data-filter-all] / a[data-filter-clear]。
-   */
-  function buildNewUrl(name: string, value: string | null): string {
-    const params = new URLSearchParams(window.location.search);
-    if (value === null) {
-      params.delete(name);
-    } else {
-      params.set(name, value);
-    }
-    const qs = params.toString();
-    const path = window.location.pathname;
-    return qs ? `${path}?${qs}` : path;
-  }
-
-  function bindFilterBars() {
-    document.querySelectorAll<HTMLElement>('[data-filter-bar]').forEach((bar) => {
-      const grid = document.querySelector<HTMLElement>('[data-card-grid]');
-      if (!grid) return; // 没有 grid 的页面（如无筛选）不绑
-
-      bar.querySelectorAll<HTMLAnchorElement>('[data-filter-chip]').forEach((link) => {
-        link.addEventListener('click', (e) => {
-          e.preventDefault();
-          const name = link.dataset.filterName ?? '';
-          const value = link.dataset.filterValue ?? '';
-          if (!name) return;
-
-          // 切换语义：若当前已选中该项 → 清除；否则设置
-          const current = new URLSearchParams(window.location.search).get(name);
-          const newValue = current === value ? null : value;
-          const newUrl = buildNewUrl(name, newValue);
-          window.history.replaceState({}, '', newUrl);
-          window.dispatchEvent(new CustomEvent('evil-baike:filter-changed', { detail: { url: newUrl } }));
-        });
+  document.querySelectorAll<HTMLElement>('[data-filter-bar]').forEach((bar) => {
+    const links = Array.from(bar.querySelectorAll<HTMLAnchorElement>('[data-filter-chip], [data-filter-all], [data-filter-clear]'));
+    const names = [...new Set(links.map(link => link.dataset.filterName || link.dataset.filterAll).filter(Boolean))] as string[];
+    const targetUrl = (link: HTMLAnchorElement) => {
+      const params = new URLSearchParams(window.location.search);
+      const name = link.dataset.filterName || link.dataset.filterAll;
+      if (link.hasAttribute('data-filter-clear')) names.forEach(key => params.delete(key));
+      else if (name) {
+        const value = link.dataset.filterValue;
+        if (!value || params.get(name) === value) params.delete(name);
+        else params.set(name, value);
+      }
+      const query = params.toString();
+      return window.location.pathname + (query ? `?${query}` : '');
+    };
+    const syncLinks = () => {
+      const params = new URLSearchParams(window.location.search);
+      links.forEach(link => {
+        link.href = targetUrl(link);
+        if (link.hasAttribute('data-filter-clear')) {
+          link.hidden = !names.some(name => params.has(name));
+          return;
+        }
+        const name = link.dataset.filterName || link.dataset.filterAll || '';
+        const active = (params.get(name) || '') === (link.dataset.filterValue || '');
+        link.classList.toggle('is-active', active);
+        if (active) link.setAttribute('aria-current', 'true');
+        else link.removeAttribute('aria-current');
       });
-
-      bar.querySelectorAll<HTMLAnchorElement>('[data-filter-all]').forEach((link) => {
-        link.addEventListener('click', (e) => {
-          e.preventDefault();
-          const name = link.dataset.filterAll ?? '';
-          if (!name) return;
-          const newUrl = buildNewUrl(name, null);
-          window.history.replaceState({}, '', newUrl);
-          window.dispatchEvent(new CustomEvent('evil-baike:filter-changed', { detail: { url: newUrl } }));
-        });
-      });
-
-      const clearBtn = bar.querySelector<HTMLAnchorElement>('[data-filter-clear]');
-      clearBtn?.addEventListener('click', (e) => {
-        e.preventDefault();
-        window.history.replaceState({}, '', window.location.pathname);
-        window.dispatchEvent(new CustomEvent('evil-baike:filter-changed'));
-      });
-    });
-  }
-
-  bindFilterBars();
+    };
+    links.forEach(link => link.addEventListener('click', event => {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      const url = targetUrl(link);
+      if (url !== window.location.pathname + window.location.search) window.history.pushState({}, '', url);
+      window.dispatchEvent(new CustomEvent('evil-baike:filter-changed'));
+    }));
+    window.addEventListener('popstate', syncLinks);
+    window.addEventListener('evil-baike:filter-changed', syncLinks);
+    syncLinks();
+  });
 </script>

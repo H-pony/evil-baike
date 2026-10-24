@@ -45,7 +45,7 @@ const missingAccess = sources.filter((s) => !s.accessedAt).length;
   <ol class="space-y-3 font-serif">
     {sources.map((src, idx) => (
       <li class="flex gap-3 pb-3 border-b border-ink-900/10 last:border-b-0">
-        <span class="font-mono text-xs text-ink-faded pt-0.5 shrink-0">
+        <span class="source-number">
           [{String(idx + 1).padStart(2, '0')}]
         </span>
         <div class="flex-1 min-w-0">
@@ -79,3 +79,15 @@ const missingAccess = sources.filter((s) => !s.accessedAt).length;
     ))}
   </ol>
 </div>
+
+<style>
+  [data-source-list] { color: var(--text); }
+  [data-source-list] > ol { list-style: none; padding: 0; }
+  [data-source-list] > ol > li { gap: 18px; padding: 22px 0; margin: 0; border-color: var(--line); }
+  .source-number { flex-shrink: 0; padding-top: 3px; color: var(--accent); font-size: 11px; letter-spacing: .03em; }
+  [data-source-list] a { color: var(--text); text-decoration-color: var(--line); text-underline-offset: 4px; }
+  [data-source-list] a:hover { color: var(--accent); }
+  [data-source-list] li > div > a { font-size: 15px; font-weight: 500; line-height: 1.8; }
+  [data-source-list] li > div > div { margin-top: 8px; color: var(--muted); font-size: 11px; line-height: 1.7; }
+  [data-source-list] p { color: var(--muted); line-height: 1.8; }
+</style>

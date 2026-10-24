@@ -1,0 +1,22 @@
+[
+  {
+    "name": "Carousel responds to keyboard",
+    "passed": true
+  },
+  {
+    "name": "Carousel responds to touch swipe",
+    "passed": true
+  },
+  {
+    "name": "Final mobile layout fits 320",
+    "passed": true
+  },
+  {
+    "name": "Final mobile layout fits 360",
+    "passed": true
+  },
+  {
+    "name": "Final mobile layout fits 390",
+    "passed": true
+  }
+]

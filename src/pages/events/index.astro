@@ -63,10 +63,11 @@ const filters = [
 ---
 
 <BaseLayout title="事件档案" description="所有已归档的公共事件">
-  <header class="text-center py-8 border-b-3 border-double border-ink-900 mb-8">
+  <div class="events-browser">
+  <header class="events-header">
     <p class="meta-stamp mb-2">SECTION 01</p>
     <h1 class="headline text-4xl lg:text-5xl">事件档案</h1>
-    <p class="deck mt-2" data-count-line data-total={allEvents.length}>
+    <p class="deck mt-2" data-count-line role="status" aria-live="polite" data-total={allEvents.length}>
       共 {allEvents.length} 条归档 · 当前显示 <span data-current-count>{allEvents.length}</span> 条
     </p>
   </header>
@@ -108,7 +109,7 @@ const filters = [
       data-card-grid
       data-type-field="type"
       data-year-field="dateStart"
-      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+      class="event-card-grid"
     >
       {events.map((event) => (
         <article
@@ -139,13 +140,14 @@ const filters = [
   <p data-empty hidden class="text-center text-ink-muted py-20">
     无匹配条目。<a href="/events">清除筛选</a>或<a href="/submit">提交新事件</a>。
   </p>
+  </div>
 </BaseLayout>
 
 <script>
   /**
    * 客户端筛选 + 排序逻辑：
    * 1. 读取 URL search params（type / year / sort）
-   * 2. 在 [data-filter-bar] 标记当前 active chip（朱砂红高亮）
+   * 2. 在 [data-filter-bar] 标记当前 active chip（统一选中态）
    * 3. 按 sort 参数决定默认排序（事件发生时间 vs 档案更新时间）
    * 4. 遍历 [data-card] 节点，按 data-* 属性判定是否匹配
    * 5. 不匹配的设置 hidden 属性
@@ -170,13 +172,15 @@ const filters = [
         const value = chip.dataset.filterValue ?? '';
         const isActive = filters[name] !== '' && filters[name] === value;
         chip.classList.toggle('is-active', isActive);
-        chip.setAttribute('aria-pressed', String(isActive));
+        if (isActive) chip.setAttribute('aria-current', 'true');
+        else chip.removeAttribute('aria-current');
       });
       bar.querySelectorAll<HTMLAnchorElement>('[data-filter-all]').forEach((chip) => {
         const name = chip.dataset.filterAll as FilterName;
         const isActive = filters[name] === '';
         chip.classList.toggle('is-active', isActive);
-        chip.setAttribute('aria-pressed', String(isActive));
+        if (isActive) chip.setAttribute('aria-current', 'true');
+        else chip.removeAttribute('aria-current');
       });
     }
 
@@ -185,7 +189,12 @@ const filters = [
       const linkSort = link.dataset.sortValue as SortName;
       const isActive = linkSort === sort;
       link.classList.toggle('is-active', isActive);
-      link.setAttribute('aria-pressed', String(isActive));
+      if (isActive) link.setAttribute('aria-current', 'true');
+      else link.removeAttribute('aria-current');
+      const nextParams = new URLSearchParams(window.location.search);
+      if (linkSort === 'event') nextParams.delete('sort');
+      else nextParams.set('sort', linkSort);
+      link.href = window.location.pathname + (nextParams.size ? `?${nextParams}` : '');
     });
 
     // 过滤卡片
@@ -213,7 +222,7 @@ const filters = [
       visibleCards.sort((a, b) => {
         const av = sort === 'updated' ? (a.dataset.updated ?? '') : (a.dataset.date ?? '');
         const bv = sort === 'updated' ? (b.dataset.updated ?? '') : (b.dataset.date ?? '');
-        return bv.localeCompare(av);
+        return bv.localeCompare(av) || (b.dataset.date ?? '').localeCompare(a.dataset.date ?? '') || (a.dataset.id ?? '').localeCompare(b.dataset.id ?? '');
       });
       // 重排 DOM
       const frag = document.createDocumentFragment();
@@ -238,30 +247,45 @@ const filters = [
   // 排序切换：拦截链接 click
   document.querySelectorAll<HTMLAnchorElement>('[data-sort-bar] [data-sort-link]').forEach((link) => {
     link.addEventListener('click', (e) => {
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       e.preventDefault();
       const params = new URLSearchParams(window.location.search);
       const value = link.dataset.sortValue ?? 'event';
-      params.set('sort', value);
+      if (value === 'event') params.delete('sort');
+      else params.set('sort', value);
       const qs = params.toString();
       const newUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
-      window.history.replaceState({}, '', newUrl);
+      if (newUrl !== window.location.pathname + window.location.search) window.history.pushState({}, '', newUrl);
       window.dispatchEvent(new CustomEvent('evil-baike:filter-changed', { detail: { url: newUrl } }));
     });
   });
   applyFilter();
 </script>
 
-<style is:global>
-  /* FilterBar active chip（运行时由 JS 切换） */
-  [data-filter-bar] a.is-active {
-    border-color: rgb(168 57 46) !important;
-    background-color: rgb(168 57 46 / 0.1) !important;
-    color: rgb(168 57 46) !important;
-  }
-  /* 排序按钮 active 态 */
-  [data-sort-bar] a.is-active {
-    border-color: rgb(168 57 46) !important;
-    background-color: rgb(168 57 46 / 0.1) !important;
-    color: rgb(168 57 46) !important;
+<style>
+  .events-browser { margin-top: -26px; }
+  .events-header { padding: 0 0 14px; margin-bottom: 14px; border-bottom: 1px solid var(--line); text-align: left; }
+  .events-header > .meta-stamp { margin-bottom: 4px; font-size: 10px; line-height: 1.5; letter-spacing: .12em; }
+  .events-header h1 { margin: 0; font-size: clamp(30px, 3vw, 40px); line-height: 1.2; letter-spacing: -.04em; }
+  .events-header .deck { margin-top: 6px; font-size: 13px; line-height: 1.6; }
+  .events-browser :global([data-sort-bar]) { gap: 8px; margin-bottom: 8px; }
+  .events-browser :global([data-sort-bar] .meta-stamp) { font-size: 11px; }
+  .events-browser :global([data-sort-bar] a) { min-height: 44px; padding: 8px 12px; font-size: 11px; }
+  .events-browser :global([data-filter-bar="events"]) { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 16px; padding: 8px 12px; margin-bottom: 16px; }
+  .events-browser :global([data-filter-bar="events"] > div:first-child) { align-items: center; gap: 8px; margin: 0; }
+  .events-browser :global([data-filter-bar="events"] > .space-y-3) { display: flex; flex: 1; flex-wrap: wrap; align-items: center; gap: 4px 16px; }
+  .events-browser :global([data-filter-bar="events"] > .space-y-3 > div) { align-items: center; margin: 0; gap: 4px; }
+  .events-browser :global([data-filter-bar="events"] > .space-y-3 > div > span) { width: auto; min-width: 28px; font-size: 10px; }
+  .events-browser :global([data-filter-bar="events"] a) { min-height: 44px; padding: 8px 10px; font-size: 10px; }
+  .events-browser :global([data-filter-bar="events"] > div:first-child > .meta-stamp) { font-size: 10px; }
+  @media (max-width: 599px) {
+    .events-browser { margin-top: -8px; }
+    .events-header { padding-bottom: 12px; margin-bottom: 10px; }
+    .events-header h1 { font-size: 30px; }
+    .events-header .deck { font-size: 12px; }
+    .events-browser :global([data-filter-bar="events"]) { display: block; padding: 8px 10px; margin-bottom: 12px; }
+    .events-browser :global([data-filter-bar="events"] > div:first-child) { min-height: 20px; margin-bottom: 3px; }
+    .events-browser :global([data-filter-bar="events"] > .space-y-3) { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+    .events-browser :global([data-filter-bar="events"] a) { padding-inline: 9px; }
   }
 </style>

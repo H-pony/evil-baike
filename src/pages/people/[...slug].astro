@@ -8,6 +8,7 @@ import EntryLayout from '~/layouts/EntryLayout.astro';
 import EntityLink from '~/components/EntityLink.astro';
 import { getCollection, render } from 'astro:content';
 import { isPubliclyVisible, isIndexable } from '~/content.config';
+import { eventHasPerson, personHasOrganization, getEventOrganizations } from '~/lib/relations';
 import type { GetStaticPaths } from 'astro';
 
 export const getStaticPaths = (async () => {
@@ -24,11 +25,11 @@ const { Content } = await render(person);
 // 找出涉及此人的事件（仅列出已发布）
 const allEvents = await getCollection('events', (e) => isIndexable(e.data.status));
 const relatedEvents = allEvents
-  .filter((e) => e.data.people.includes(person.id))
+  .filter((e) => eventHasPerson(e, person))
   .sort((a, b) => b.data.dateStart.getTime() - a.data.dateStart.getTime());
 
 const orgs = await getCollection('organizations', (o) => isPubliclyVisible(o.data.status));
-const orgsMap = new Map(orgs.map((o) => [o.id, o]));
+const relatedOrgs = orgs.filter(org => personHasOrganization(person, org));
 
 const typeLabels: Record<string, string> = {
   criminal: '刑事',
@@ -70,18 +71,13 @@ const typeLabels: Record<string, string> = {
 >
   <Content />
 
-  {person.data.organizations.length > 0 && (
+  {relatedOrgs.length > 0 && (
     <section class="mt-10 pt-6 border-t border-ink-900/30">
       <h2 class="headline text-xl mb-4">关联机构</h2>
       <div class="flex flex-wrap gap-2">
-        {person.data.organizations.map((id) => {
-          const o = orgsMap.get(id);
-          return (
-            <EntityLink type="organization" id={id}>
-              {o?.data.name ?? id}
-            </EntityLink>
-          );
-        })}
+        {relatedOrgs.map(org => (
+          <EntityLink type="organization" id={org.id}>{org.data.name}</EntityLink>
+        ))}
       </div>
     </section>
   )}
@@ -94,10 +90,10 @@ const typeLabels: Record<string, string> = {
       </div>
       <ul class="space-y-3">
         {relatedEvents.map((e) => (
-          <li>
+          <li class="archive-box">
             <a
               href={`/events/${e.id}`}
-              class="block archive-box hover:border-archive-seal transition-colors no-underline"
+              class="block hover:text-archive-seal transition-colors no-underline"
             >
               <div class="flex items-center gap-2 mb-2 flex-wrap">
                 <span class="meta-stamp border border-ink-900/30 px-2 py-0.5">
@@ -112,17 +108,15 @@ const typeLabels: Record<string, string> = {
                 {e.data.title}
               </h3>
               <p class="text-sm text-ink-muted line-clamp-2">{e.data.summary}</p>
-              {e.data.organizations.length > 0 && (
+              </a>
+              {getEventOrganizations(e, orgs).length > 0 && (
                 <div class="flex flex-wrap gap-1.5 mt-2">
                   <span class="meta-stamp text-ink-faded text-xs">涉及机构：</span>
-                  {e.data.organizations.map((oid) => (
-                    <EntityLink type="organization" id={oid}>
-                      {orgsMap.get(oid)?.data.name ?? oid}
-                    </EntityLink>
+                  {getEventOrganizations(e, orgs).map(org => (
+                    <EntityLink type="organization" id={org.id}>{org.data.name}</EntityLink>
                   ))}
                 </div>
               )}
-            </a>
           </li>
         ))}
       </ul>

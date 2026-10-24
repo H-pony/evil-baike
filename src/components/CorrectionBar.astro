@@ -9,19 +9,19 @@ interface Props {
 }
 
 const { type, id, title, url } = Astro.props;
-const eventContext = `关于条目 ${type}/${id}：${title}\n页面：${url}\n\n请描述你要补充或更正的事件内容。`;
+const eventContext = `关于条目 ${type}/${id}：${title}\n页面：${url}\n\n请说明需要补充、更正或申诉的具体内容，并附公开信源链接。`;
 const submissionUrl = `/submit?event=${encodeURIComponent(eventContext)}`;
 ---
 
-<section class="mt-12 pt-6 border-t border-ink-900/30" data-correction-bar>
+<section id="correction" class="mt-12 pt-6 border-t border-ink-900/30" data-correction-bar>
   <h2 class="headline text-2xl mb-3 pb-2 border-b border-ink-900">补充或更正条目</h2>
   <p class="text-sm text-ink-muted mb-4 leading-relaxed">
     如果你发现本条目的事实有遗漏或错误，可以提交补充。投稿表单会自动带上当前条目名称和页面地址。
   </p>
   <a
     href={submissionUrl}
-    class="inline-flex items-center gap-2 px-3 py-2 border border-archive-seal text-archive-seal hover:bg-archive-seal hover:text-archive-paper transition-colors text-sm no-underline"
+    class="pill-button"
   >
-    <span class="font-mono uppercase tracking-wider text-xs">打开投稿表单 →</span>
+    <span class="font-mono uppercase tracking-wider text-xs">补充 / 更正 / 申诉 →</span>
   </a>
 </section>

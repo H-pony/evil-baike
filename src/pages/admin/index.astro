@@ -2,13 +2,13 @@
 import BaseLayout from '~/layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="浏览量后台" description="恶人百科站点浏览量管理后台" noIndex={true}>
+<BaseLayout title="管理后台" description="恶人百科投稿审核与浏览量管理后台" noIndex={true}>
   <div class="admin-shell">
     <header class="admin-header">
       <div>
         <p class="admin-eyebrow">SITE ADMINISTRATION</p>
-        <h1>浏览量后台</h1>
-        <p class="admin-subtitle">恶人百科 · 页面浏览统计</p>
+        <h1>管理后台</h1>
+        <p class="admin-subtitle">恶人百科 · 投稿审核与页面浏览统计</p>
       </div>
       <a class="admin-home-link" href="/">返回网站 <span aria-hidden="true">↗</span></a>
     </header>
@@ -16,7 +16,7 @@ import BaseLayout from '~/layouts/BaseLayout.astro';
     <section id="login-view" class="admin-panel login-panel" aria-labelledby="login-title" hidden>
       <p class="admin-eyebrow">ADMIN ACCESS</p>
       <h2 id="login-title">登录后台</h2>
-      <p class="admin-muted">输入后台密码查看站点浏览量。</p>
+      <p class="admin-muted">输入后台密码查看投稿队列与站点浏览量。</p>
       <form id="login-form" class="login-form">
         <label for="admin-password">后台密码</label>
         <input id="admin-password" name="password" type="password" autocomplete="current-password" required maxlength="256" />
@@ -30,7 +30,7 @@ import BaseLayout from '~/layouts/BaseLayout.astro';
         <div>
           <p class="admin-eyebrow">TRAFFIC OVERVIEW</p>
           <h2 id="dashboard-title">站点浏览量</h2>
-          <p class="admin-muted">按香港时间统计页面打开次数（PV），不代表独立访客数。</p>
+          <p class="admin-muted">按北京时间统计页面打开次数（PV），不代表独立访客数。</p>
         </div>
         <div class="dashboard-actions">
           <button id="refresh-button" class="button-secondary" type="button">刷新数据</button>
@@ -42,7 +42,7 @@ import BaseLayout from '~/layouts/BaseLayout.astro';
 
       <div class="stats-grid" aria-label="浏览量汇总">
         <article class="stat-card stat-primary"><span>累计浏览量</span><strong id="stat-total">—</strong><small>自统计功能上线起</small></article>
-        <article class="stat-card"><span>今日</span><strong id="stat-today">—</strong><small>香港时间</small></article>
+        <article class="stat-card"><span>今日</span><strong id="stat-today">—</strong><small>北京时间</small></article>
         <article class="stat-card"><span>近 7 天</span><strong id="stat-week">—</strong><small>含今天</small></article>
         <article class="stat-card"><span>近 30 天</span><strong id="stat-month">—</strong><small>含今天</small></article>
       </div>
@@ -72,95 +72,137 @@ import BaseLayout from '~/layouts/BaseLayout.astro';
 
       <section class="admin-panel submissions-panel" aria-labelledby="submissions-title">
         <div class="panel-heading">
-          <div><p class="admin-eyebrow">INCOMING SUBMISSIONS</p><h3 id="submissions-title">投稿记录</h3></div>
+          <div><p class="admin-eyebrow">INCOMING SUBMISSIONS</p><h3 id="submissions-title">投稿审核队列</h3></div>
           <span id="submission-count" class="admin-muted"></span>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th scope="col">姓名</th><th scope="col">事件</th><th scope="col">提交时间</th></tr></thead>
-            <tbody id="submissions-table"></tbody>
-          </table>
-        </div>
+        <p class="admin-muted">投稿不会自动发布。完成档案编辑与部署后，关联真实档案并更新状态；处理说明可由持有回执的投稿者查看。</p>
+        <div class="submission-toolbar"><label for="submission-filter">处理状态</label><select id="submission-filter"><option value="">全部状态</option><option value="received">待查看</option><option value="reviewing">核查中</option><option value="accepted">待整理发布</option><option value="published">已收录 / 更新</option><option value="resolved">已处理</option><option value="rejected">暂不收录</option></select><span id="pending-count" class="admin-muted"></span></div>
+        <p id="queue-message" class="admin-message" role="status" aria-live="polite"></p>
+        <div id="submissions-list" class="submissions-list"></div>
+        <nav class="submission-pagination" aria-label="投稿分页"><button id="previous-page" class="button-secondary" type="button" disabled>上一页</button><span id="page-indicator" aria-live="polite">第 1 页</span><button id="next-page" class="button-secondary" type="button" disabled>下一页</button></nav>
       </section>
       <p class="privacy-note">统计只保存日期、页面路径和浏览次数，不收集访客 IP、Cookie 或浏览器信息。</p>
     </section>
   </div>
 </BaseLayout>
 
-<style>
-  .admin-shell { max-width: 1120px; margin: 0 auto; color: #211d19; }
+<style is:global>
+  .admin-shell { max-width: 1200px; margin: 0 auto; color: var(--text); font-family: ui-sans-serif, system-ui, sans-serif; }
   .admin-header, .dashboard-heading, .panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; }
-  .admin-header { padding: .75rem 0 2rem; border-bottom: 1px solid #ddd5c8; margin-bottom: 2.5rem; }
-  .admin-eyebrow { margin: 0 0 .55rem; color: #9b7654; font: 700 .67rem/1.3 ui-sans-serif, system-ui, sans-serif; letter-spacing: .16em; }
-  .admin-header h1, .dashboard-heading h2, .login-panel h2 { margin: 0; font: 500 clamp(1.8rem, 4vw, 2.5rem)/1.1 Georgia, 'Noto Serif SC', serif; }
-  .admin-subtitle, .admin-muted { color: #81796f; font: .85rem/1.6 ui-sans-serif, system-ui, sans-serif; }
-  .admin-subtitle { margin: .45rem 0 0; }
-  .admin-home-link { color: #67553f; font: 600 .82rem ui-sans-serif, system-ui, sans-serif; text-decoration: none; white-space: nowrap; }
-  .admin-home-link:hover { color: #a27647; }
-  .admin-panel { border: 1px solid #e3ddd3; background: #fffefa; padding: 1.4rem; }
-  .login-panel { max-width: 440px; margin: 0 auto; padding: 2rem; }
-  .login-panel h2 { font-size: 1.7rem; }
-  .login-form { display: grid; gap: .65rem; margin-top: 1.5rem; }
-  .login-form label { font: 600 .82rem ui-sans-serif, system-ui, sans-serif; }
-  .login-form input { width: 100%; border: 1px solid #cec5b8; border-radius: 3px; padding: .75rem .8rem; background: white; color: #211d19; font: 1rem ui-sans-serif, system-ui, sans-serif; }
-  .login-form input:focus { outline: 2px solid #9b7654; outline-offset: 1px; }
-  .login-form button, .button-secondary { min-height: 40px; border: 1px solid #4d4031; border-radius: 3px; padding: .55rem .9rem; font: 600 .8rem ui-sans-serif, system-ui, sans-serif; cursor: pointer; }
-  .login-form button { margin-top: .35rem; background: #30281f; color: #fff; }
-  .login-form button:disabled, .button-secondary:disabled { opacity: .55; cursor: wait; }
-  .button-secondary { background: #fffefa; color: #514638; }
-  .button-secondary:hover { background: #f4eee4; }
-  .admin-message { min-height: 1.4em; margin: .75rem 0 0; color: #a0392a; font: .82rem/1.5 ui-sans-serif, system-ui, sans-serif; }
+  .admin-header { padding: clamp(1.4rem, 4vw, 3rem) 0 2rem; border-bottom: 1px solid var(--line); margin-bottom: 2.5rem; }
+  .admin-eyebrow { margin: 0 0 .7rem; color: var(--accent); font: 750 .68rem/1.3 ui-sans-serif, system-ui, sans-serif; letter-spacing: .16em; }
+  .admin-header h1 { margin: 0; color: var(--text); font: 850 clamp(2.5rem, 6vw, 4.7rem)/1.06 ui-sans-serif, system-ui, sans-serif; letter-spacing: -.055em; }
+  .dashboard-heading h2, .login-panel h2 { margin: 0; color: var(--text); font: 800 clamp(1.7rem, 3vw, 2.3rem)/1.15 ui-sans-serif, system-ui, sans-serif; letter-spacing: -.035em; }
+  .admin-subtitle, .admin-muted { color: var(--muted); font: .85rem/1.7 ui-sans-serif, system-ui, sans-serif; }
+  .admin-subtitle { margin: .8rem 0 0; }
+  .admin-home-link { display: inline-flex; align-items: center; min-height: 44px; gap: .6rem; color: var(--text); font: 650 .82rem ui-sans-serif, system-ui, sans-serif; text-decoration: none; white-space: nowrap; }
+  .admin-home-link:hover { color: var(--accent); }
+  .admin-panel { border-radius: 12px; border: 1px solid var(--line); background: var(--surface); padding: 1.5rem; }
+  .login-panel { max-width: 460px; margin: 0 auto; padding: 2rem; }
+  .login-panel h2 { font-size: 2rem; }
+  .login-form { display: grid; gap: .7rem; margin-top: 1.7rem; }
+  .login-form label { font: 650 .85rem ui-sans-serif, system-ui, sans-serif; }
+  .login-form input { width: 100%; min-height: 48px; border: 1px solid var(--line); border-radius: 10px; padding: .85rem .9rem; background: var(--page); color: var(--text); font: 1rem ui-sans-serif, system-ui, sans-serif; caret-color: var(--accent); color-scheme: dark; }
+  .login-form input:focus { outline: 2px solid var(--accent); outline-offset: 3px; border-color: var(--accent); }
+  .login-form input:user-invalid { border-color: #ff9588; }
+  .login-form button, .admin-shell .button-secondary { min-height: 44px; border: 1px solid var(--line); border-radius: 10px; padding: .75rem 1rem; font: 700 .8rem ui-sans-serif, system-ui, sans-serif; cursor: pointer; transition: background .18s, border-color .18s; }
+  .login-form button { min-height: 48px; margin-top: .4rem; background: var(--accent); border-color: var(--accent); color: var(--page); }
+  .login-form button:hover { background: #e2ff76; border-color: #e2ff76; }
+  .login-form button:disabled, .admin-shell .button-secondary:disabled { opacity: .45; cursor: wait; }
+  .admin-shell .button-secondary { background: transparent; color: var(--text); }
+  .admin-shell .button-secondary:hover { color: var(--accent); background: var(--surface-raised); border-color: var(--accent); }
+  .admin-shell button:focus-visible, .admin-shell a:focus-visible, .submission-history summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+  .admin-message { min-height: 1.4em; margin: .8rem 0 0; color: var(--muted); font: .83rem/1.6 ui-sans-serif, system-ui, sans-serif; }
+  .admin-message[data-state="error"] { color: #ff9588; }
+  .admin-message[data-state="success"] { color: var(--accent); }
   .dashboard-heading { align-items: flex-end; margin-bottom: .5rem; }
-  .dashboard-heading h2 { font-size: 1.9rem; }
-  .dashboard-heading .admin-muted { margin: .45rem 0 0; }
-  .dashboard-actions { display: flex; gap: .55rem; }
-  .stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .85rem; margin: 1.1rem 0; }
-  .stat-card { display: grid; gap: .45rem; border: 1px solid #e3ddd3; padding: 1.1rem 1.2rem; background: #fffefa; }
-  .stat-card > span { color: #766d62; font: 600 .78rem ui-sans-serif, system-ui, sans-serif; }
-  .stat-card strong { font: 500 clamp(1.65rem, 3vw, 2.2rem)/1 Georgia, 'Noto Serif SC', serif; font-variant-numeric: tabular-nums; }
-  .stat-card small { color: #999084; font: .7rem ui-sans-serif, system-ui, sans-serif; }
-  .stat-primary { border-top: 3px solid #8e704e; }
-  .dashboard-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(280px, .9fr); gap: .9rem; margin-top: .9rem; }
+  .dashboard-heading .admin-muted { margin: .55rem 0 0; }
+  .dashboard-actions { display: flex; gap: .6rem; }
+  .stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .65rem; margin: 1.1rem 0; }
+  .stat-card { border-radius: 12px; display: grid; gap: .65rem; border: 1px solid var(--line); padding: 1.3rem; background: var(--surface); }
+  .stat-card > span { color: var(--muted); font: 650 .8rem ui-sans-serif, system-ui, sans-serif; }
+  .stat-card strong { color: var(--text); font: 800 clamp(2rem, 4vw, 3rem)/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: -.05em; font-variant-numeric: tabular-nums; }
+  .stat-card small { color: var(--muted); font: .72rem ui-sans-serif, system-ui, sans-serif; }
+  .stat-primary { border-top: 3px solid var(--accent); }
+  .stat-primary strong { color: var(--accent); }
+  .dashboard-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(280px, .9fr); gap: .65rem; margin-top: .65rem; }
   .panel-heading { align-items: flex-start; margin-bottom: 1.2rem; }
-  .panel-heading h3 { margin: 0; font: 500 1.15rem Georgia, 'Noto Serif SC', serif; }
-  .panel-heading .admin-muted { margin: .25rem 0 0; font-size: .72rem; }
-  .chart-legend { display: flex; align-items: center; gap: .4rem; color: #81796f; font: .7rem ui-sans-serif, system-ui, sans-serif; white-space: nowrap; }
-  .chart-legend i { width: .5rem; height: .5rem; border-radius: 50%; background: #a98965; }
-  .daily-chart { display: grid; grid-template-columns: repeat(30, minmax(7px, 1fr)); align-items: end; gap: 4px; min-width: 600px; height: 170px; padding: .3rem 0 1.5rem; border-bottom: 1px solid #e6dfd5; }
-  .chart-scroll { overflow-x: auto; }
+  .panel-heading h3 { margin: 0; color: var(--text); font: 750 1.25rem/1.3 ui-sans-serif, system-ui, sans-serif; letter-spacing: -.025em; }
+  .panel-heading .admin-muted { margin: .25rem 0 0; font-size: .75rem; }
+  .chart-legend { display: flex; align-items: center; gap: .4rem; color: var(--muted); font: .72rem ui-sans-serif, system-ui, sans-serif; white-space: nowrap; }
+  .chart-legend i { width: .5rem; height: .5rem; border-radius: 50%; background: var(--accent); }
+  .daily-chart { display: grid; grid-template-columns: repeat(30, minmax(7px, 1fr)); align-items: end; gap: 4px; min-width: 600px; height: 170px; padding: .3rem 0 1.5rem; border-bottom: 1px solid var(--line); }
+  .chart-scroll { overflow-x: auto; scrollbar-color: var(--line) var(--surface); }
   .chart-day { position: relative; height: 100%; display: flex; align-items: flex-end; justify-content: center; }
-  .chart-bar { width: min(100%, 13px); min-height: 2px; height: var(--bar-height); background: #b79a76; border-radius: 2px 2px 0 0; }
-  .chart-day:nth-child(5n + 1)::after { content: attr(data-label); position: absolute; top: calc(100% + .45rem); left: 50%; transform: translateX(-50%); color: #92897d; font: .6rem ui-sans-serif, system-ui, sans-serif; white-space: nowrap; }
-  .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; text-align: left; }
-  th { padding: .5rem .35rem; color: #9a9083; font: 600 .67rem ui-sans-serif, system-ui, sans-serif; }
-  td { padding: .66rem .35rem; border-top: 1px solid #eee8df; font: .77rem/1.4 ui-sans-serif, system-ui, sans-serif; }
-  td:last-child, th:last-child { width: 74px; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .page-link { color: #584a39; text-decoration: none; overflow-wrap: anywhere; }
-  .page-link:hover { text-decoration: underline; }
-  .empty-row { color: #92897d; text-align: center !important; padding: 1.5rem .35rem; }
-  .submissions-panel { margin-top: .9rem; }
-  .submissions-panel td { vertical-align: top; }
-  .submission-event { min-width: 260px; max-width: 600px; max-height: 160px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
-  .submission-time { min-width: 130px; color: #81796f; white-space: nowrap; }
-  .privacy-note { margin: 1rem 0 0; color: #92897d; font: .72rem/1.5 ui-sans-serif, system-ui, sans-serif; }
-  [hidden] { display: none !important; }
-  @media (max-width: 760px) {
-    .admin-header { margin-bottom: 1.6rem; }
-    .dashboard-heading { align-items: flex-start; flex-direction: column; gap: .8rem; }
-    .dashboard-actions { width: 100%; }
-    .dashboard-actions button { flex: 1; }
-    .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .dashboard-grid { grid-template-columns: 1fr; }
-  }
-  @media (max-width: 420px) {
-    .admin-panel { padding: 1rem; }
-    .login-panel { padding: 1.4rem; }
-    .admin-header { gap: .6rem; }
-  }
+  .chart-bar { width: min(100%, 13px); min-height: 2px; height: var(--bar-height); background: var(--accent); border-radius: 2px 2px 0 0; }
+  .chart-day:nth-child(5n + 1)::after { content: attr(data-label); position: absolute; top: calc(100% + .45rem); left: 50%; transform: translateX(-50%); color: var(--muted); font: .62rem ui-sans-serif, system-ui, sans-serif; white-space: nowrap; }
+  .admin-shell .table-wrap { overflow-x: auto; }
+  .admin-shell table { width: 100%; border-collapse: collapse; text-align: left; }
+  .admin-shell th { padding: .6rem .35rem; color: var(--muted); font: 650 .72rem ui-sans-serif, system-ui, sans-serif; }
+  .admin-shell td { padding: .8rem .35rem; border-top: 1px solid var(--line); font: .8rem/1.5 ui-sans-serif, system-ui, sans-serif; }
+  .admin-shell td:last-child, .admin-shell th:last-child { width: 74px; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .page-link { color: var(--text); text-decoration: none; overflow-wrap: anywhere; }
+  .page-link:hover { color: var(--accent); text-decoration: underline; text-underline-offset: .25em; }
+  .empty-row { color: var(--muted); text-align: center !important; padding: 1.5rem .35rem; }
+  .submissions-panel { margin-top: .65rem; }
+  .privacy-note { margin: 1.2rem 0 0; color: var(--muted); font: .75rem/1.7 ui-sans-serif, system-ui, sans-serif; }
+  .admin-shell [hidden] { display: none !important; }
+  .submission-toolbar, .submission-pagination { display: flex; gap: .7rem; align-items: center; flex-wrap: wrap; margin: 1.2rem 0; font: .84rem/1.5 ui-sans-serif, system-ui, sans-serif; }
+  .submission-pagination { justify-content: center; margin-bottom: 0; }
+  .submission-toolbar select, .submission-review input, .submission-review select, .submission-review textarea { width: 100%; min-height: 44px; padding: .7rem .8rem; border: 1px solid var(--line); border-radius: 10px; color: var(--text); background: var(--page); font: .9rem/1.5 ui-sans-serif, system-ui, sans-serif; caret-color: var(--accent); color-scheme: dark; }
+  .submission-toolbar select { width: auto; }
+  .submission-review input::placeholder, .submission-review textarea::placeholder { color: var(--muted); opacity: .8; }
+  .submission-review input:focus, .submission-review select:focus, .submission-review textarea:focus, .submission-toolbar select:focus { outline: 2px solid var(--accent); outline-offset: 3px; border-color: var(--accent); }
+  .submission-review input:user-invalid, .submission-review textarea:user-invalid { border-color: #ff9588; }
+  .submission-review input:disabled { opacity: .45; }
+  .submission-record { border-top: 1px solid var(--line); padding: 1.5rem 0; }
+  .submission-record-header { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; }
+  .submission-record-header h4 { color: var(--text); font-size: 1.1rem; font-weight: 750; margin: 0; overflow-wrap: anywhere; }
+  .submission-status { color: var(--text); font: 650 .75rem/1.5 ui-sans-serif, system-ui, sans-serif; padding: .3rem .6rem; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-raised); }
+  .submission-status[data-state="error"] { color: #ff9588; }
+  .submission-status[data-state="success"] { color: var(--accent); }
+  .submission-content { color: var(--text); white-space: pre-wrap; overflow-wrap: anywhere; font: .9rem/1.8 ui-sans-serif, system-ui, sans-serif; max-height: 22rem; overflow: auto; margin: 1rem 0; padding: 1.1rem; border: 1px solid var(--line); border-radius: 10px; background: var(--page); scrollbar-color: var(--line) var(--page); }
+  .submission-review { display: grid; grid-template-columns: minmax(160px, 1fr) minmax(200px, 2fr); gap: .9rem; }
+  .submission-review label { display: grid; gap: .45rem; color: var(--text); font: 650 .8rem/1.5 ui-sans-serif, system-ui, sans-serif; }
+  .submission-review .review-note, .submission-review .review-feedback { grid-column: 1 / -1; }
+  .submission-review textarea { resize: vertical; }
+  .submission-review button { justify-self: start; }
+  .submission-review button[type="submit"] { background: var(--accent); color: var(--page); border-color: var(--accent); }
+  .submission-review button[type="submit"]:hover { background: #e2ff76; border-color: #e2ff76; }
+  .submission-history { color: var(--muted); font: .8rem/1.7 ui-sans-serif, system-ui, sans-serif; margin-top: .8rem; }
+  .submission-history summary { min-height: 44px; cursor: pointer; padding: .7rem 0; color: var(--text); }
+  .submission-history li { margin: .6rem 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+  @media (max-width: 760px) { .admin-header { margin-bottom: 1.6rem; } .dashboard-heading { align-items: flex-start; flex-direction: column; gap: .8rem; } .dashboard-actions { width: 100%; } .dashboard-actions button { flex: 1; } .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dashboard-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 600px) { .submission-review { grid-template-columns: 1fr; } }
+  @media (max-width: 420px) { .admin-panel { padding: 1rem; } .login-panel { padding: 1.4rem; } .admin-header { gap: .6rem; align-items: flex-start; flex-direction: column; } }
+  @media (prefers-reduced-motion: reduce) { .login-form button, .admin-shell .button-secondary { transition: none; } }
 </style>
 
 <script>
+  type MessageState = 'neutral' | 'error' | 'success';
+  function setMessage(element: HTMLElement, text: string, state: MessageState = 'neutral') {
+    element.textContent = text;
+    element.dataset.state = state;
+  }
+  type DailyView = { day: string; views: number };
+  type PageView = { path: string; views: number };
+  type Submission = { id: number; name: string; event: string; submittedAt: string; updatedAt: string; status: string; response: string; publishedPath: string; version: number; hasReceipt: number };
+  type History = { submissionId: number; fromStatus: string; toStatus: string; response: string; publishedPath: string; changedAt: string };
+  type QueueData = { submissions: Submission[]; history: History[]; counts: { status: string; count: number }[]; page: number; pageCount: number; total: number; error?: string };
+  const statusLabels: Record<string, string> = { received: '待查看', reviewing: '核查中', accepted: '待整理发布', published: '已收录 / 更新', resolved: '已处理', rejected: '暂不收录' };
+  let currentPage = 1;
+  let queueLoading = false;
+  let sessionEpoch = 0;
+  type ReviewDraft = { status: string; response: string; publishedPath: string; version: number };
+  const reviewDrafts = new Map<number, ReviewDraft>();
+  window.addEventListener('beforeunload', (event) => { if (reviewDrafts.size) { event.preventDefault(); event.returnValue = ''; } });
+  type DashboardData = {
+    summary: { currentDay: string; total: number; today: number; last7: number; last30: number };
+    daily: DailyView[];
+    pages: PageView[];
+    error?: string;
+  };
+
   const loginView = document.querySelector<HTMLElement>('#login-view')!;
   const dashboardView = document.querySelector<HTMLElement>('#dashboard-view')!;
   const loginForm = document.querySelector<HTMLFormElement>('#login-form')!;
@@ -168,24 +210,24 @@ import BaseLayout from '~/layouts/BaseLayout.astro';
   const dashboardMessage = document.querySelector<HTMLElement>('#dashboard-message')!;
   const numberFormat = new Intl.NumberFormat('zh-Hans-CN');
 
-  function showLogin(message = '') {
+  function showLogin(message = '', state: MessageState = message ? 'error' : 'neutral') {
     loginView.hidden = false;
     dashboardView.hidden = true;
-    loginMessage.textContent = message;
+    setMessage(loginMessage, message, state);
     document.querySelector<HTMLInputElement>('#admin-password')!.focus();
   }
 
-  function showDashboard(message = '') {
+  function showDashboard(message = '', state: MessageState = message ? 'error' : 'neutral') {
     loginView.hidden = true;
     dashboardView.hidden = false;
-    dashboardMessage.textContent = message;
+    setMessage(dashboardMessage, message, state);
   }
 
-  function renderChart(data) {
+  function renderChart(data: DashboardData) {
     const chart = document.querySelector<HTMLElement>('#daily-chart')!;
     chart.replaceChildren();
     const counts = new Map(data.daily.map((entry) => [entry.day, Number(entry.views)]));
-    const days = [];
+    const days: string[] = [];
     const end = new Date(`${data.summary.currentDay}T00:00:00Z`);
     for (let offset = 29; offset >= 0; offset -= 1) {
       const day = new Date(end);
@@ -209,7 +251,7 @@ import BaseLayout from '~/layouts/BaseLayout.astro';
     }
   }
 
-  function renderPages(pages) {
+  function renderPages(pages: PageView[]) {
     const tbody = document.querySelector<HTMLTableSectionElement>('#pages-table')!;
     tbody.replaceChildren();
     if (!pages.length) {
@@ -240,48 +282,114 @@ import BaseLayout from '~/layouts/BaseLayout.astro';
     }
   }
 
-  function renderSubmissions(data) {
-    const tbody = document.querySelector<HTMLTableSectionElement>('#submissions-table')!;
-    tbody.replaceChildren();
-    document.querySelector<HTMLElement>('#submission-count')!.textContent = `共 ${numberFormat.format(data.submissionCount)} 条 · 显示最近 ${Math.min(data.submissionCount, data.submissions.length)} 条`;
-    if (!data.submissions.length) {
-      const row = document.createElement('tr');
-      const cell = document.createElement('td');
-      cell.className = 'empty-row';
-      cell.colSpan = 3;
-      cell.textContent = '目前还没有投稿';
-      row.append(cell);
-      tbody.append(row);
-      return;
-    }
-
+  function renderSubmissions(data: QueueData) {
+    const list = document.querySelector<HTMLElement>('#submissions-list')!;
+    list.replaceChildren();
+    document.querySelector<HTMLElement>('#submission-count')!.textContent = `当前筛选共 ${numberFormat.format(data.total)} 条`;
+    const pending = data.counts.filter((item) => ['received', 'reviewing', 'accepted'].includes(item.status)).reduce((sum, item) => sum + Number(item.count), 0);
+    document.querySelector<HTMLElement>('#pending-count')!.textContent = `待处理 ${numberFormat.format(pending)} 条`;
+    currentPage = data.page;
+    document.querySelector<HTMLElement>('#page-indicator')!.textContent = `第 ${data.page} / ${data.pageCount} 页`;
+    document.querySelector<HTMLButtonElement>('#previous-page')!.disabled = data.page <= 1;
+    document.querySelector<HTMLButtonElement>('#next-page')!.disabled = data.page >= data.pageCount;
+    if (!data.submissions.length) { const empty = document.createElement('p'); empty.className = 'admin-muted'; empty.textContent = '当前状态下没有投稿。'; list.append(empty); }
     for (const submission of data.submissions) {
-      const row = document.createElement('tr');
-      const nameCell = document.createElement('td');
-      nameCell.textContent = submission.name;
-      const eventCell = document.createElement('td');
-      const eventText = document.createElement('div');
-      eventText.className = 'submission-event';
-      eventText.textContent = submission.event;
-      eventCell.append(eventText);
-      const timeCell = document.createElement('td');
-      timeCell.className = 'submission-time';
-      timeCell.textContent = `${submission.submittedAt} 香港时间`;
-      row.append(nameCell, eventCell, timeCell);
-      tbody.append(row);
+      const draft = reviewDrafts.get(submission.id);
+      const editingVersion = draft?.version ?? submission.version;
+      const article = document.createElement('article'); article.className = 'submission-record';
+      const header = document.createElement('div'); header.className = 'submission-record-header';
+      const title = document.createElement('h4'); title.textContent = `#${submission.id} · ${submission.name}`;
+      const badge = document.createElement('span'); badge.className = 'submission-status'; badge.textContent = statusLabels[submission.status] || submission.status;
+      badge.dataset.state = submission.status === 'rejected' ? 'error' : ['published', 'resolved'].includes(submission.status) ? 'success' : 'neutral';
+      header.append(title, badge);
+      const time = document.createElement('p'); time.className = 'admin-muted'; time.textContent = `提交于 ${submission.submittedAt}（北京时间）${submission.hasReceipt ? '' : ' · 历史投稿无回执，仅供后台处理'}`;
+      const content = document.createElement('div'); content.className = 'submission-content'; content.textContent = submission.event;
+      const review = document.createElement('form'); review.className = 'submission-review';
+      const statusLabel = document.createElement('label'); statusLabel.textContent = '处理状态';
+      const status = document.createElement('select'); status.name = 'status';
+      for (const [value, text] of Object.entries(statusLabels)) { const option = document.createElement('option'); option.value = value; option.textContent = text; status.append(option); }
+      status.value = draft?.status ?? submission.status; statusLabel.append(status);
+      const pathLabel = document.createElement('label'); pathLabel.textContent = '已发布档案路径';
+      const path = document.createElement('input'); path.name = 'publishedPath'; path.placeholder = '/events/条目编号'; path.value = draft?.publishedPath ?? submission.publishedPath; path.maxLength = 300; pathLabel.append(path);
+      const noteLabel = document.createElement('label'); noteLabel.className = 'review-note'; noteLabel.textContent = '处理说明（持回执者可见，请勿含敏感信息）';
+      const note = document.createElement('textarea'); note.name = 'response'; note.rows = 3; note.maxLength = 2000; note.value = draft?.response ?? submission.response; noteLabel.append(note);
+      function updateFields() { path.disabled = status.value !== 'published'; path.required = !path.disabled; note.required = ['resolved', 'rejected'].includes(status.value); }
+      status.addEventListener('change', updateFields); updateFields();
+      const save = document.createElement('button'); save.type = 'submit'; save.className = 'button-secondary'; save.textContent = '保存处理结果';
+      const feedback = document.createElement('p'); feedback.className = 'admin-message review-feedback'; feedback.setAttribute('role', 'status');
+      const discard = document.createElement('button'); discard.type = 'button'; discard.className = 'button-secondary'; discard.textContent = '撤销未保存改动'; discard.hidden = !draft;
+      if (draft) setMessage(feedback, '已恢复本页未保存的处理草稿。', 'neutral');
+      const rememberDraft = () => {
+        reviewDrafts.set(submission.id, { status: status.value, response: note.value, publishedPath: path.value, version: editingVersion });
+        discard.hidden = false; setMessage(feedback, '有未保存的改动。', 'neutral');
+      };
+      status.addEventListener('change', rememberDraft); path.addEventListener('input', rememberDraft); note.addEventListener('input', rememberDraft);
+      discard.addEventListener('click', () => { reviewDrafts.delete(submission.id); loadQueue('已撤销这条投稿的未保存改动。'); });
+      review.append(statusLabel, pathLabel, noteLabel, save, discard, feedback);
+      review.addEventListener('submit', async (event) => {
+        event.preventDefault(); save.disabled = true; setMessage(feedback, '正在保存…', 'neutral');
+        try {
+          const response = await fetch('/api/admin/submissions', { method: 'PATCH', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: submission.id, version: editingVersion, status: status.value, response: note.value, publishedPath: status.value === 'published' ? path.value : '' }) });
+          if (response.status === 401) { showLogin('登录已过期，请重新登录。尚未保存的内容仍在页面中。'); return; }
+          const result = await response.json();
+          if (!response.ok) { setMessage(feedback, result.error || '保存失败，请重试。', 'error'); return; }
+          reviewDrafts.delete(submission.id);
+          await loadQueue('处理结果已保存。');
+        } catch { setMessage(feedback, '连接失败，暂时无法确认结果，请刷新队列核对后重试。', 'error'); }
+        finally { save.disabled = false; }
+      });
+      article.append(header, time, content, review);
+      const history = data.history.filter((item) => item.submissionId === submission.id);
+      if (history.length) {
+        const details = document.createElement('details'); details.className = 'submission-history';
+        const summary = document.createElement('summary'); summary.textContent = `处理历史（${history.length}）`;
+        const items = document.createElement('ol');
+        for (const item of history) { const li = document.createElement('li'); li.textContent = `${item.changedAt} · 管理员：${statusLabels[item.fromStatus]} → ${statusLabels[item.toStatus]}${item.response ? `\n${item.response}` : ''}${item.publishedPath ? `\n关联档案：${item.publishedPath}` : ''}`; items.append(li); }
+        details.append(summary, items); article.append(details);
+      }
+      list.append(article);
     }
   }
 
+  async function loadQueue(successMessage = '') {
+    if (queueLoading) return;
+    const requestEpoch = sessionEpoch;
+    queueLoading = true;
+    const message = document.querySelector<HTMLElement>('#queue-message')!;
+    setMessage(message, '正在读取投稿…', 'neutral');
+    const filter = document.querySelector<HTMLSelectElement>('#submission-filter')!;
+    const previous = document.querySelector<HTMLButtonElement>('#previous-page')!;
+    const next = document.querySelector<HTMLButtonElement>('#next-page')!;
+    filter.disabled = true; previous.disabled = true; next.disabled = true;
+    try {
+      const response = await fetch(`/api/admin/submissions?page=${currentPage}&status=${encodeURIComponent(filter.value)}`, { credentials: 'same-origin', cache: 'no-store' });
+      if (requestEpoch !== sessionEpoch) return;
+      if (response.status === 401) { showLogin('请先登录。'); return; }
+      const data: QueueData = await response.json();
+      if (requestEpoch !== sessionEpoch) return;
+      if (!response.ok) { setMessage(message, data.error || '读取投稿失败。', 'error'); return; }
+      renderSubmissions(data); setMessage(message, successMessage, successMessage ? 'success' : 'neutral');
+    } catch { if (requestEpoch === sessionEpoch) setMessage(message, '连接投稿服务失败，请刷新重试。', 'error'); }
+    finally { if (requestEpoch === sessionEpoch) { queueLoading = false; filter.disabled = false; } }
+  }
+  document.querySelector<HTMLSelectElement>('#submission-filter')!.addEventListener('change', () => { currentPage = 1; loadQueue(); });
+  document.querySelector<HTMLButtonElement>('#previous-page')!.addEventListener('click', () => { currentPage = Math.max(1, currentPage - 1); loadQueue(); });
+  document.querySelector<HTMLButtonElement>('#next-page')!.addEventListener('click', () => { currentPage += 1; loadQueue(); });
+
   async function loadDashboard() {
+    const requestEpoch = sessionEpoch;
     try {
       const response = await fetch('/api/admin/analytics', { credentials: 'same-origin', cache: 'no-store' });
+      if (requestEpoch !== sessionEpoch) return;
       if (response.status === 401) {
         showLogin();
         return;
       }
-      const data = await response.json();
+      const data: DashboardData = await response.json();
+      if (requestEpoch !== sessionEpoch) return;
       if (!response.ok) {
         showDashboard(data.error || '暂时无法读取统计数据。');
+        await loadQueue();
         return;
       }
 
@@ -292,9 +400,11 @@ import BaseLayout from '~/layouts/BaseLayout.astro';
       document.querySelector<HTMLElement>('#stat-month')!.textContent = numberFormat.format(data.summary.last30);
       renderChart(data);
       renderPages(data.pages);
-      renderSubmissions(data);
+      await loadQueue();
     } catch {
+      if (requestEpoch !== sessionEpoch) return;
       showDashboard('连接统计服务失败，请检查网络后重试。');
+      await loadQueue();
     }
   }
 
@@ -303,7 +413,7 @@ import BaseLayout from '~/layouts/BaseLayout.astro';
     const button = document.querySelector<HTMLButtonElement>('#login-button')!;
     const password = new FormData(loginForm).get('password');
     button.disabled = true;
-    loginMessage.textContent = '正在登录…';
+    setMessage(loginMessage, '正在登录…', 'neutral');
     try {
       const response = await fetch('/api/admin/login', {
         method: 'POST',
@@ -313,13 +423,15 @@ import BaseLayout from '~/layouts/BaseLayout.astro';
       });
       const data = await response.json();
       if (!response.ok) {
-        loginMessage.textContent = data.error || '登录失败。';
+        setMessage(loginMessage, data.error || '登录失败。', 'error');
         return;
       }
       loginForm.reset();
+      sessionEpoch += 1;
+      queueLoading = false;
       await loadDashboard();
     } catch {
-      loginMessage.textContent = '连接失败，请稍后重试。';
+      setMessage(loginMessage, '连接失败，请稍后重试。', 'error');
     } finally {
       button.disabled = false;
     }
@@ -327,16 +439,34 @@ import BaseLayout from '~/layouts/BaseLayout.astro';
 
   document.querySelector<HTMLButtonElement>('#refresh-button')!.addEventListener('click', loadDashboard);
   document.querySelector<HTMLButtonElement>('#logout-button')!.addEventListener('click', async () => {
+    if (reviewDrafts.size && !window.confirm('有未保存的处理草稿。退出会清除这些草稿，确定退出吗？')) return;
+    const button = document.querySelector<HTMLButtonElement>('#logout-button')!;
+    button.disabled = true;
     try {
-      await fetch('/api/admin/logout', {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
-        body: '{}',
-      });
-    } finally {
-      showLogin('已退出登录。');
-    }
+      const response = await fetch('/api/admin/logout', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      if (!response.ok) { setMessage(dashboardMessage, '退出未成功，请重试。当前登录仍可能有效。', 'error'); return; }
+      sessionEpoch += 1;
+      queueLoading = false;
+      reviewDrafts.clear();
+      for (const id of ['submissions-list', 'daily-chart', 'pages-table']) {
+        document.getElementById(id)!.replaceChildren();
+      }
+      for (const id of ['stat-total', 'stat-today', 'stat-week', 'stat-month']) {
+        document.getElementById(id)!.textContent = '—';
+      }
+      for (const id of ['submission-count', 'pending-count', 'queue-message']) {
+        document.getElementById(id)!.textContent = '';
+      }
+      currentPage = 1;
+      document.querySelector<HTMLSelectElement>('#submission-filter')!.value = '';
+      document.querySelector<HTMLSelectElement>('#submission-filter')!.disabled = false;
+      document.querySelector<HTMLElement>('#page-indicator')!.textContent = '第 1 页';
+      document.querySelector<HTMLButtonElement>('#previous-page')!.disabled = true;
+      document.querySelector<HTMLButtonElement>('#next-page')!.disabled = true;
+      setMessage(dashboardMessage, '', 'neutral');
+      showLogin('已退出登录。', 'success');
+    } catch { setMessage(dashboardMessage, '网络中断，无法确认退出。请恢复连接后重试。', 'error'); }
+    finally { button.disabled = false; }
   });
 
   loadDashboard();

@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <!-- 档案馆风格 favicon：黑底 + 朱砂红印章字"恶" -->
-  <rect width="64" height="64" fill="#0a0908"/>
+  <!-- 深黑与荧光色 favicon：保留原有字形"恶" -->
+  <rect width="64" height="64" fill="#1c1d21"/>
   <!-- 双线边框 -->
-  <rect x="3" y="3" width="58" height="58" fill="none" stroke="#a8392e" stroke-width="1"/>
-  <rect x="5" y="5" width="54" height="54" fill="none" stroke="#a8392e" stroke-width="0.5"/>
+  <rect x="3" y="3" width="58" height="58" fill="none" stroke="#d7ff36" stroke-width="1"/>
+  <rect x="5" y="5" width="54" height="54" fill="none" stroke="#d7ff36" stroke-width="0.5"/>
 
   <!-- 朱砂"恶"字（简化印章体） -->
-  <g fill="#a8392e" font-family="Source Han Serif SC, Noto Serif SC, serif" font-weight="900" text-anchor="middle">
+  <g fill="#d7ff36" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-weight="900" text-anchor="middle">
     <text x="32" y="44" font-size="36">恶</text>
   </g>
 </svg>

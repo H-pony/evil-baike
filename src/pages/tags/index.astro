@@ -8,10 +8,13 @@ import { isIndexable } from '~/content.config';
 
 const tagMap = new Map<string, number>();
 
-for (const event of await getCollection('events', (e) => isIndexable(e.data.status))) {
-  for (const t of event.data.tags) {
-    tagMap.set(t, (tagMap.get(t) ?? 0) + 1);
-  }
+const entries = [
+  ...await getCollection('events', entry => isIndexable(entry.data.status)),
+  ...await getCollection('people', entry => isIndexable(entry.data.status)),
+  ...await getCollection('organizations', entry => isIndexable(entry.data.status)),
+];
+for (const entry of entries) {
+  for (const tag of new Set(entry.data.tags)) tagMap.set(tag, (tagMap.get(tag) ?? 0) + 1);
 }
 
 const sorted = [...tagMap.entries()].sort((a, b) => b[1] - a[1]);
@@ -21,7 +24,7 @@ const sorted = [...tagMap.entries()].sort((a, b) => b[1] - a[1]);
   <header class="text-center py-8 border-b-3 border-double border-ink-900 mb-8">
     <p class="meta-stamp mb-2">SECTION 04</p>
     <h1 class="headline text-4xl lg:text-5xl">标签</h1>
-    <p class="deck mt-2">共 {sorted.length} 个标签</p>
+    <p class="deck mt-2">共 {sorted.length} 个话题 · 涵盖事件、人物与机构</p>
   </header>
 
   {sorted.length === 0 ? (

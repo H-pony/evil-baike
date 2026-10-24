@@ -2,86 +2,202 @@
 import BaseLayout from '~/layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="投稿" description="向恶人百科提交事件投稿">
+<BaseLayout title="投稿" description="提交公共事件、补充信源或申请更正，并凭私密回执查询处理进度">
   <div class="submission-page">
     <header class="submission-header">
-      <p class="meta-stamp mb-2">投稿入口</p>
-      <h1 class="headline text-4xl lg:text-5xl">提交事件</h1>
-      <p class="deck mt-3 max-w-2xl mx-auto">留下姓名和事件内容，投稿会进入后台等待人工查看。</p>
+      <p class="meta-stamp mb-2">SUBMIT / CORRECT</p>
+      <h1 class="headline text-4xl lg:text-5xl">投稿与更正</h1>
+      <p class="deck mt-3 max-w-2xl mx-auto">提交事件、补充信源或申请更正。维护者核查后决定是否收录，你可以凭回执查看处理进度。</p>
     </header>
 
     <section class="submission-card archive-box" aria-labelledby="submission-title">
       <h2 id="submission-title" class="headline text-2xl mb-6">投稿信息</h2>
       <form id="submission-form" class="submission-form">
         <div class="field-group">
-          <label for="submitter-name">姓名</label>
-          <input id="submitter-name" name="name" type="text" autocomplete="name" maxlength="80" required />
+          <label for="submitter-name">你的称呼</label>
+          <input id="submitter-name" name="name" type="text" autocomplete="nickname" maxlength="80" aria-describedby="name-help" required />
+          <p id="name-help" class="field-help">可用昵称，无需真实姓名。称呼和投稿原文仅供维护者查看。</p>
         </div>
         <div class="field-group">
-          <label for="event-description">事件</label>
-          <textarea id="event-description" name="event" rows="9" maxlength="5000" required></textarea>
-          <p class="field-help">最多 5000 个字符。请勿填写身份证号、住址等敏感信息。</p>
+          <label for="event-description">事件或更正内容</label>
+          <textarea id="event-description" name="event" rows="9" maxlength="5000" aria-describedby="event-help" placeholder="请说明事件经过和时间，附上公开报道或文件链接。申请更正时请写明条目地址、具体错误与核查依据。" required></textarea>
+          <p id="event-help" class="field-help">最多 5000 个字符。请附可核查信源，不填写身份证号、住址等敏感信息。<a href="/methodology">查看收录与更正规则</a>。</p>
         </div>
-        <button id="submit-button" class="submit-button" type="submit">提交投稿</button>
+        <div class="submission-actions"><button id="submit-button" class="submit-button" type="submit">提交投稿</button><button id="new-submission" class="submit-button secondary-button" type="button" hidden>开始新投稿</button></div>
       </form>
       <p id="submission-message" class="submission-message" role="status" aria-live="polite"></p>
+      <div id="receipt-panel" class="receipt-panel" hidden>
+        <h3>请保存私密回执</h3>
+        <p class="field-help">任何持有回执的人都能查看处理结果。请勿公开分享；关闭当前浏览器会话后可能需要重新填写。</p>
+        <label for="receipt-code" class="sr-only">本次投稿回执码</label>
+        <input id="receipt-code" class="receipt-code" type="text" readonly />
+        <button id="copy-receipt" class="submit-button secondary-button" type="button">复制回执码</button>
+      </div>
     </section>
+    <section class="submission-card archive-box status-card" aria-labelledby="status-title">
+      <h2 id="status-title" class="headline text-2xl mb-3">查询处理进度</h2>
+      <p class="field-help">填写提交时的回执码，查看核查状态、处理说明和已收录的档案。不会展示投稿原文与称呼。</p>
+      <form id="status-form" class="submission-form">
+        <div class="field-group"><label for="status-receipt">回执码</label><input id="status-receipt" name="receipt" type="text" autocomplete="off" spellcheck="false" maxlength="43" minlength="43" required /></div>
+        <button id="status-button" class="submit-button secondary-button" type="submit">查询进度</button>
+      </form>
+      <p id="status-message" class="submission-message" role="status" aria-live="polite"></p>
+      <div id="status-result" class="status-result" hidden><strong id="status-label"></strong><p id="status-response"></p><a id="status-link" hidden>查看已收录档案 →</a><p id="status-time" class="field-help"></p></div>
+    </section>
+    <noscript><p class="submission-message">投稿和回执查询需要开启 JavaScript。当前内容不会自动发送。</p></noscript>
   </div>
 </BaseLayout>
 
 <style>
-  .submission-page { max-width: 760px; margin: 0 auto; }
-  .submission-header { text-align: center; padding: 2rem 0; border-bottom: 3px double #211d19; margin-bottom: 2rem; }
-  .submission-card { padding: clamp(1.2rem, 4vw, 2rem); }
+  .submission-page { max-width: 800px; margin: 0 auto; color: var(--text); }
+  .submission-header { text-align: left; padding: clamp(2rem, 5vw, 4rem) 0 2rem; border-bottom: 1px solid var(--line); margin-bottom: 2rem; }
+  .submission-header .meta-stamp { color: var(--accent); font: 700 .72rem/1.4 ui-sans-serif, system-ui, sans-serif; letter-spacing: .16em; }
+  .submission-header h1 { color: var(--text); font: 850 clamp(2.8rem, 7vw, 5.25rem)/1.08 ui-sans-serif, system-ui, sans-serif; letter-spacing: -.055em; }
+  .submission-header .deck { color: var(--muted); font: 1rem/1.8 ui-sans-serif, system-ui, sans-serif; margin-left: 0; max-width: 620px; }
+  .submission-card { padding: clamp(1.25rem, 4vw, 2.25rem); border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+  .submission-card h2 { color: var(--text); font: 750 clamp(1.3rem, 3vw, 1.65rem)/1.3 ui-sans-serif, system-ui, sans-serif; letter-spacing: -.025em; }
   .submission-form { display: grid; gap: 1.35rem; }
-  .field-group { display: grid; gap: .5rem; }
-  .field-group label { color: #332d26; font: 600 .92rem/1.4 ui-sans-serif, system-ui, sans-serif; }
-  .field-group input, .field-group textarea { width: 100%; border: 1px solid rgb(33 29 25 / 35%); border-radius: 2px; background: #fffefa; padding: .8rem .9rem; color: #211d19; font: 1rem/1.6 ui-sans-serif, system-ui, sans-serif; }
-  .field-group textarea { resize: vertical; min-height: 190px; }
-  .field-group input:focus, .field-group textarea:focus { outline: 2px solid #8a6846; outline-offset: 1px; }
-  .field-help { margin: 0; color: #776f65; font: .78rem/1.5 ui-sans-serif, system-ui, sans-serif; }
-  .submit-button { justify-self: start; min-height: 44px; border: 1px solid #211d19; background: #211d19; color: #fffefa; padding: .65rem 1.2rem; font: 600 .88rem ui-sans-serif, system-ui, sans-serif; cursor: pointer; }
-  .submit-button:hover { background: #59442e; }
-  .submit-button:disabled { opacity: .6; cursor: wait; }
-  .submission-message { min-height: 1.4em; margin: .8rem 0 0; color: #75634c; font: .88rem/1.5 ui-sans-serif, system-ui, sans-serif; }
+  .field-group { display: grid; gap: .6rem; }
+  .field-group label { color: var(--text); font: 650 .9rem/1.4 ui-sans-serif, system-ui, sans-serif; }
+  .field-group input, .field-group textarea { width: 100%; min-height: 48px; border: 1px solid var(--line); border-radius: 10px; background: var(--page); padding: .85rem 1rem; color: var(--text); font: 1rem/1.6 ui-sans-serif, system-ui, sans-serif; caret-color: var(--accent); color-scheme: dark; }
+  .field-group textarea { resize: vertical; min-height: 210px; }
+  .field-group input::placeholder, .field-group textarea::placeholder { color: var(--muted); opacity: .8; }
+  .field-group input:focus, .field-group textarea:focus, .receipt-code:focus { outline: 2px solid var(--accent); outline-offset: 3px; border-color: var(--accent); }
+  .field-group input:user-invalid, .field-group textarea:user-invalid { border-color: #ff9588; }
+  .field-help { margin: 0; color: var(--muted); font: .8rem/1.65 ui-sans-serif, system-ui, sans-serif; }
+  .field-help a, #status-link { color: var(--accent); text-underline-offset: .25em; }
+  .field-help a:hover, #status-link:hover { text-decoration: underline; }
+  .submit-button { border-radius: 10px; justify-self: start; min-height: 48px; border: 1px solid var(--accent); background: var(--accent); color: var(--page); padding: .75rem 1.3rem; font: 750 .86rem/1.3 ui-sans-serif, system-ui, sans-serif; cursor: pointer; transition: background .18s, border-color .18s; }
+  .submit-button:hover { background: #e2ff76; border-color: #e2ff76; }
+  .submit-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+  .submit-button:disabled { opacity: .5; cursor: wait; }
+  .submission-message { min-height: 1.4em; margin: .85rem 0 0; color: var(--muted); font: .88rem/1.65 ui-sans-serif, system-ui, sans-serif; }
+  .submission-message[data-state="error"] { color: #ff9588; }
+  .submission-message[data-state="success"] { color: var(--accent); }
+  .submission-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
+  .secondary-button { background: transparent; color: var(--text); border-color: var(--line); }
+  .secondary-button:hover { background: var(--surface-raised); color: var(--accent); border-color: var(--accent); }
+  .receipt-panel, .status-result { margin-top: 1.25rem; padding: 1.15rem; background: var(--surface-raised); border: 1px solid var(--line); border-radius: 10px; }
+  .receipt-panel h3 { margin-bottom: .5rem; color: var(--text); font-weight: 700; }
+  .receipt-code { width: 100%; min-height: 48px; margin: .9rem 0; padding: .8rem; border: 1px solid var(--line); border-radius: 10px; font: .83rem/1.5 ui-monospace, monospace; color: var(--accent); background: var(--page); }
+  .status-card { margin-top: 1rem; }
+  #status-form { margin-top: 1.35rem; }
+  #status-label { color: var(--text); font-weight: 750; }
+  .status-result[data-state="success"] #status-label { color: var(--accent); }
+  .status-result[data-state="error"] #status-label { color: #ff9588; }
+  #status-response { color: var(--text); white-space: pre-wrap; overflow-wrap: anywhere; margin: .8rem 0; line-height: 1.75; }
+  #status-link { display: inline-flex; align-items: center; min-height: 44px; }
+  #status-time { margin-top: .7rem; }
+  [hidden] { display: none !important; }
+  @media (max-width: 480px) { .submission-header { padding-top: 1.3rem; } .submission-actions { display: grid; } .submission-actions .submit-button { width: 100%; } }
+  @media (prefers-reduced-motion: reduce) { .submit-button { transition: none; } }
 </style>
 
 <script>
-  const submissionForm = document.querySelector<HTMLFormElement>('#submission-form')!;
-  const submissionMessage = document.querySelector<HTMLParagraphElement>('#submission-message')!;
+  type MessageState = 'neutral' | 'error' | 'success';
+  function setMessage(element: HTMLElement, text: string, state: MessageState = 'neutral') {
+    element.textContent = text;
+    element.dataset.state = state;
+  }
+  const labels: Record<string, string> = { received: '待查看', reviewing: '核查中', accepted: '待整理发布', published: '已收录 / 更新', resolved: '已处理', rejected: '暂不收录' };
+  const form = document.querySelector<HTMLFormElement>('#submission-form')!;
+  const message = document.querySelector<HTMLParagraphElement>('#submission-message')!;
   const submitButton = document.querySelector<HTMLButtonElement>('#submit-button')!;
+  const newButton = document.querySelector<HTMLButtonElement>('#new-submission')!;
   const eventField = document.querySelector<HTMLTextAreaElement>('#event-description')!;
+  const receiptCode = document.querySelector<HTMLInputElement>('#receipt-code')!;
+  const statusField = document.querySelector<HTMLInputElement>('#status-receipt')!;
+  const statusMessage = document.querySelector<HTMLElement>('#status-message')!;
+  const statusResult = document.querySelector<HTMLElement>('#status-result')!;
+  const receiptPattern = /^[A-Za-z0-9_-]{43}$/;
+  const storeKey = 'eb-pending-submission-receipt';
+  let pendingReceipt = '';
+  let confirmed = false;
   const prefilledEvent = new URLSearchParams(window.location.search).get('event');
-
   if (prefilledEvent) eventField.value = prefilledEvent.slice(0, 5000);
+  try {
+    pendingReceipt = sessionStorage.getItem(storeKey) || '';
+    statusField.value = sessionStorage.getItem('eb-last-submission-receipt') || pendingReceipt;
+  } catch { /* Receipt copying remains available when browser storage is disabled. */ }
+  if (!receiptPattern.test(pendingReceipt)) pendingReceipt = '';
 
-  submissionForm.addEventListener('submit', async (event) => {
+  function ensureReceipt() {
+    if (!pendingReceipt) {
+      pendingReceipt = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      try { sessionStorage.setItem(storeKey, pendingReceipt); } catch { /* Current tab still retains it in memory. */ }
+    }
+    receiptCode.value = pendingReceipt;
+    statusField.value = pendingReceipt;
+    document.querySelector<HTMLElement>('#receipt-panel')!.hidden = false;
+    newButton.hidden = false;
+    return pendingReceipt;
+  }
+  if (pendingReceipt) ensureReceipt();
+
+  function renderStatus(data: { status: string; response: string; publishedPath: string; updatedAt: string; linkUnavailable?: boolean }) {
+    statusResult.hidden = false;
+    statusResult.dataset.state = data.status === 'rejected' ? 'error' : ['published', 'resolved'].includes(data.status) ? 'success' : 'neutral';
+    document.querySelector<HTMLElement>('#status-label')!.textContent = labels[data.status] || '处理中';
+    document.querySelector<HTMLElement>('#status-response')!.textContent = (data.response || (data.status === 'accepted' ? '投稿已进入编辑整理阶段，发布后会在这里提供档案链接。' : '维护者尚未留下处理说明，请稍后再查询。')) + (data.linkUnavailable ? '\n原关联档案目前无法确认公开可访问，链接暂不展示。处理记录仍保留。' : '');
+    const link = document.querySelector<HTMLAnchorElement>('#status-link')!;
+    const validPath = /^\/(events|people|organizations)\/[a-z0-9][a-z0-9-]*$/.test(data.publishedPath);
+    link.hidden = !validPath;
+    if (validPath) link.href = data.publishedPath;
+    else link.removeAttribute('href');
+    document.querySelector<HTMLElement>('#status-time')!.textContent = `最近更新：${data.updatedAt}（北京时间）`;
+  }
+
+  form.addEventListener('submit', async (event) => {
     event.preventDefault();
-    const values = new FormData(submissionForm);
+    if (confirmed) return;
+    const values = new FormData(form);
     const name = String(values.get('name') || '').trim();
     const eventText = String(values.get('event') || '').trim();
+    if (!name || !eventText) { setMessage(message, '请填写称呼和事件内容，不能只输入空格。', 'error'); return; }
+    const receipt = ensureReceipt();
     submitButton.disabled = true;
-    submissionMessage.textContent = '正在提交…';
-
+    newButton.disabled = true;
+    setMessage(message, '正在提交…', 'neutral');
     try {
-      const response = await fetch('/api/submissions', {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, event: eventText }),
-      });
+      const response = await fetch('/api/submissions', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, event: eventText, receipt }) });
       const result = await response.json();
-      if (!response.ok) {
-        submissionMessage.textContent = result.error || '暂时无法提交，请稍后重试。';
-        return;
-      }
+      if (!response.ok || !result.ok) { setMessage(message, result.error || '暂时无法确认结果，请保留回执查询或重试。', 'error'); return; }
+      confirmed = true;
+      form.reset();
+      submitButton.textContent = '投稿已收到';
+      setMessage(message, '投稿已收到，等待人工核查。请保存下方回执，收录或更正结果将在查询区显示。', 'success');
+      renderStatus(result.submission);
+      try { sessionStorage.removeItem(storeKey); sessionStorage.setItem('eb-last-submission-receipt', receipt); } catch { /* No private submission text is stored. */ }
+    } catch { setMessage(message, '连接中断，暂时无法确认提交结果。请保留回执并查询，或直接重试同一份投稿。', 'error'); }
+    finally { submitButton.disabled = confirmed; newButton.disabled = false; }
+  });
 
-      submissionForm.reset();
-      submissionMessage.textContent = '投稿已收到，感谢提交。';
-    } catch {
-      submissionMessage.textContent = '连接失败，请检查网络后重试。';
-    } finally {
-      submitButton.disabled = false;
-    }
+  newButton.addEventListener('click', () => {
+    if (!confirmed && !window.confirm('当前投稿可能已送达。建议先用回执查询，避免重复提交。确定开始另一份投稿吗？')) return;
+    pendingReceipt = ''; confirmed = false;
+    try { sessionStorage.removeItem(storeKey); } catch { /* No storage available. */ }
+    form.reset(); submitButton.disabled = false; submitButton.textContent = '提交投稿'; newButton.hidden = true;
+    document.querySelector<HTMLElement>('#receipt-panel')!.hidden = true;
+    setMessage(message, '可以开始新的投稿。上一份回执仍可在查询区使用。', 'neutral');
+    document.querySelector<HTMLInputElement>('#submitter-name')!.focus();
+  });
+
+  document.querySelector<HTMLButtonElement>('#copy-receipt')!.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(receiptCode.value); setMessage(message, '回执码已复制，请妥善保存。', 'success'); }
+    catch { receiptCode.focus(); receiptCode.select(); setMessage(message, '请复制已选中的回执码。', 'neutral'); }
+  });
+  document.querySelector<HTMLFormElement>('#status-form')!.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const receipt = statusField.value.trim();
+    if (!receiptPattern.test(receipt)) { setMessage(statusMessage, '请填写完整的 43 位回执码。', 'error'); return; }
+    const button = document.querySelector<HTMLButtonElement>('#status-button')!;
+    button.disabled = true; statusResult.hidden = true; setMessage(statusMessage, '正在查询…', 'neutral');
+    try {
+      const response = await fetch('/api/submissions/status', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ receipt }) });
+      const result = await response.json();
+      if (!response.ok) { setMessage(statusMessage, result.error || '查询失败，请稍后重试。', 'error'); return; }
+      renderStatus(result.submission); setMessage(statusMessage, '已读取最新处理进度。', 'success');
+    } catch { setMessage(statusMessage, '连接查询服务失败，请稍后重试。', 'error'); }
+    finally { button.disabled = false; }
   });
 </script>

@@ -1,0 +1,32 @@
+[
+  {
+    "headerOverflow": false,
+    "scrollWidth": 305,
+    "tiles": 18,
+    "width": 320
+  },
+  {
+    "headerOverflow": false,
+    "scrollWidth": 375,
+    "tiles": 18,
+    "width": 390
+  },
+  {
+    "headerOverflow": false,
+    "scrollWidth": 753,
+    "tiles": 36,
+    "width": 768
+  },
+  {
+    "headerOverflow": false,
+    "scrollWidth": 1009,
+    "tiles": 36,
+    "width": 1024
+  },
+  {
+    "headerOverflow": false,
+    "scrollWidth": 1425,
+    "tiles": 36,
+    "width": 1440
+  }
+]

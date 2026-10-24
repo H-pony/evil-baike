@@ -15,6 +15,7 @@ interface Props {
   showDisclaimer?: boolean;
   ogType?: 'website' | 'article';
   noIndex?: boolean;
+  fullBleed?: boolean;
 }
 
 const {
@@ -23,6 +24,7 @@ const {
   showDisclaimer = false,
   ogType = 'website',
   noIndex = false,
+  fullBleed = false,
 } = Astro.props;
 
 const siteName = '恶人百科';
@@ -58,18 +60,20 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).to
     <link rel="alternate" type="application/rss+xml" title={siteName} href="/rss.xml" />
     <link rel="sitemap" href="/sitemap-index.xml" />
 
-    <meta name="theme-color" content="#0a0908" />
+    <meta name="theme-color" content="#111214" />
+    <link rel="preload" href="/fonts/geist.woff2" as="font" type="font/woff2" crossorigin />
   </head>
   <body class="min-h-screen flex flex-col">
+    <a class="skip-link" href="#main">跳到主要内容</a>
     <Header />
 
     {showDisclaimer && (
-      <div class="container mx-auto px-4 mt-4 no-print">
+      <div class="site-container mt-4 no-print">
         <DisclaimerBanner />
       </div>
     )}
 
-    <main class="flex-1 container mx-auto px-4 py-8 lg:py-12 max-w-6xl">
+    <main id="main" class:list={['site-main flex-1', { 'site-main--full': fullBleed }]}>
       <slot />
     </main>
 

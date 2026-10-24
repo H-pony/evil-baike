@@ -16,7 +16,7 @@ import FactNatureTag from './FactNatureTag.astro';
 type Nature = 'confirmed' | 'official-action' | 'media-claim' | 'self-claim' | 'rumor' | 'correction';
 
 interface Entry {
-  date: Date;
+  date: Date | string;
   title: string;
   description: string;
   sources?: string[];
@@ -31,25 +31,31 @@ interface Props {
 
 const { entries } = Astro.props;
 
-const sorted = [...entries].sort(
-  (a, b) => a.date.getTime() - b.date.getTime()
-);
-
-function formatDate(d: Date): string {
-  return d.toISOString().slice(0, 10);
+function dateSortValue(date: Date | string): number {
+  if (date instanceof Date) return date.getTime();
+  const normalized = /^\d{4}$/.test(date)
+    ? `${date}-01-01`
+    : /^\d{4}-(?:0[1-9]|1[0-2])$/.test(date)
+      ? `${date}-01`
+      : date;
+  return Date.parse(`${normalized}T00:00:00Z`);
 }
 
-// 把描述里 [信源 N] / [1] 这类标记替换成超链接；
-// 没有标记时不强加链接（避免误导）。
-function linkifyDescription(desc: string, sources: string[]): string {
-  if (!sources || sources.length === 0) return desc;
-  // 匹配 [1] [2] ... 标记
-  return desc.replace(/\[(\d{1,2})\]/g, (m, n) => {
-    const idx = parseInt(n, 10);
-    if (idx >= 1 && idx <= sources.length) {
-      return `<a href="${sources[idx - 1]}" target="_blank" rel="noopener noreferrer nofollow" class="text-archive-seal underline decoration-archive-seal/40 hover:decoration-archive-seal">[${n}]</a>`;
-    }
-    return m;
+const sorted = [...entries].sort(
+  (a, b) => dateSortValue(a.date) - dateSortValue(b.date)
+);
+
+function formatDate(d: Date | string): string {
+  if (typeof d === 'string' && /^\d{4}(?:-(?:0[1-9]|1[0-2]))?$/.test(d)) return d;
+  return d instanceof Date ? d.toISOString().slice(0, 10) : d;
+}
+
+// 描述按纯文本渲染，仅把显式编号变为信源链接；不接受描述内的 HTML。
+function descriptionParts(description: string, sources: string[]) {
+  return description.split(/(\[(?:信源\s*)?\d{1,2}\])/g).map(text => {
+    const match = text.match(/^\[(?:信源\s*)?(\d{1,2})\]$/);
+    const source = match ? sources[Number(match[1]) - 1] : undefined;
+    return { text, href: source && /^https?:\/\//i.test(source) ? source : undefined };
   });
 }
 ---
@@ -57,7 +63,7 @@ function linkifyDescription(desc: string, sources: string[]): string {
 <ol class="space-y-0 mt-6" data-timeline>
   {sorted.map((e) => {
     const sources = e.sources ?? [];
-    const descriptionHTML = linkifyDescription(e.description, sources);
+    const parts = descriptionParts(e.description, sources);
     return (
       <li class="timeline-item" data-nature={e.nature ?? 'media-claim'}>
         <div class="flex flex-wrap items-center gap-2 mb-1">
@@ -65,7 +71,7 @@ function linkifyDescription(desc: string, sources: string[]): string {
           {e.nature && <FactNatureTag nature={e.nature} by={e.by} />}
         </div>
         <h3 class="font-display font-semibold text-lg mb-1">{e.title}</h3>
-        <p class="text-ink-900/90 leading-relaxed" set:html={descriptionHTML} />
+        <p class="text-ink-900/90 leading-relaxed">{parts.map(part => part.href ? <a href={part.href} target="_blank" rel="noopener noreferrer nofollow" class="text-archive-seal underline">{part.text}</a> : part.text)}</p>
 
         {e.tags && e.tags.length > 0 && (
           <div class="flex flex-wrap gap-1.5 mt-2">
@@ -94,3 +100,20 @@ function linkifyDescription(desc: string, sources: string[]): string {
     );
   })}
 </ol>
+
+<style>
+  [data-timeline] { list-style: none; padding: 0; margin-top: 28px; }
+  .timeline-item { position: relative; margin: 0; padding: 0 0 36px 27px; border-left: 1px solid var(--line); }
+  .timeline-item::before { content: ''; position: absolute; top: 5px; left: -4px; width: 7px; height: 7px; border: 0; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 5px var(--page); }
+  .timeline-item:last-child { padding-bottom: 0; }
+  .timeline-item time { color: var(--muted); font-size: 12px; letter-spacing: .04em; }
+  .timeline-item h3 { margin: 14px 0 10px; color: var(--text); font-size: clamp(20px, 2vw, 24px); font-weight: 600; line-height: 1.5; letter-spacing: -.035em; }
+  .timeline-item p { color: var(--muted); font-size: 14px; line-height: 2; }
+  .timeline-item a { color: var(--accent); text-underline-offset: 3px; }
+  [data-timeline-sources] { padding-top: 7px; }
+  [data-timeline-sources] > summary { display: list-item; min-height: 36px; padding: 8px 0; color: var(--text); font-size: 11px; }
+  [data-timeline-sources] > ol { margin: 0; padding: 14px 16px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); }
+  [data-timeline-sources] li { line-height: 1.8; }
+  [data-timeline-sources] li > span { color: var(--muted); }
+  @media (max-width: 600px) { .timeline-item { padding-left: 21px; } }
+</style>

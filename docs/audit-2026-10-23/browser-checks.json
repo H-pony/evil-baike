@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-23",
+  "environment": "isolated local Cloudflare Pages Functions + D1; synthetic submissions only",
+  "checks": {
+    "responsive_header_320_to_1440": "passed; eight viewport widths",
+    "filter_sort_history": "passed; 4 entries -> 1 entry -> sort -> back -> back to 4",
+    "entity_reverse_relation": "passed; person page shows linked event",
+    "entity_only_tag_route": "passed; former missing route now shows matching person",
+    "search_failure_retry": "passed; blocked index request showed recovery; unblocked retry succeeded",
+    "search_related_event": "passed; public person name retrieves linked event",
+    "search_escape_focus": "passed; one Escape closes and restores trigger focus",
+    "favorite_round_trip": "passed; add, list, remove, empty state",
+    "submission_retry": "passed; failed service preserved input and receipt; retry created one row",
+    "admin_queue": "passed; authenticated queue rendered actual D1 entry",
+    "admin_invalid_publication_path": "passed; nonexistent archive rejected",
+    "admin_unsaved_draft_refresh": "passed; unsaved response retained",
+    "admin_publish_and_history": "passed; existing public path accepted and history added",
+    "receipt_result": "passed; latest status and response visible; linked archive opened",
+    "logout_network_failure": "passed; dashboard retained and failure explained",
+    "logout_recovery": "passed; successful retry returned to login",
+    "missing_static_assets": "none across 83 HTML pages",
+    "network_fault_injection_cleanup": "all request blocks removed",
+    "viewport_cleanup": "temporary viewport overrides reset"
+  },
+  "limits": [
+    "No production deployment or production database migration",
+    "No independent verification of event claims or external source availability",
+    "No full screen-reader or physical-device certification"
+  ]
+}

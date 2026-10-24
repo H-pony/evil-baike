@@ -35,23 +35,39 @@ export const isIndexable = (s: string): boolean => s === 'published';
 // 共享 schema 片段
 // ============================================================
 
+/** 公共信源只允许可直接访问的 HTTP(S) 页面。 */
+const sourceUrl = z.string().url().refine(value => /^https?:\/\//i.test(value), '信源必须使用 http 或 https 地址');
+
 /** 信源条目：每条事实都必须能溯源到这里 */
 const sourceItem = z.object({
-  url: z.string().url(),
+  url: sourceUrl,
   title: z.string(),
   publisher: z.string().optional(),
   publishedAt: z.coerce.date().optional(),
   accessedAt: z.coerce.date().optional(),
-  archive: z.string().url().optional(),
+  archive: sourceUrl.optional(),
   note: z.string().optional(),
 });
 
+/** 时间线日期：保留仅到年份或月份的日期精度 */
+const timelineDate = z.preprocess(
+  (value) =>
+    typeof value === 'number' && Number.isInteger(value) && value >= 1000 && value <= 9999
+      ? String(value)
+      : value,
+  z.union([
+    z.string().regex(/^\d{4}(?:-(?:0[1-9]|1[0-2]))?$/),
+    z.date(),
+    z.coerce.date(),
+  ])
+);
+
 /** 时间线节点：一个事实单元 */
 const timelineEntry = z.object({
-  date: z.coerce.date(),
+  date: timelineDate,
   title: z.string(),
   description: z.string(),
-  sources: z.array(z.string().url()).default([]),
+  sources: z.array(sourceUrl).default([]),
   tags: z.array(z.string()).default([]),
   // 信息性质：决定节点在时间线上的呈现标签
   nature: z
@@ -154,7 +170,7 @@ const events = defineCollection({
         z.object({
           claim: z.string(),
           by: z.string(),                  // 陈述方（"原告方"、"被告方"、"自媒体报道" 等）
-          sources: z.array(z.string().url()).default([]),
+          sources: z.array(sourceUrl).default([]),
         })
       )
       .default([]),

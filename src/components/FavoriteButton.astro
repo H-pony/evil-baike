@@ -15,7 +15,6 @@ interface Props {
 }
 
 const { type, id, title } = Astro.props;
-const safeTitle = title.replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c] ?? c));
 ---
 
 <button
@@ -23,102 +22,53 @@ const safeTitle = title.replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', 
   data-fav-btn
   data-fav-type={type}
   data-fav-id={id}
-  data-fav-title={safeTitle}
-  class="inline-flex items-center gap-2 px-3 py-1.5 border border-ink-900/40 text-sm font-mono uppercase tracking-wider bg-archive-paper hover:border-archive-seal hover:text-archive-seal transition-colors"
+  data-fav-title={title}
+  class="favorite-button"
   aria-label="加入收藏"
+  aria-pressed="false"
   title="加入收藏 / 取消收藏（仅本地存储）"
 >
   <span data-fav-star aria-hidden="true">☆</span>
   <span data-fav-label>收藏</span>
 </button>
 
+<span data-fav-feedback role="status" class="text-sm text-ink-muted"></span>
 <script>
-  // 收藏管理 - 使用 localStorage
-  const KEY = 'evil-baike-favs';
-  type FavType = 'event' | 'person' | 'organization';
+  import { FAVORITES_KEY, FAVORITES_CHANGED, readFavorites, saveFavorites, type FavoriteType } from '~/lib/favorites';
 
-  function readFavs(): Record<FavType, Array<{ id: string; title: string; ts: number }>> {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (!raw) return { event: [], person: [], organization: [] };
-      const parsed = JSON.parse(raw);
-      return {
-        event: Array.isArray(parsed.event) ? parsed.event : [],
-        person: Array.isArray(parsed.person) ? parsed.person : [],
-        organization: Array.isArray(parsed.organization) ? parsed.organization : [],
-      };
-    } catch {
-      return { event: [], person: [], organization: [] };
-    }
+  function renderBtn(btn: HTMLButtonElement) {
+    const type = btn.dataset.favType as FavoriteType;
+    const active = readFavorites()[type].some(favorite => favorite.id === btn.dataset.favId);
+    btn.querySelector('[data-fav-star]')!.textContent = active ? '★' : '☆';
+    btn.querySelector('[data-fav-label]')!.textContent = active ? '已收藏' : '收藏';
+    btn.setAttribute('aria-pressed', String(active));
+    btn.setAttribute('aria-label', active ? '取消收藏' : '加入收藏');
   }
-
-  function writeFavs(favs: Record<FavType, Array<{ id: string; title: string; ts: number }>>) {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(favs));
-      // 广播事件供 Header 计数 + favorites 页同步
-      window.dispatchEvent(new CustomEvent('evil-baike:favs-changed', { detail: favs }));
-    } catch (err) {
-      console.warn('[evil-baike] localStorage 写入失败', err);
-    }
-  }
-
-  function isFav(type: FavType, id: string): boolean {
-    const favs = readFavs();
-    return favs[type].some((f) => f.id === id);
-  }
-
-  function toggleFav(type: FavType, id: string, title: string) {
-    const favs = readFavs();
-    const idx = favs[type].findIndex((f) => f.id === id);
-    if (idx >= 0) {
-      favs[type].splice(idx, 1);
-    } else {
-      favs[type].push({ id, title, ts: Date.now() });
-    }
-    writeFavs(favs);
-    return favs[type].some((f) => f.id === id);
-  }
-
-  function renderBtn(btn: HTMLButtonElement, active: boolean) {
-    const star = btn.querySelector('[data-fav-star]') as HTMLElement;
-    const label = btn.querySelector('[data-fav-label]') as HTMLElement;
-    if (active) {
-      star.textContent = '★';
-      label.textContent = '已收藏';
-      btn.classList.add('border-archive-seal', 'text-archive-seal');
-      btn.classList.remove('border-ink-900/40');
-      btn.setAttribute('aria-pressed', 'true');
-    } else {
-      star.textContent = '☆';
-      label.textContent = '收藏';
-      btn.classList.remove('border-archive-seal', 'text-archive-seal');
-      btn.classList.add('border-ink-900/40');
-      btn.setAttribute('aria-pressed', 'false');
-    }
-  }
-
-  // 初始化所有按钮
-  function initAll() {
-    document.querySelectorAll<HTMLButtonElement>('[data-fav-btn]').forEach((btn) => {
-      const type = btn.dataset.favType as FavType;
-      const id = btn.dataset.favId ?? '';
-      const title = btn.dataset.favTitle ?? '';
-      renderBtn(btn, isFav(type, id));
-      btn.addEventListener('click', () => {
-        const active = toggleFav(type, id, title);
-        renderBtn(btn, active);
-      });
-    });
-  }
-
-  // 跨组件同步
-  window.addEventListener('evil-baike:favs-changed', () => {
-    document.querySelectorAll<HTMLButtonElement>('[data-fav-btn]').forEach((btn) => {
-      const type = btn.dataset.favType as FavType;
-      const id = btn.dataset.favId ?? '';
-      renderBtn(btn, isFav(type, id));
+  function sync() { document.querySelectorAll<HTMLButtonElement>('[data-fav-btn]').forEach(renderBtn); }
+  document.querySelectorAll<HTMLButtonElement>('[data-fav-btn]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const type = btn.dataset.favType as FavoriteType;
+      const id = btn.dataset.favId!;
+      const favorites = readFavorites();
+      const index = favorites[type].findIndex(favorite => favorite.id === id);
+      if (index >= 0) favorites[type].splice(index, 1);
+      else favorites[type].push({ id, title: btn.dataset.favTitle ?? '', ts: Date.now() });
+      const saved = saveFavorites(favorites);
+      const feedback = btn.nextElementSibling;
+      if (feedback?.hasAttribute('data-fav-feedback')) feedback.textContent = saved ? (index >= 0 ? '已取消收藏' : '已保存到本机收藏') : '收藏未保存，请允许浏览器存储后重试。';
+      renderBtn(btn);
     });
   });
-
-  initAll();
+  window.addEventListener(FAVORITES_CHANGED, sync);
+  window.addEventListener('storage', event => { if (event.key === FAVORITES_KEY || event.key === null) sync(); });
+  sync();
 </script>
+
+<style>
+  .favorite-button { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; padding: 10px 18px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--text); font-size: 12px; font-weight: 600; line-height: 1.4; transition: border-color .2s ease, background .2s ease; }
+  .favorite-button:hover { border-color: var(--accent); }
+  .favorite-button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--page); }
+  [data-fav-star] { font-size: 18px; line-height: 1; }
+  [data-fav-feedback] { align-self: center; max-width: 26em; color: var(--muted); font-size: 12px; line-height: 1.7; }
+  [data-fav-feedback]:empty { display: none; }
+</style>

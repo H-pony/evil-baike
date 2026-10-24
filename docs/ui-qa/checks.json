@@ -1,0 +1,313 @@
+{
+  "results": [
+    {
+      "name": "Home has one primary heading",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Desktop has no horizontal overflow",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Hero images load",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Carousel next",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Carousel previous",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Carousel wraps to last",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Carousel wraps to first",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Pause stops automatic carousel",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Menu opens",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Escape closes menu and restores focus",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Archive guide opens",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Search loads existing archive index",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Search empty-result state",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Search restores focus",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Command K opens search",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "/events desktop fits",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "/events renders",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Year filter matches existing event",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Clearing filter restores events",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Sort updates URL",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "/people desktop fits",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "/people renders",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "/organizations desktop fits",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "/organizations renders",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "/tags desktop fits",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "/tags renders",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "/submit desktop fits",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "/submit renders",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Submission required fields retained",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "/about desktop fits",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "/about renders",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "/methodology desktop fits",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "/methodology renders",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "/favorites desktop fits",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "/favorites renders",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "/admin desktop fits",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "/admin renders",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Mobile home fits",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Mobile pause control accessible",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Mobile menu fits",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Mobile search fits",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "/events mobile fits",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "/people mobile fits",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "/organizations mobile fits",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "/submit mobile fits",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "/events/2023-wu-library-allegation mobile fits",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "No uncaught client JavaScript exceptions",
+      "passed": true,
+      "details": []
+    }
+  ],
+  "logErrors": [
+    {
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "url": "http://127.0.0.1:4321/api/views"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "url": "http://127.0.0.1:4321/api/views"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "url": "http://127.0.0.1:4321/api/views"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "url": "http://127.0.0.1:4321/api/views"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "url": "http://127.0.0.1:4321/api/views"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "url": "http://127.0.0.1:4321/api/views"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "url": "http://127.0.0.1:4321/api/views"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "url": "http://127.0.0.1:4321/api/views"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "url": "http://127.0.0.1:4321/api/views"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "url": "http://127.0.0.1:4321/api/views"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "url": "http://127.0.0.1:4321/api/admin/analytics"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "url": "http://127.0.0.1:4321/api/views"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "url": "http://127.0.0.1:4321/api/views"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "url": "http://127.0.0.1:4321/api/views"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "url": "http://127.0.0.1:4321/api/views"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "url": "http://127.0.0.1:4321/api/views"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "url": "http://127.0.0.1:4321/api/views"
+    },
+    {
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "url": "http://127.0.0.1:4321/api/views"
+    }
+  ]
+}

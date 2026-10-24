@@ -1,0 +1,44 @@
+{
+  "date": "2026-10-24",
+  "reference": "https://junni.co.jp/",
+  "local": "http://127.0.0.1:8788/",
+  "browser": "Google Chrome",
+  "desktop_viewports": [
+    [
+      1339,
+      828
+    ],
+    [
+      1339,
+      772
+    ]
+  ],
+  "mobile_viewport": [
+    390,
+    844
+  ],
+  "observed_reference": {
+    "first_wheel_180": "settles on green without scrolling the document",
+    "scrollY_after_first_wheel": 0,
+    "pointer": "tile flip and following text ring"
+  },
+  "local_checks": {
+    "header_wheel": "back at scrollY 0; header background rgba(0, 0, 0, 0)",
+    "next_down_wheel": "native document scroll; scrollY 270 on final retest",
+    "pointer_after_settle": "all 36 tiles flat; ring retained through wheel scene transition",
+    "keyboard_down": "back; focus manifesto-title; scrollY 0",
+    "keyboard_up": "front; focus portal-title; scrollY 0",
+    "explore_link_and_browser_back": "#archive enters back, back restores empty hash/front at scrollY 0",
+    "mobile_6px_vertical_drag": "18 tiles, back at scrollY 0",
+    "mobile_cta_1px_finger_jitter": "touch start, move +1px, end on CTA navigates to /events/",
+    "system_reduced_motion": "3D disabled, motion switch disabled and labelled 系统已减少动态效果",
+    "temporary_emulation": "device, touch and media overrides restored",
+    "console_errors": []
+  },
+  "automated": "npm run check:all passed; 12 Node tests passed; 83 pages; content and route validation passed",
+  "limits": [
+    "Print restoration reviewed in source, not retested via native print dialog this round",
+    "Uses CSS 3D; does not claim exact reproduction of source WebGL material and frame timings"
+  ],
+  "release": "GitHub Actions build required; production deployment disabled unless CF_AUTO_DEPLOY=true and configured"
+}

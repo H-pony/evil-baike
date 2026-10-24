@@ -1,302 +1,149 @@
 ---
-/**
- * Search - 全局搜索命令面板（⌘K 唤起）
- *
- * P2 改造：
- *   - 打开时记录 document.activeElement，关闭时恢复焦点
- *   - 显式 ESC 关闭
- *   - 无结果状态文案
- *   - 移除 riskLevel 显示（P0）
- */
+/** A native modal retains keyboard focus and searches the existing public index. */
 ---
-
-<button
-  type="button"
-  id="search-trigger"
-  class="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-ink-900/30 hover:border-archive-seal hover:text-archive-seal transition-colors font-mono"
-  aria-label="打开搜索"
-  aria-haspopup="dialog"
-  aria-controls="search-panel"
-  aria-expanded="false"
->
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-    <circle cx="11" cy="11" r="8"/>
-    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-  </svg>
-  <span class="hidden sm:inline">搜索</span>
-  <kbd class="hidden md:inline-flex items-center gap-0.5 text-[10px] border border-ink-900/30 px-1.5 py-0.5 ml-1 text-ink-faded">
-    <span>⌘</span><span>K</span>
-  </kbd>
-</button>
-
-<!-- 命令面板 -->
-<div
-  id="search-panel"
-  class="fixed inset-0 z-[100] hidden items-start justify-center pt-[10vh] px-4"
-  role="dialog"
-  aria-modal="true"
-  aria-label="全局搜索"
->
-  <!-- 背景遮罩 -->
-  <div id="search-backdrop" class="absolute inset-0 bg-ink-950/60 backdrop-blur-sm"></div>
-
-  <!-- 面板本体 -->
-  <div class="relative w-full max-w-2xl bg-archive-paper border-2 border-ink-900 shadow-2xl">
-    <!-- 输入框 -->
-    <div class="flex items-center border-b border-ink-900/30 px-4">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-ink-muted" aria-hidden="true">
-        <circle cx="11" cy="11" r="8"/>
-        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-      </svg>
-      <input
-        type="search"
-        id="search-input"
-        placeholder="搜索事件、人物、机构…"
-        class="flex-1 ml-3 py-4 bg-transparent outline-none font-serif text-lg placeholder:text-ink-faded"
-        autocomplete="off"
-        spellcheck="false"
-        aria-label="搜索关键词"
-      />
-      <kbd class="text-[10px] border border-ink-900/30 px-1.5 py-0.5 text-ink-faded font-mono">ESC</kbd>
-    </div>
-
-    <!-- 结果区 -->
-    <div id="search-results" class="max-h-[60vh] overflow-y-auto">
-      <div id="search-empty" class="p-8 text-center text-ink-faded text-sm">
-        <p class="font-mono uppercase tracking-wider mb-3">提示</p>
-        <p class="font-serif">输入关键词开始搜索</p>
-        <p class="text-xs mt-2 font-mono">支持模糊匹配 · 跨事件/人物/机构 · 命中别名</p>
-      </div>
-      <div id="search-no-match" class="p-8 text-center text-ink-faded text-sm hidden">
-        <p class="font-mono uppercase tracking-wider mb-3">无匹配结果</p>
-        <p class="font-serif">没有匹配的事件、人物或机构</p>
-        <p class="text-xs mt-2 font-mono">
-          可尝试更短的关键词，或检查拼写 · 如需投稿请前往
-          <a href="/submit">投稿页</a>
-        </p>
-      </div>
-      <div id="search-results-list" class="hidden"></div>
-    </div>
-
-    <!-- 底栏 -->
-    <div class="border-t border-ink-900/30 px-4 py-2 flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-ink-faded">
-      <div class="flex items-center gap-3">
-        <span><kbd class="border border-ink-900/30 px-1 py-0.5">↑↓</kbd> 选择</span>
-        <span><kbd class="border border-ink-900/30 px-1 py-0.5">↵</kbd> 打开</span>
-        <span><kbd class="border border-ink-900/30 px-1 py-0.5">ESC</kbd> 关闭</span>
-      </div>
-      <span id="search-result-count">0 结果</span>
-    </div>
-  </div>
-</div>
-
+<button type="button" id="search-trigger" class="pill-button search-trigger" aria-label="站内搜索" aria-haspopup="dialog" aria-controls="search-panel" aria-expanded="false"><span class="search-word">SEARCH</span><span class="search-orb" aria-hidden="true"><img src="/icons/search.svg" alt="" /></span></button>
+<dialog id="search-panel" class="search-dialog" aria-labelledby="search-title">
+  <div class="dialog-top"><div><p class="eyebrow">SEARCH THE ARCHIVE</p><h2 id="search-title">站内搜索</h2></div><button id="search-close" class="pill-button icon-button" aria-label="关闭搜索"><img src="/icons/close.svg" alt="" /></button></div>
+  <div class="search-field"><img src="/icons/search.svg" alt="" /><input type="search" id="search-input" placeholder="搜索事件、人物、机构…" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-controls="search-results-list" aria-expanded="false" aria-describedby="search-keyboard-hint" aria-label="搜索关键词" /><kbd>⌘ / Ctrl K</kbd></div>
+  <div id="search-results"><div id="search-empty" class="search-message"><p>从一个名字、一件事开始。</p><small>支持模糊匹配，也可以搜索话题或别名。</small></div><div id="search-loading" class="search-message" role="status" hidden><p>正在加载搜索索引…</p><small>加载后将自动显示搜索结果。</small></div><div id="search-no-match" class="search-message" role="status" hidden><p>没有找到匹配的档案</p><small>试试更短的关键词，或<a href="/submit">提交新事件</a>。</small></div><div id="search-error" class="search-message" role="status" hidden><p>搜索索引暂时无法加载</p><small>可以重试，或直接<a href="/events">浏览事件档案</a>。</small><button id="search-retry" type="button" class="pill-button">重新加载</button></div><div id="search-results-list" role="listbox" aria-label="搜索结果" hidden></div></div>
+  <div class="search-bottom"><span id="search-keyboard-hint">↑↓ 选择　↵ 打开　ESC 关闭</span><span id="search-result-count" role="status" aria-live="polite">0 个结果</span></div>
+</dialog>
+<style>
+  .search-trigger { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-width: 48px; width: auto; min-height: 48px; height: auto; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--text,#f4f2e9); font-size: 11px; font-weight: 650; letter-spacing: .11em; }
+  .search-trigger:hover { color: var(--accent,#d7ff36); background: transparent; }
+  .search-orb { display: grid; place-items: center; width: 48px; height: 48px; border: 1px solid var(--line,#37383b); border-radius: 50%; transition: border-color .2s; }
+  .search-orb img { width: 16px; height: 16px; filter: brightness(0) invert(1); }
+  .search-trigger:hover .search-orb { border-color: var(--accent,#d7ff36); }
+  :global(html.flip-on-green .home-header) .search-trigger { color: var(--page,#111214); }
+  :global(html.flip-on-green .home-header) .search-orb,
+  :global(html.flip-on-green .home-header) .search-trigger:hover .search-orb { border-color: currentColor; }
+  :global(html.flip-on-green .home-header) .search-orb img { filter: brightness(0); }
+  :global(html.flip-on-green .home-header) .search-trigger:focus-visible { outline-color: var(--page,#111214); }
+  .search-dialog { width: min(860px,calc(100% - 40px)); max-height: calc(100dvh - 40px); margin: auto; padding: clamp(24px,4vw,48px); border: 1px solid var(--line,#37383b); border-radius: 8px; overflow-y: auto; background: var(--surface,#1c1d21); color: var(--text,#f4f2e9); overscroll-behavior: contain; }
+  .search-dialog::backdrop { background: rgb(0 0 0 / .8); backdrop-filter: blur(12px); }
+  .dialog-top { display: flex; align-items: start; justify-content: space-between; gap: 20px; margin-bottom: 34px; }
+  .eyebrow { font: 500 10px/1.5 Geist,sans-serif; letter-spacing: .15em; color: var(--muted,#aaa9a4); }
+  h2 { font-size: clamp(30px,4vw,48px); line-height: 1.2; font-weight: 600; letter-spacing: -.05em; margin-top: 12px; }
+  #search-close { display: grid; place-items: center; width: 48px; min-height: 48px; padding: 0; border: 1px solid var(--line,#37383b); border-radius: 50%; background: transparent; flex-shrink: 0; }
+  #search-close img { width: 16px; height: 16px; filter: brightness(0) invert(1); }
+  #search-close:hover { border-color: var(--accent,#d7ff36); background: var(--surface-raised,#242529); }
+  .search-field { display: flex; align-items: center; gap: 18px; background: transparent; border: 0; border-bottom: 1px solid var(--line,#37383b); border-radius: 0; padding: 18px 0; }
+  .search-field > img { width: 20px; height: 20px; filter: brightness(0) invert(1); }
+  .search-field input { flex: 1; width: 0; min-width: 0; padding: 0; background: none; border: 0; outline: none; color: var(--text,#f4f2e9); font-size: clamp(18px,2.4vw,25px); line-height: 1.5; caret-color: var(--accent,#d7ff36); }
+  .search-field input::placeholder { color: var(--muted,#aaa9a4); }
+  .search-field:focus-within { border-color: var(--accent,#d7ff36); box-shadow: 0 1px 0 var(--accent,#d7ff36); }
+  .search-field input:focus-visible { outline: none; }
+  kbd { font-size: 10px; font-family: inherit; color: var(--muted,#aaa9a4); white-space: nowrap; }
+  #search-results { max-height: min(50dvh,500px); overflow-y: auto; margin-top: 20px; scrollbar-color: var(--line,#37383b) transparent; }
+  .search-message { padding: 56px 12px; text-align: center; }
+  .search-message p { font-size: 20px; font-weight: 500; margin-bottom: 10px; }
+  .search-message small { color: var(--muted,#aaa9a4); font-size: 13px; line-height: 1.8; }
+  .search-message a { color: var(--text,#f4f2e9); text-decoration: underline; text-underline-offset: 4px; }
+  .search-message a:hover { color: var(--accent,#d7ff36); }
+  #search-retry { display: flex; min-height: 44px; margin: 24px auto 0; padding: 10px 22px; border: 1px solid var(--accent,#d7ff36); border-radius: 4px; color: var(--accent,#d7ff36); background: transparent; font-size: 13px; }
+  #search-retry:hover { color: #111214; background: var(--accent,#d7ff36); }
+  .search-bottom { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px 20px; border-top: 1px solid var(--line,#37383b); padding-top: 18px; margin-top: 18px; color: var(--muted,#aaa9a4); font-size: 11px; }
+  :global(#search-panel .search-result) { display: block; padding: 20px; border-radius: 4px; margin-bottom: 8px; border: 1px solid transparent; color: var(--text,#f4f2e9); text-decoration: none; }
+  :global(#search-panel .search-result:hover),:global(#search-panel .search-result.is-selected) { border-color: var(--accent,#d7ff36); background: var(--surface-raised,#242529); }
+  :global(#search-panel .search-result .result-type) { font-size: 10px; display: inline-block; border-radius: 0; background: transparent; color: var(--muted,#aaa9a4); padding: 0; margin-bottom: 9px; letter-spacing: .08em; }
+  :global(#search-panel .search-result strong) { display: block; line-height: 1.6; font-size: 18px; font-weight: 550; margin-bottom: 8px; }
+  :global(#search-panel .search-result p) { color: var(--muted,#aaa9a4); font-size: 13px; line-height: 1.85; }
+  :global(#search-panel .search-result mark) { color: #111214; background: var(--accent,#d7ff36); border-radius: 1px; }
+  button:focus-visible,a:focus-visible { outline: 2px solid var(--accent,#d7ff36); outline-offset: 5px; }
+  @media (max-width:700px) { .search-trigger .search-word { display: none; } }
+  @media (max-width:600px) { .search-dialog { width: calc(100% - 24px); max-height: calc(100dvh - 24px); padding: 22px; } .dialog-top { margin-bottom: 24px; } h2 { font-size: 30px; } kbd { display: none; } .search-message { padding: 40px 0; } .search-message p { font-size: 17px; } .search-message small { font-size: 12px; } .search-field { gap: 12px; padding-block: 16px; } .search-field input { font-size: 17px; } :global(#search-panel .search-result) { padding: 16px; } :global(#search-panel .search-result strong) { font-size: 16px; } }
+  @media (prefers-reduced-motion:reduce) { .search-orb { transition: none; } }
+</style>
 <script>
   import Fuse from 'fuse.js';
-
-  const trigger = document.getElementById('search-trigger') as HTMLButtonElement;
-  const panel = document.getElementById('search-panel') as HTMLDivElement;
-  const backdrop = document.getElementById('search-backdrop') as HTMLDivElement;
-  const input = document.getElementById('search-input') as HTMLInputElement;
-  const empty = document.getElementById('search-empty') as HTMLDivElement;
-  const noMatch = document.getElementById('search-no-match') as HTMLDivElement;
-  const resultsList = document.getElementById('search-results-list') as HTMLDivElement;
-  const countLabel = document.getElementById('search-result-count') as HTMLSpanElement;
-
-  type Doc = {
-    type: 'event' | 'person' | 'organization';
-    id: string;
-    title: string;
-    summary: string;
-    aliases?: string[];
-    tags?: string[];
-    url: string;
-    orgType?: string;
-  };
-
-  let fuse: Fuse<Doc> | null = null;
-  let docs: Doc[] = [];
-  let activeIndex = -1;
-  let lastFocused: HTMLElement | null = null; // P2：记录打开前的焦点
-
+  type Doc = { type: 'event' | 'person' | 'organization'; title: string; summary: string; aliases?: string[]; tags?: string[]; url: string; };
+  const trigger = document.querySelector<HTMLButtonElement>('#search-trigger')!;
+  const panel = document.querySelector<HTMLDialogElement>('#search-panel')!;
+  const input = document.querySelector<HTMLInputElement>('#search-input')!;
+  const list = document.querySelector<HTMLElement>('#search-results-list')!;
+  const empty = document.getElementById('search-empty')!;
+  const noMatch = document.getElementById('search-no-match')!;
+  const error = document.getElementById('search-error')!;
+  const loadingMessage = document.getElementById('search-loading')!;
+  const count = document.getElementById('search-result-count')!;
+  let fuse: Fuse<Doc> | undefined;
+  let loading: Promise<void> | undefined;
+  let active = -1;
+  let previousFocus: HTMLElement | null = null;
+  let failed = false;
+  const escape = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+  function message(el: HTMLElement) {
+    for (const item of [empty, noMatch, error, loadingMessage, list]) item.hidden = item !== el;
+    active = -1; count.textContent = '0 个结果';
+    input.setAttribute('aria-expanded', String(el === list));
+    input.removeAttribute('aria-activedescendant');
+  }
+  function render() {
+    if (!fuse) { message(failed ? error : loading ? loadingMessage : empty); return; }
+    if (!input.value.trim()) { message(empty); return; }
+    const results = fuse.search(input.value.trim()).slice(0, 20);
+    if (!results.length) { message(noMatch); return; }
+    message(list);
+    list.innerHTML = results.map(({ item, matches }, index) => {
+      const match = matches?.find(m => m.key === 'title');
+      let title = ''; let start = 0;
+      for (const [a,b] of match?.indices ?? []) { title += escape(item.title.slice(start,a)) + '<mark>' + escape(item.title.slice(a,b+1)) + '</mark>'; start = b+1; }
+      title += escape(item.title.slice(start));
+      return `<a href="${escape(item.url)}" id="search-option-${index}" class="search-result" role="option" aria-selected="false" tabindex="-1" data-index="${index}"><span class="result-type">${{ event: '事件档案', person: '人物', organization: '机构' }[item.type]}</span><strong>${title}</strong><p>${escape(item.summary.slice(0,100))}${item.summary.length > 100 ? '…' : ''}</p></a>`;
+    }).join('');
+    active = 0;
+    count.textContent = `${results.length} 个结果`;
+    select();
+  }
+  function select() {
+    const items = list.querySelectorAll<HTMLAnchorElement>('.search-result');
+    items.forEach((el,i) => { el.classList.toggle('is-selected',i === active); el.setAttribute('aria-selected', String(i === active)); });
+    if (items[active]) input.setAttribute('aria-activedescendant', items[active].id);
+    items[active]?.scrollIntoView({ block: 'nearest' });
+  }
   async function loadIndex() {
     if (fuse) return;
-    try {
-      const res = await fetch('/search.json');
-      if (!res.ok) return;
-      docs = await res.json();
-      fuse = new Fuse(docs, {
-        keys: [
-          { name: 'title', weight: 3 },
-          { name: 'aliases', weight: 2 },
-          { name: 'summary', weight: 1 },
-          { name: 'tags', weight: 1.5 },
-        ],
-        threshold: 0.4,
-        ignoreLocation: true,
-        includeMatches: true,
-        minMatchCharLength: 1,
-      });
-    } catch {
-      // 网络/解析失败时不打扰用户
-    }
+    if (loading) return loading;
+    failed = false;
+    message(loadingMessage);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 12000);
+    loading = (async () => {
+      try {
+        const res = await fetch('/search.json', { signal: controller.signal });
+        if (!res.ok) throw new Error('Search unavailable');
+        const docs: Doc[] = await res.json();
+        fuse = new Fuse(docs, { keys: [{ name: 'title', weight: 3 },{ name: 'aliases',weight: 2 },{ name: 'summary',weight: 1 },{ name: 'tags',weight: 1.5 }], threshold: .4, ignoreLocation: true, includeMatches: true });
+        if (panel.open) render();
+      } catch { failed = true; if (panel.open) message(error); }
+      finally { window.clearTimeout(timeout); loading = undefined; }
+    })();
+    return loading;
   }
-
   function open() {
-    lastFocused = document.activeElement as HTMLElement | null;
-    panel.classList.remove('hidden');
-    panel.classList.add('flex');
-    trigger.setAttribute('aria-expanded', 'true');
-    document.body.style.overflow = 'hidden';
-    loadIndex();
-    setTimeout(() => input.focus(), 0);
+    if (panel.open) return;
+    document.querySelector<HTMLDialogElement>('#nav-menu[open]')?.close();
+    document.querySelector<HTMLDialogElement>('#guide-panel[open]')?.close();
+    previousFocus = document.activeElement as HTMLElement;
+    panel.showModal();
+    document.body.classList.add('dialog-open');
+    trigger.setAttribute('aria-expanded','true');
+    render(); input.focus(); loadIndex();
   }
-
-  function close() {
-    panel.classList.add('hidden');
-    panel.classList.remove('flex');
-    trigger.setAttribute('aria-expanded', 'false');
-    document.body.style.overflow = '';
-    input.value = '';
-    showEmpty();
-    // P2：恢复焦点
-    if (lastFocused && typeof lastFocused.focus === 'function') {
-      lastFocused.focus();
-    } else {
-      trigger.focus();
-    }
-    lastFocused = null;
-  }
-
-  function showEmpty() {
-    empty.classList.remove('hidden');
-    noMatch.classList.add('hidden');
-    resultsList.classList.add('hidden');
-    countLabel.textContent = '0 结果';
-    activeIndex = -1;
-  }
-
-  function showNoMatch() {
-    empty.classList.add('hidden');
-    noMatch.classList.remove('hidden');
-    resultsList.classList.add('hidden');
-    countLabel.textContent = '0 结果';
-    activeIndex = -1;
-  }
-
-  function renderResults(results: Array<{ item: Doc; matches?: ReadonlyArray<{ key?: string; value?: string; indices?: ReadonlyArray<readonly [number, number]> }> }>) {
-    if (results.length === 0) {
-      showNoMatch();
-      return;
-    }
-
-    resultsList.innerHTML = results.slice(0, 20).map((r, idx) => {
-      const d = r.item;
-      const typeLabel = d.type === 'event' ? '事件' : d.type === 'person' ? '人物' : '机构';
-      const titleMatch = r.matches?.find((m) => m.key === 'title');
-      const summaryMatch = r.matches?.find((m) => m.key === 'summary');
-
-      const titleHTML = highlight(d.title, titleMatch?.indices);
-      const summaryHTML = highlight(truncate(d.summary, 100), summaryMatch?.indices);
-
-      return `
-        <a
-          href="${d.url}"
-          data-idx="${idx}"
-          class="search-result block px-4 py-3 border-b border-ink-900/10 hover:bg-archive-aged/50 transition-colors ${idx === activeIndex ? 'bg-archive-aged/50' : ''}"
-        >
-          <div class="flex items-center gap-2 mb-1">
-            <span class="meta-stamp text-archive-seal">${typeLabel}</span>
-          </div>
-          <div class="font-display font-semibold text-base mb-1">${titleHTML}</div>
-          <div class="text-sm text-ink-muted line-clamp-2">${summaryHTML}</div>
-          ${d.tags && d.tags.length > 0 ? `<div class="flex flex-wrap gap-1 mt-1.5">${d.tags.slice(0, 4).map((t) => `<span class="tag">#${t}</span>`).join('')}</div>` : ''}
-        </a>
-      `;
-    }).join('');
-
-    resultsList.classList.remove('hidden');
-    empty.classList.add('hidden');
-    noMatch.classList.add('hidden');
-    countLabel.textContent = `${results.length} 结果`;
-    activeIndex = 0;
-  }
-
-  function highlight(text: string, indices?: ReadonlyArray<readonly [number, number]>): string {
-    if (!indices || indices.length === 0) return escapeHTML(text);
-    const parts: string[] = [];
-    let last = 0;
-    for (const [start, end] of indices) {
-      if (start > last) parts.push(escapeHTML(text.slice(last, start)));
-      parts.push(`<mark class="bg-archive-seal/30 text-ink-900 px-0.5">${escapeHTML(text.slice(start, end + 1))}</mark>`);
-      last = end + 1;
-    }
-    if (last < text.length) parts.push(escapeHTML(text.slice(last)));
-    return parts.join('');
-  }
-
-  function truncate(text: string, n: number): string {
-    if (text.length <= n) return text;
-    return text.slice(0, n) + '…';
-  }
-
-  function escapeHTML(text: string): string {
-    return text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-  }
-
-  // 事件绑定
-  trigger.addEventListener('click', open);
-  backdrop.addEventListener('click', close);
-
-  document.addEventListener('keydown', (e) => {
-    const isOpen = !panel.classList.contains('hidden');
-    // ⌘K / Ctrl+K 切换
-    if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault();
-      if (isOpen) close();
-      else open();
-      return;
-    }
-    if (!isOpen) return;
-    // P2：ESC 关闭（不再要求用户先 click input）
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      close();
-      return;
-    }
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      e.preventDefault();
-      const items = resultsList.querySelectorAll<HTMLElement>('.search-result');
-      if (items.length === 0) return;
-      items.forEach((el) => el.classList.remove('bg-archive-aged/50'));
-      activeIndex = (activeIndex + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
-      items[activeIndex]?.classList.add('bg-archive-aged/50');
-      items[activeIndex]?.scrollIntoView({ block: 'nearest' });
-      return;
-    }
-    if (e.key === 'Enter' && activeIndex >= 0) {
-      const items = resultsList.querySelectorAll<HTMLElement>('.search-result');
-      const target = items[activeIndex] as HTMLAnchorElement | undefined;
-      if (target) {
-        window.location.href = target.href;
-      }
-    }
-  });
-
-  let timer: ReturnType<typeof setTimeout> | null = null;
-  input.addEventListener('input', () => {
-    if (timer) clearTimeout(timer);
-    timer = setTimeout(() => {
-      const q = input.value.trim();
-      if (!q || !fuse) {
-        showEmpty();
-        return;
-      }
-      const results = fuse.search(q);
-      renderResults(results as Parameters<typeof renderResults>[0]);
-    }, 100);
+  trigger.addEventListener('click',open);
+  document.getElementById('search-close')?.addEventListener('click',()=>panel.close());
+  document.getElementById('search-retry')?.addEventListener('click', () => { input.focus(); loadIndex(); });
+  panel.addEventListener('close',()=> { const anotherDialogOpen = !!document.querySelector('dialog[open]'); document.body.classList.toggle('dialog-open', anotherDialogOpen); trigger.setAttribute('aria-expanded','false'); input.value = ''; message(empty); if (!anotherDialogOpen) previousFocus?.focus(); });
+  panel.addEventListener('click',e=> { if (e.target !== panel) return; const box=panel.getBoundingClientRect(); if(e.clientX<box.left||e.clientX>box.right||e.clientY<box.top||e.clientY>box.bottom) panel.close(); });
+  input.addEventListener('input',render);
+  document.addEventListener('keydown',e=> {
+    if(e.isComposing || e.keyCode === 229) return;
+    if(e.key.toLowerCase()==='k'&&(e.metaKey||e.ctrlKey)) { e.preventDefault(); panel.open ? panel.close() : open(); return; }
+    if(!panel.open) return;
+    if(e.key === 'Escape') { e.preventDefault(); panel.close(); return; }
+    if(e.target !== input) return;
+    const items = list.querySelectorAll<HTMLAnchorElement>('.search-result');
+    if((e.key==='ArrowDown'||e.key==='ArrowUp')&&items.length&&!list.hidden) { e.preventDefault(); active=(active+(e.key==='ArrowDown'?1:-1)+items.length)%items.length;select(); }
+    if(e.key==='Enter'&&active>=0&&!list.hidden) { e.preventDefault(); items[active]?.click(); }
   });
 </script>
