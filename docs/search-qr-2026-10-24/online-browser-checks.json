@@ -1,0 +1,33 @@
+{
+  "site": "https://schemer.online",
+  "deployment": "https://75696545.evil-baike.pages.dev",
+  "onlineSearch": {
+    "count": "11 个结果",
+    "filters": [
+      "全部11",
+      "事件档案2",
+      "机构5",
+      "人物4"
+    ],
+    "groups": [
+      "事件档案",
+      "机构",
+      "人物"
+    ],
+    "heading": "28px",
+    "result": "16px"
+  },
+  "onlineOrgCount": 5,
+  "onlineQR": {
+    "imageLoaded": true,
+    "open": true,
+    "overflow": false,
+    "width": 352
+  },
+  "onlineMobileSearch": {
+    "count": "11 个结果",
+    "heading": "24px",
+    "overflow": false,
+    "result": "15px"
+  }
+}

@@ -1,4 +1,12 @@
-# 生产发布与实操验收 · 2026-10-24
+# 搜索分类与页脚 QQ 群入口 · 2026-10-24
+
+final result: passed
+
+已发布到 [schemer.online](https://schemer.online/)，部署为 [75696545.evil-baike.pages.dev](https://75696545.evil-baike.pages.dev)，应用源码提交 `998a7e6`。搜索标题缩小为桌面28px、手机24px，新增全部、事件档案、机构、人物筛选与分组；页脚新增用户提供的QQ群二维码及放大弹窗，原图逐字节保留。桌面与手机正式站复核通过，构建、测试与内容检查均通过。详情和截图见 [本轮验收记录](docs/search-qr-2026-10-24/qa.md)。
+
+---
+
+# 首次生产发布与实操验收 · 2026-10-24
 
 final result: passed
 

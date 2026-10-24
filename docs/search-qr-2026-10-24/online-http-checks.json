@@ -1,0 +1,51 @@
+{
+  "verifiedAt": "2026-10-24T10:50:31+08:00",
+  "site": "https://schemer.online/",
+  "immutableDeployment": "https://75696545.evil-baike.pages.dev",
+  "codeCommit": "998a7e6",
+  "mode": "Read-only HTTP GET; no authentication or writes",
+  "homepage": {
+    "status": 200,
+    "categoryControls": {
+      "all": true,
+      "event": true,
+      "organization": true,
+      "person": true
+    },
+    "qqTrigger": true,
+    "qqPanel": true,
+    "qqGroupNumber": true
+  },
+  "qrAsset": {
+    "path": "/images/qq-group-1121513455.png",
+    "status": 200,
+    "contentType": "image/png",
+    "bytes": 569376,
+    "sha256": "e9fb9837904057d4c3664bf59afdc417d400f2a2fc4d13aa48bf0c71a117cf13",
+    "localSha256": "e9fb9837904057d4c3664bf59afdc417d400f2a2fc4d13aa48bf0c71a117cf13",
+    "matchesLocal": true
+  },
+  "searchIndex": {
+    "status": 200,
+    "docs": 20,
+    "types": {
+      "event": 4,
+      "organization": 9,
+      "person": 7
+    }
+  },
+  "unauthenticatedAdminSubmissions": {
+    "status": 401,
+    "body": {
+      "error": "请先登录。"
+    }
+  },
+  "submitPage": {
+    "requestedPath": "/submit",
+    "redirectStatus": 308,
+    "location": "/submit/",
+    "finalUrl": "https://schemer.online/submit/",
+    "status": 200
+  },
+  "passed": true
+}

@@ -1,6 +1,8 @@
 # 搜索分类与页脚 QQ 群二维码 · 2026-10-24
 
-本地验收：通过。正式发布：待执行。
+final result: passed
+
+本地和正式站验收均通过。正式地址：https://schemer.online/；部署：https://75696545.evil-baike.pages.dev；应用源码提交：`998a7e6`。
 
 ## 改动
 
@@ -21,5 +23,16 @@
 - 二维码放大弹窗显示完整码区，Esc 关闭并恢复入口焦点；在该弹窗按 ⌘K 后只保留搜索弹窗，焦点在输入框，背景滚动锁定正常。
 
 界面证据：`search-desktop.png`、`search-mobile.png`、`footer-desktop.png`、`footer-mobile.png`、`qr-enlarged.png`、`qr-mobile.png`。机器检查记录见 `browser-checks.json`。
+
+## 正式发布与复核
+
+从仓库根目录使用官方 Wrangler 执行 `pages deploy dist --project-name evil-baike --branch main`，静态文件、Functions bundle、路由、响应头和重定向均上传成功。
+
+- 正式域名桌面搜索实际显示 28px 标题、16px 结果标题，“武汉”显示 11 条及 2 / 5 / 4 分类数量；机构筛选实际返回 5 条。
+- 正式域名手机 390 × 844：搜索为 24px / 15px，11 条结果，无横向溢出；二维码可放大，图片加载成功且弹窗无横向溢出。临时浏览器尺寸已恢复。
+- 正式页脚二维码 HTTP 200，SHA-256 与本地用户原图相同；搜索索引仍为 20 条。投稿页 HTTP 200，未登录后台投稿接口仍为 401。
+- 本轮发布不涉及数据库迁移或 Secret 更新。
+
+线上证据：`online-search-desktop.png`、`online-search-mobile.png`、`online-footer-desktop.png`、`online-qr-mobile.png`、`online-browser-checks.json`、`online-http-checks.json`。
 
 本轮未实际加入 QQ 群；二维码内容采用用户原图。
