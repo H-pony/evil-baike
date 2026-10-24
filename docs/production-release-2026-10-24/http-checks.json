@@ -1,0 +1,70 @@
+{
+  "origin": "https://schemer.online",
+  "checkedAt": "2026-10-24T02:08:37.054Z",
+  "results": [
+    {
+      "path": "/",
+      "status": 200,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/events",
+      "status": 200,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/api/admin/submissions",
+      "status": 401,
+      "type": "application/json"
+    },
+    {
+      "path": "/api/submissions/status",
+      "status": 404,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/images/events/bit-peiyi-official-notice-20260929.webp",
+      "status": 200,
+      "bytes": 17970,
+      "sha256": "6f35487a48492b5792ba7145d8ba2a30760db3b4adac6898de9e1505600f1f5c",
+      "matchesLocal": true
+    },
+    {
+      "path": "/images/events/wu-keai-official-notice.webp",
+      "status": 200,
+      "bytes": 110368,
+      "sha256": "9234b0a01e4d69c2cd01a9536a0c53def3163c69e7b81befff404918c4341b16",
+      "matchesLocal": true
+    },
+    {
+      "path": "/images/events/lvliang-case-notice.webp",
+      "status": 200,
+      "bytes": 166864,
+      "sha256": "72b7d83d1a6ddebd1cbc9e6f42805b465231f37a4b6e7311d7a6b387c18fd347",
+      "matchesLocal": true
+    },
+    {
+      "path": "/images/events/wu-library-review-notice-20250920.webp",
+      "status": 200,
+      "bytes": 268590,
+      "sha256": "62c91295cd1b7d13964acf447f4d7df2818b1e00d7e6622a0d19543cd202d906",
+      "matchesLocal": true
+    },
+    {
+      "path": "/api/submissions",
+      "origin": "https://invalid.example",
+      "status": 403,
+      "body": {
+        "error": "请求无效，请刷新页面后重试。"
+      }
+    },
+    {
+      "path": "/api/submissions",
+      "origin": "https://schemer.online",
+      "status": 400,
+      "body": {
+        "error": "请填写称呼（可用昵称，最多 80 个字符）。"
+      }
+    }
+  ]
+}

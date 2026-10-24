@@ -1,0 +1,44 @@
+{
+  "origin": "https://schemer.online",
+  "checkedAt": "2026-10-24T02:18:29.793Z",
+  "outcomes": [
+    {
+      "case": "production_admin_login",
+      "status": 200
+    },
+    {
+      "case": "same_receipt_submit_twice",
+      "status": 201
+    },
+    {
+      "case": "idempotency_single_submission",
+      "passed": true
+    },
+    {
+      "case": "reject_nonexistent_public_archive",
+      "status": 400
+    },
+    {
+      "case": "resolve_test_submission",
+      "status": 200
+    },
+    {
+      "case": "reject_stale_review_version",
+      "status": 409
+    },
+    {
+      "case": "receipt_result_and_privacy",
+      "status": 200,
+      "passed": true
+    },
+    {
+      "case": "review_history_saved",
+      "passed": true
+    },
+    {
+      "case": "logout_and_unauthenticated_access",
+      "status": 401
+    }
+  ],
+  "testRecord": "One synthetic submission retained with resolved status; no public archive created; receipt stored only in ignored local state."
+}

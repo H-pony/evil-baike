@@ -249,3 +249,9 @@ A: 内容页仍是静态生成；浏览量与投稿通过独立的 Cloudflare Pa
 ```
 
 零成本、零运维、全球 CDN、抗审查能力比 Vercel/Netlify 强——非常适合「恶人百科」这种需要长期存档的项目。
+
+## 当前生产维护记录（2026-10-24）
+
+正式域名为 https://schemer.online，既有 `evil-baike` 是 Direct Upload 项目，没有 Cloudflare Git 连接；GitHub 的 `CF_AUTO_DEPLOY` 未启用，目前仅CI。此次先核对生产 `ANALYTICS_DB` 并执行0002一次，再用官方Wrangler部署 `dist/` 和根目录 `functions/`。生产后台的ADMIN_PASSWORD和SESSION_SECRET已配置为加密Secret；本机密码文件在Git忽略的 `.wrangler/` 下，不要提交或上传到公开资料。
+
+已认证的本机日后可在完整检查通过后运行 `wrangler pages deploy dist --project-name evil-baike --branch main`；修改Secret后重新部署，使新部署读取配置。此后不要再执行整份0002，先检查现有schema。此次迁移和正式站实操结果见根目录 `design-qa.md`。

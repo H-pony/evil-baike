@@ -1,0 +1,56 @@
+{
+  "site": "https://schemer.online/",
+  "immutableDeployment": "https://c1b6898f.evil-baike.pages.dev",
+  "previousDeployment": "https://f36852c2.evil-baike.pages.dev",
+  "codeCommit": "111a32e1d3aef556e8c6961e1b0312ff94557c43",
+  "date": "2026-10-24",
+  "desktopViewport": [
+    1686,
+    873
+  ],
+  "mobileViewport": [
+    390,
+    844
+  ],
+  "interactionChecks": {
+    "mouseHover": "tile spins; neighbours settle flat; cursor none, following ring grid; nonFlat tiles 0 after settle",
+    "headerWheel180": "back at scrollY 0; transparent header; ring retained; continuous text readable",
+    "nextDownWheel280": "native document scrollY 280",
+    "reverseWheel": "at top, upward wheel settles front at scrollY 0",
+    "mobileProgressiveDrag": "touch start y650, moves y644 then y630, end; back, 18 tiles, scrollY 0",
+    "mobileSingle6pxProbe": "did not change scene; not counted as passed. Prior standalone 6px claim corrected.",
+    "mobileCtaJitter1px": "back CTA touch y780→781 enters /events/; 4 source images; no horizontal overflow",
+    "imageAssets": "all 4 HTTP200 and byte-identical to local lossless WebP",
+    "consoleErrors": []
+  },
+  "database": {
+    "migration": "0002_submission_workflow.sql",
+    "statementsApplied": 10,
+    "newColumns": 6,
+    "historyTableAndIndexes": 4,
+    "submissionsBefore": 0,
+    "submissionsAfterMigration": 0,
+    "orphanHistory": 0,
+    "recovery": "Pre-migration D1 Time Travel bookmark retained in ignored local release state",
+    "smokeTest": "One synthetic submission created, repeated submit kept one row, reviewed to resolved; no public archive created"
+  },
+  "credentials": {
+    "productionSecrets": [
+      "ADMIN_PASSWORD",
+      "SESSION_SECRET"
+    ],
+    "storage": "Cloudflare encrypted production variables; local administrator password file is Git-ignored and mode 0600",
+    "notIncluded": [
+      "password",
+      "session secret",
+      "receipt",
+      "session cookie",
+      "OAuth token"
+    ]
+  },
+  "checks": {
+    "local": "check:all passed; 12 tests; 83 pages; 0 content/route errors",
+    "ci": "https://github.com/H-pony/evil-baike/actions/runs/40052651363"
+  },
+  "deploymentMode": "Existing Direct Upload Pages project; subsequent Wrangler deployment included Functions and production secrets. GitHub auto-deploy remains disabled."
+}

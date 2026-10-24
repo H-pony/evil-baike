@@ -29,7 +29,7 @@
     "keyboard_down": "back; focus manifesto-title; scrollY 0",
     "keyboard_up": "front; focus portal-title; scrollY 0",
     "explore_link_and_browser_back": "#archive enters back, back restores empty hash/front at scrollY 0",
-    "mobile_6px_vertical_drag": "18 tiles, back at scrollY 0",
+    "mobile_progressive_drag": "moves 6px then 20px total; 18 tiles, back at scrollY 0; standalone 6px was not isolated",
     "mobile_cta_1px_finger_jitter": "touch start, move +1px, end on CTA navigates to /events/",
     "system_reduced_motion": "3D disabled, motion switch disabled and labelled 系统已减少动态效果",
     "temporary_emulation": "device, touch and media overrides restored",
