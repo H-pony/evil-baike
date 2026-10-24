@@ -5,7 +5,13 @@
 <dialog id="search-panel" class="search-dialog" aria-labelledby="search-title">
   <div class="dialog-top"><div><p class="eyebrow">SEARCH THE ARCHIVE</p><h2 id="search-title">站内搜索</h2></div><button id="search-close" class="pill-button icon-button" aria-label="关闭搜索"><img src="/icons/close.svg" alt="" /></button></div>
   <div class="search-field"><img src="/icons/search.svg" alt="" /><input type="search" id="search-input" placeholder="搜索事件、人物、机构…" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-controls="search-results-list" aria-expanded="false" aria-describedby="search-keyboard-hint" aria-label="搜索关键词" /><kbd>⌘ / Ctrl K</kbd></div>
-  <div id="search-results"><div id="search-empty" class="search-message"><p>从一个名字、一件事开始。</p><small>支持模糊匹配，也可以搜索话题或别名。</small></div><div id="search-loading" class="search-message" role="status" hidden><p>正在加载搜索索引…</p><small>加载后将自动显示搜索结果。</small></div><div id="search-no-match" class="search-message" role="status" hidden><p>没有找到匹配的档案</p><small>试试更短的关键词，或<a href="/submit">提交新事件</a>。</small></div><div id="search-error" class="search-message" role="status" hidden><p>搜索索引暂时无法加载</p><small>可以重试，或直接<a href="/events">浏览事件档案</a>。</small><button id="search-retry" type="button" class="pill-button">重新加载</button></div><div id="search-results-list" role="listbox" aria-label="搜索结果" hidden></div></div>
+  <div class="search-filters" role="group" aria-label="搜索分类">
+    <button type="button" class="search-filter" data-search-type="all" aria-pressed="true" aria-controls="search-results-list">全部<span class="filter-count" hidden></span></button>
+    <button type="button" class="search-filter" data-search-type="event" aria-pressed="false" aria-controls="search-results-list">事件档案<span class="filter-count" hidden></span></button>
+    <button type="button" class="search-filter" data-search-type="organization" aria-pressed="false" aria-controls="search-results-list">机构<span class="filter-count" hidden></span></button>
+    <button type="button" class="search-filter" data-search-type="person" aria-pressed="false" aria-controls="search-results-list">人物<span class="filter-count" hidden></span></button>
+  </div>
+  <div id="search-results"><div id="search-empty" class="search-message"><p>从一个名字、一件事开始。</p><small>支持模糊匹配，也可以搜索话题或别名。</small></div><div id="search-loading" class="search-message" role="status" hidden><p>正在加载搜索索引…</p><small>加载后将自动显示搜索结果。</small></div><div id="search-no-match" class="search-message" role="status" hidden><p id="search-no-match-title">没有找到匹配的档案</p><small id="search-no-match-help">试试更短的关键词，或<a href="/submit">提交新事件</a>。</small><button id="search-show-all" type="button" class="pill-button" hidden>查看全部分类</button></div><div id="search-error" class="search-message" role="status" hidden><p>搜索索引暂时无法加载</p><small>可以重试，或直接<a href="/events">浏览事件档案</a>。</small><button id="search-retry" type="button" class="pill-button">重新加载</button></div><div id="search-results-list" role="listbox" aria-label="搜索结果" hidden></div></div>
   <div class="search-bottom"><span id="search-keyboard-hint">↑↓ 选择　↵ 打开　ESC 关闭</span><span id="search-result-count" role="status" aria-live="polite">0 个结果</span></div>
 </dialog>
 <style>
@@ -19,44 +25,60 @@
   :global(html.flip-on-green .home-header) .search-trigger:hover .search-orb { border-color: currentColor; }
   :global(html.flip-on-green .home-header) .search-orb img { filter: brightness(0); }
   :global(html.flip-on-green .home-header) .search-trigger:focus-visible { outline-color: var(--page,#111214); }
-  .search-dialog { width: min(860px,calc(100% - 40px)); max-height: calc(100dvh - 40px); margin: auto; padding: clamp(24px,4vw,48px); border: 1px solid var(--line,#37383b); border-radius: 8px; overflow-y: auto; background: var(--surface,#1c1d21); color: var(--text,#f4f2e9); overscroll-behavior: contain; }
+  .search-dialog { width: min(860px,calc(100% - 40px)); max-height: calc(100dvh - 40px); margin: auto; padding: clamp(24px,3vw,32px); border: 1px solid var(--line,#37383b); border-radius: 8px; overflow-y: auto; background: var(--surface,#1c1d21); color: var(--text,#f4f2e9); overscroll-behavior: contain; }
+  .search-dialog[open] { display: flex; flex-direction: column; overflow: hidden; }
+  .dialog-top,.search-field,.search-filters,.search-bottom { flex-shrink: 0; }
   .search-dialog::backdrop { background: rgb(0 0 0 / .8); backdrop-filter: blur(12px); }
-  .dialog-top { display: flex; align-items: start; justify-content: space-between; gap: 20px; margin-bottom: 34px; }
+  .dialog-top { display: flex; align-items: start; justify-content: space-between; gap: 20px; margin-bottom: 20px; }
   .eyebrow { font: 500 10px/1.5 Geist,sans-serif; letter-spacing: .15em; color: var(--muted,#aaa9a4); }
-  h2 { font-size: clamp(30px,4vw,48px); line-height: 1.2; font-weight: 600; letter-spacing: -.05em; margin-top: 12px; }
-  #search-close { display: grid; place-items: center; width: 48px; min-height: 48px; padding: 0; border: 1px solid var(--line,#37383b); border-radius: 50%; background: transparent; flex-shrink: 0; }
+  h2 { font-size: 28px; line-height: 1.3; font-weight: 600; letter-spacing: -.03em; margin-top: 8px; }
+  #search-close { display: grid; place-items: center; width: 44px; min-height: 44px; padding: 0; border: 1px solid var(--line,#37383b); border-radius: 50%; background: transparent; flex-shrink: 0; }
   #search-close img { width: 16px; height: 16px; filter: brightness(0) invert(1); }
   #search-close:hover { border-color: var(--accent,#d7ff36); background: var(--surface-raised,#242529); }
-  .search-field { display: flex; align-items: center; gap: 18px; background: transparent; border: 0; border-bottom: 1px solid var(--line,#37383b); border-radius: 0; padding: 18px 0; }
+  .search-field { display: flex; align-items: center; gap: 14px; background: transparent; border: 0; border-bottom: 1px solid var(--line,#37383b); border-radius: 0; padding: 14px 0; }
   .search-field > img { width: 20px; height: 20px; filter: brightness(0) invert(1); }
-  .search-field input { flex: 1; width: 0; min-width: 0; padding: 0; background: none; border: 0; outline: none; color: var(--text,#f4f2e9); font-size: clamp(18px,2.4vw,25px); line-height: 1.5; caret-color: var(--accent,#d7ff36); }
+  .search-field input { flex: 1; width: 0; min-width: 0; padding: 0; background: none; border: 0; outline: none; color: var(--text,#f4f2e9); font-size: 20px; line-height: 1.5; caret-color: var(--accent,#d7ff36); }
   .search-field input::placeholder { color: var(--muted,#aaa9a4); }
   .search-field:focus-within { border-color: var(--accent,#d7ff36); box-shadow: 0 1px 0 var(--accent,#d7ff36); }
   .search-field input:focus-visible { outline: none; }
   kbd { font-size: 10px; font-family: inherit; color: var(--muted,#aaa9a4); white-space: nowrap; }
-  #search-results { max-height: min(50dvh,500px); overflow-y: auto; margin-top: 20px; scrollbar-color: var(--line,#37383b) transparent; }
+  .search-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+  .search-filter { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; padding: 8px 13px; border: 1px solid var(--line,#37383b); border-radius: 999px; color: var(--muted,#aaa9a4); background: transparent; font-size: 12px; line-height: 1.4; white-space: nowrap; }
+  .search-filter:hover { color: var(--text,#f4f2e9); border-color: var(--muted,#aaa9a4); }
+  .search-filter[aria-pressed="true"] { color: var(--page,#111214); background: var(--accent,#d7ff36); border-color: var(--accent,#d7ff36); }
+  .filter-count { font-size: 10px; font-variant-numeric: tabular-nums; opacity: .75; }
+  #search-results { min-height: 0; max-height: min(48dvh,440px); overflow-y: auto; margin-top: 16px; scrollbar-color: var(--line,#37383b) transparent; }
   .search-message { padding: 56px 12px; text-align: center; }
-  .search-message p { font-size: 20px; font-weight: 500; margin-bottom: 10px; }
+  .search-message p { font-size: 17px; font-weight: 500; margin-bottom: 10px; }
   .search-message small { color: var(--muted,#aaa9a4); font-size: 13px; line-height: 1.8; }
   .search-message a { color: var(--text,#f4f2e9); text-decoration: underline; text-underline-offset: 4px; }
   .search-message a:hover { color: var(--accent,#d7ff36); }
-  #search-retry { display: flex; min-height: 44px; margin: 24px auto 0; padding: 10px 22px; border: 1px solid var(--accent,#d7ff36); border-radius: 4px; color: var(--accent,#d7ff36); background: transparent; font-size: 13px; }
-  #search-retry:hover { color: #111214; background: var(--accent,#d7ff36); }
+  #search-retry,#search-show-all { min-height: 44px; margin: 24px auto 0; padding: 10px 22px; border: 1px solid var(--accent,#d7ff36); border-radius: 4px; color: var(--accent,#d7ff36); background: transparent; font-size: 13px; }
+  #search-retry:hover,#search-show-all:hover { color: #111214; background: var(--accent,#d7ff36); }
   .search-bottom { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px 20px; border-top: 1px solid var(--line,#37383b); padding-top: 18px; margin-top: 18px; color: var(--muted,#aaa9a4); font-size: 11px; }
-  :global(#search-panel .search-result) { display: block; padding: 20px; border-radius: 4px; margin-bottom: 8px; border: 1px solid transparent; color: var(--text,#f4f2e9); text-decoration: none; }
+  :global(#search-panel .result-group + .result-group) { margin-top: 18px; }
+  :global(#search-panel .result-group-heading) { display: flex; align-items: center; gap: 10px; padding: 4px 2px 10px; margin-bottom: 4px; border-bottom: 1px solid var(--line,#37383b); color: var(--muted,#aaa9a4); font-size: 11px; font-weight: 500; letter-spacing: .05em; }
+  :global(#search-panel .result-group-heading span) { font-size: 10px; font-variant-numeric: tabular-nums; }
+  :global(#search-panel .search-result) { display: block; padding: 12px 14px; border-radius: 4px; margin-bottom: 4px; border: 1px solid transparent; color: var(--text,#f4f2e9); text-decoration: none; }
   :global(#search-panel .search-result:hover),:global(#search-panel .search-result.is-selected) { border-color: var(--accent,#d7ff36); background: var(--surface-raised,#242529); }
-  :global(#search-panel .search-result .result-type) { font-size: 10px; display: inline-block; border-radius: 0; background: transparent; color: var(--muted,#aaa9a4); padding: 0; margin-bottom: 9px; letter-spacing: .08em; }
-  :global(#search-panel .search-result strong) { display: block; line-height: 1.6; font-size: 18px; font-weight: 550; margin-bottom: 8px; }
-  :global(#search-panel .search-result p) { color: var(--muted,#aaa9a4); font-size: 13px; line-height: 1.85; }
+  :global(#search-panel .search-result strong) { display: block; line-height: 1.55; font-size: 16px; font-weight: 550; margin-bottom: 5px; overflow-wrap: anywhere; }
+  :global(#search-panel .search-result p) { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; color: var(--muted,#aaa9a4); font-size: 12px; line-height: 1.75; }
   :global(#search-panel .search-result mark) { color: #111214; background: var(--accent,#d7ff36); border-radius: 1px; }
   button:focus-visible,a:focus-visible { outline: 2px solid var(--accent,#d7ff36); outline-offset: 5px; }
   @media (max-width:700px) { .search-trigger .search-word { display: none; } }
-  @media (max-width:600px) { .search-dialog { width: calc(100% - 24px); max-height: calc(100dvh - 24px); padding: 22px; } .dialog-top { margin-bottom: 24px; } h2 { font-size: 30px; } kbd { display: none; } .search-message { padding: 40px 0; } .search-message p { font-size: 17px; } .search-message small { font-size: 12px; } .search-field { gap: 12px; padding-block: 16px; } .search-field input { font-size: 17px; } :global(#search-panel .search-result) { padding: 16px; } :global(#search-panel .search-result strong) { font-size: 16px; } }
+  @media (max-width:600px) { .search-dialog { width: calc(100% - 24px); max-height: calc(100dvh - 24px); padding: 20px; } .dialog-top { margin-bottom: 16px; } h2 { font-size: 24px; } kbd { display: none; } .search-message { padding: 40px 0; } .search-message p { font-size: 16px; } .search-message small { font-size: 12px; } .search-field { gap: 12px; padding-block: 12px; } .search-field input { font-size: 17px; } .search-filters { gap: 6px; margin-top: 14px; } .search-filter { gap: 4px; padding-inline: 7px; font-size: 11px; } :global(#search-panel .search-result) { padding: 11px 10px; } :global(#search-panel .search-result strong) { font-size: 15px; } }
+  @media (max-height:500px) { .search-dialog[open] { display: block; overflow-y: auto; } #search-results { max-height: 45dvh; } .dialog-top { margin-bottom: 10px; } }
   @media (prefers-reduced-motion:reduce) { .search-orb { transition: none; } }
 </style>
 <script>
   import Fuse from 'fuse.js';
   type Doc = { type: 'event' | 'person' | 'organization'; title: string; summary: string; aliases?: string[]; tags?: string[]; url: string; };
+  type SearchType = 'all' | Doc['type'];
+  const categories = [
+    { type: 'event', label: '事件档案' },
+    { type: 'organization', label: '机构' },
+    { type: 'person', label: '人物' },
+  ] as const;
   const trigger = document.querySelector<HTMLButtonElement>('#search-trigger')!;
   const panel = document.querySelector<HTMLDialogElement>('#search-panel')!;
   const input = document.querySelector<HTMLInputElement>('#search-input')!;
@@ -66,40 +88,77 @@
   const error = document.getElementById('search-error')!;
   const loadingMessage = document.getElementById('search-loading')!;
   const count = document.getElementById('search-result-count')!;
+  const filters = document.querySelectorAll<HTMLButtonElement>('[data-search-type]');
+  const showAll = document.getElementById('search-show-all')!;
   let fuse: Fuse<Doc> | undefined;
   let loading: Promise<void> | undefined;
   let active = -1;
+  let selectedType: SearchType = 'all';
   let previousFocus: HTMLElement | null = null;
   let failed = false;
   const escape = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+  function updateFilters(totals?: Record<SearchType, number>) {
+    filters.forEach(button => {
+      const type = button.dataset.searchType as SearchType;
+      button.setAttribute('aria-pressed', String(type === selectedType));
+      const badge = button.querySelector<HTMLElement>('.filter-count')!;
+      badge.hidden = !totals;
+      badge.textContent = totals ? String(totals[type]) : '';
+    });
+  }
   function message(el: HTMLElement) {
     for (const item of [empty, noMatch, error, loadingMessage, list]) item.hidden = item !== el;
+    if (el !== list) list.innerHTML = '';
     active = -1; count.textContent = '0 个结果';
     input.setAttribute('aria-expanded', String(el === list));
     input.removeAttribute('aria-activedescendant');
   }
   function render() {
+    updateFilters();
     if (!fuse) { message(failed ? error : loading ? loadingMessage : empty); return; }
     if (!input.value.trim()) { message(empty); return; }
-    const results = fuse.search(input.value.trim()).slice(0, 20);
-    if (!results.length) { message(noMatch); return; }
+    const results = fuse.search(input.value.trim());
+    const totals: Record<SearchType, number> = { all: results.length, event: 0, organization: 0, person: 0 };
+    results.forEach(({ item }) => { totals[item.type]++; });
+    updateFilters(totals);
+    const selectedLabel = categories.find(category => category.type === selectedType)?.label;
+    const resultCount = selectedType === 'all' ? `${totals.all} 个结果` : `${selectedLabel} · ${totals[selectedType]} 个结果`;
+    if (!totals[selectedType]) {
+      document.getElementById('search-no-match-title')!.textContent = selectedLabel ? `没有找到匹配的${selectedLabel}` : '没有找到匹配的档案';
+      document.getElementById('search-no-match-help')!.innerHTML = totals.all
+        ? `其他分类中有 ${totals.all} 个结果，可以切换分类查看。`
+        : '试试更短的关键词，或<a href="/submit">提交新事件</a>。';
+      showAll.hidden = !totals.all;
+      message(noMatch);
+      count.textContent = resultCount;
+      return;
+    }
     message(list);
-    list.innerHTML = results.map(({ item, matches }, index) => {
-      const match = matches?.find(m => m.key === 'title');
-      let title = ''; let start = 0;
-      for (const [a,b] of match?.indices ?? []) { title += escape(item.title.slice(start,a)) + '<mark>' + escape(item.title.slice(a,b+1)) + '</mark>'; start = b+1; }
-      title += escape(item.title.slice(start));
-      return `<a href="${escape(item.url)}" id="search-option-${index}" class="search-result" role="option" aria-selected="false" tabindex="-1" data-index="${index}"><span class="result-type">${{ event: '事件档案', person: '人物', organization: '机构' }[item.type]}</span><strong>${title}</strong><p>${escape(item.summary.slice(0,100))}${item.summary.length > 100 ? '…' : ''}</p></a>`;
+    let index = 0;
+    list.innerHTML = categories.filter(category => totals[category.type] && (selectedType === 'all' || selectedType === category.type)).map(category => {
+      const items = results.filter(({ item }) => item.type === category.type).map(({ item, matches }) => {
+        const match = matches?.find(m => m.key === 'title');
+        let title = ''; let start = 0;
+        for (const [a,b] of match?.indices ?? []) { title += escape(item.title.slice(start,a)) + '<mark>' + escape(item.title.slice(a,b+1)) + '</mark>'; start = b+1; }
+        title += escape(item.title.slice(start));
+        return `<a href="${escape(item.url)}" id="search-option-${index}" class="search-result" role="option" aria-selected="false" tabindex="-1" data-index="${index++}"><strong>${title}</strong><p>${escape(item.summary.slice(0,120))}${item.summary.length > 120 ? '…' : ''}</p></a>`;
+      }).join('');
+      return `<div class="result-group" role="group" aria-label="${category.label}"><div class="result-group-heading" aria-hidden="true">${category.label}<span>${totals[category.type]}</span></div>${items}</div>`;
     }).join('');
+    document.getElementById('search-results')!.scrollTop = 0;
     active = 0;
-    count.textContent = `${results.length} 个结果`;
-    select();
+    count.textContent = resultCount;
+    select(false);
   }
-  function select() {
+  function select(scroll = true) {
     const items = list.querySelectorAll<HTMLAnchorElement>('.search-result');
     items.forEach((el,i) => { el.classList.toggle('is-selected',i === active); el.setAttribute('aria-selected', String(i === active)); });
     if (items[active]) input.setAttribute('aria-activedescendant', items[active].id);
-    items[active]?.scrollIntoView({ block: 'nearest' });
+    if (scroll) items[active]?.scrollIntoView({ block: 'nearest' });
+  }
+  function changeCategory(type: SearchType) {
+    selectedType = type;
+    render();
   }
   async function loadIndex() {
     if (fuse) return;
@@ -122,8 +181,7 @@
   }
   function open() {
     if (panel.open) return;
-    document.querySelector<HTMLDialogElement>('#nav-menu[open]')?.close();
-    document.querySelector<HTMLDialogElement>('#guide-panel[open]')?.close();
+    document.querySelectorAll<HTMLDialogElement>('dialog[open]').forEach(dialog => dialog.close());
     previousFocus = document.activeElement as HTMLElement;
     panel.showModal();
     document.body.classList.add('dialog-open');
@@ -133,7 +191,9 @@
   trigger.addEventListener('click',open);
   document.getElementById('search-close')?.addEventListener('click',()=>panel.close());
   document.getElementById('search-retry')?.addEventListener('click', () => { input.focus(); loadIndex(); });
-  panel.addEventListener('close',()=> { const anotherDialogOpen = !!document.querySelector('dialog[open]'); document.body.classList.toggle('dialog-open', anotherDialogOpen); trigger.setAttribute('aria-expanded','false'); input.value = ''; message(empty); if (!anotherDialogOpen) previousFocus?.focus(); });
+  filters.forEach(button => button.addEventListener('click', () => changeCategory(button.dataset.searchType as SearchType)));
+  showAll.addEventListener('click', () => { changeCategory('all'); input.focus(); });
+  panel.addEventListener('close',()=> { const anotherDialogOpen = !!document.querySelector('dialog[open]'); document.body.classList.toggle('dialog-open', anotherDialogOpen); trigger.setAttribute('aria-expanded','false'); input.value = ''; selectedType = 'all'; updateFilters(); message(empty); if (!anotherDialogOpen) previousFocus?.focus(); });
   panel.addEventListener('click',e=> { if (e.target !== panel) return; const box=panel.getBoundingClientRect(); if(e.clientX<box.left||e.clientX>box.right||e.clientY<box.top||e.clientY>box.bottom) panel.close(); });
   input.addEventListener('input',render);
   document.addEventListener('keydown',e=> {

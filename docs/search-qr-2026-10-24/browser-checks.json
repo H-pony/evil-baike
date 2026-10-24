@@ -1,0 +1,75 @@
+{
+  "categoryChecks": [
+    {
+      "kind": "event",
+      "active": "search-option-0",
+      "count": 2,
+      "groups": [
+        "事件档案"
+      ],
+      "hrefs": [
+        "/events/2023-wu-library-allegation",
+        "/events/2026-wu-keai-pdf-report"
+      ]
+    },
+    {
+      "kind": "organization",
+      "active": "search-option-0",
+      "count": 5,
+      "groups": [
+        "机构"
+      ],
+      "hrefs": [
+        "/organizations/wuhan-economic-development-zone-court",
+        "/organizations/wuhan-intermediate-court",
+        "/organizations/wuhan-university",
+        "/organizations/wuhan-chemistry-school",
+        "/organizations/anhui-university"
+      ]
+    },
+    {
+      "kind": "person",
+      "active": "search-option-0",
+      "count": 4,
+      "groups": [
+        "人物"
+      ],
+      "hrefs": [
+        "/people/xiao-moumo",
+        "/people/yang-jingyuan",
+        "/people/fu-lei",
+        "/people/zeng-mengqi"
+      ]
+    }
+  ],
+  "keyboardNavigation": {
+    "active": "search-option-1",
+    "selected": "/events/2026-wu-keai-pdf-report"
+  },
+  "narrowSearch": {
+    "filterRows": [
+      197.796875,
+      197.796875,
+      197.796875,
+      197.796875
+    ],
+    "horizontalOverflow": false
+  },
+  "closeSearch": {
+    "focus": "search-trigger",
+    "open": false,
+    "query": "",
+    "selected": "all"
+  },
+  "qrClose": {
+    "focus": "qq-group-trigger",
+    "open": false
+  },
+  "crossModal": {
+    "bodyLocked": true,
+    "focus": "search-input",
+    "openDialogs": [
+      "search-panel"
+    ]
+  }
+}
