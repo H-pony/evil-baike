@@ -24,3 +24,7 @@ The generated files were inspected and converted to WebP at approximately 1200 Ã
 The current interface follows the user-selected [JUNNI website](https://junni.co.jp/): charcoal tile grid, warm white typography, lime reverse scene, transparent header and circular controls. Earlier Spark assets above are retained as historical provenance; they do not describe the current theme. The archive keeps its own brand and copy. Its 3D artwork is made from real page text in CSS, rather than an image of the reference brand.
 
 `public/icons/dots.svg` uses the MIT-licensed [Tabler dots icon](https://github.com/tabler/tabler-icons/blob/main/icons/outline/dots.svg). The locally served fonts retain the SIL licenses listed above. The generated editorial images remain illustrative and are cropped into the compact event cards.
+
+## Event images replaced for production (2026-10-24)
+
+All four displayed event covers now use directly related school notices or a case filing notice from identified public reports. The previous generated library, campus and document images are no longer selected by the UI. Unknown entries have no fallback cover. Document images retain their source pixels, existing redactions and watermarks through lossless WebP conversion; thumbnails use contain and the detail page shows the full image with source links. See [the per-event source record](event-images-2026-10-24.md).

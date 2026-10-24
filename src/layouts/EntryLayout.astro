@@ -95,6 +95,7 @@ const indexedTags = new Set(indexedEntries.flatMap(entry => entry.data.tags));
 const orgTypeLabels: Record<string, string> = { government: '公共机构', academic: '教育机构', company: '企业', ngo: '社会组织', media: '媒体机构', other: '其他机构' };
 const displayType = type ? ((entryType === 'event' ? typeLabels : orgTypeLabels)[type] ?? type) : undefined;
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://schemer.online').toString();
+const cover = entryType === 'event' ? eventCover(entryId) : undefined;
 ---
 
 <BaseLayout
@@ -148,7 +149,20 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://schemer.
       )}
     </header>
 
-    {entryType === 'event' && <figure class="entry-cover"><img src={eventCover(entryId).src} alt={eventCover(entryId).alt} width="1200" height="675" /><figcaption>主题示意配图 · 不作为事件事实或信源证据</figcaption></figure>}
+    {cover && <figure class="entry-cover" data-image-kind={cover.kind}>
+      <a class="entry-cover-image-link" href={cover.src} target="_blank" rel="noopener noreferrer" aria-label={`查看${cover.label}完整图片（新窗口）`}>
+        <img src={cover.src} alt={cover.alt} width={cover.width} height={cover.height} />
+      </a>
+      <figcaption>
+        <strong class="entry-cover-label">{cover.label}</strong>
+        <p>{cover.caption}</p>
+        <div class="entry-cover-sources">
+          <span>出处：<a href={cover.sourceUrl} target="_blank" rel="noopener noreferrer">{cover.sourceName}</a></span>
+          <a href={cover.originalImageUrl} target="_blank" rel="noopener noreferrer">来源原图 ↗</a>
+          <a href={cover.src} target="_blank" rel="noopener noreferrer">查看完整图片 ↗</a>
+        </div>
+      </figcaption>
+    </figure>}
 
     <!-- 顶部状态横幅：verifiedAt / contested / archived -->
     <EntryStatusBanner

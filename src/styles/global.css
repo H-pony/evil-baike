@@ -142,8 +142,17 @@
 .prose th,.prose td { border-bottom:1px solid var(--line); padding:12px 16px; text-align:left; } .prose th { background:var(--surface); color:var(--text); }
 .prose pre { overflow:auto; padding:20px; border:1px solid var(--line); border-radius:6px; background:var(--surface) !important; color:var(--text) !important; }
 .prose code { font-size:.9em; color:var(--accent); } .prose hr { border-color:var(--line); margin-block:36px; }
-.entry-cover { margin:28px 0 36px; } .entry-cover img { display:block; width:100%; aspect-ratio:16/9; object-fit:cover; border-radius:9px; filter:saturate(.5); }
-.entry-cover figcaption { font-size:10px; color:var(--muted); margin-top:10px; }
+/* Source documents keep their full aspect ratio and original colors. */
+.entry-cover { margin:28px 0 36px; }
+.entry-cover-image-link { display:block; border:1px solid var(--line); border-radius:9px; overflow:hidden; background:var(--surface-raised); }
+.entry-cover img { display:block; width:100%; height:auto; border-radius:0; }
+.entry-cover[data-image-kind="document"] img { object-fit:contain; }
+.entry-cover figcaption { font-size:12px; line-height:1.75; color:var(--muted); margin-top:12px; }
+.entry-cover-label { color:var(--text); font-size:12px; }
+.entry-cover figcaption p { margin:5px 0; }
+.entry-cover-sources { display:flex; align-items:center; flex-wrap:wrap; gap:0 16px; }
+.entry-cover-sources a { display:inline-flex; align-items:center; min-height:44px; color:var(--accent); text-decoration:underline; text-underline-offset:3px; }
+.entry-cover-image-link:focus-visible,.entry-cover-sources a:focus-visible { outline:2px solid var(--accent); outline-offset:4px; }
 [data-entry-id]>header h1 { font-size:clamp(31px,4.2vw,54px); line-height:1.5; }
 [data-entry-id] .deck { font-size:16px; line-height:2; }
 [data-entry-id] .tag { min-height:36px; }

@@ -9,14 +9,14 @@ interface Props {
 const { id, title, summary, type, dateStart, dateEnd, status, sourceCount, timelineCount } = Astro.props;
 const cover = eventCover(id);
 ---
-<a href={`/events/${id}`} class="journal-card card-link">
-  <div class="journal-card-frame">
-    <div class="journal-card-image">
-      <img src={cover.src} alt={cover.alt} width="1200" height="675" loading="lazy" />
-      <span class="image-note">示意配图</span>
-      <span class="image-cta" aria-hidden="true"><img src="/icons/arrow.svg" alt="" /></span>
+<a href={`/events/${id}`} class:list={["journal-card card-link", { "journal-card--no-cover": !cover }]}>
+  {cover && <div class="journal-card-frame">
+    <div class="journal-card-image" data-image-kind={cover.kind}>
+      <img src={cover.src} alt={cover.alt} width={cover.width} height={cover.height} loading="lazy" />
+      {cover.kind === 'photo' && <span class="image-cta" aria-hidden="true"><img src="/icons/arrow.svg" alt="" /></span>}
     </div>
-  </div>
+    <span class="image-note">{cover.label}</span>
+  </div>}
   <div class="journal-card-body">
     <div class="journal-card-category"><span>{typeLabels[type] ?? type}</span><StatusBadge status={status} size="sm" /></div>
     <p class="card-date">{formatDate(dateStart)}{dateEnd && ` — ${formatDate(dateEnd)}`}</p>
@@ -32,9 +32,10 @@ const cover = eventCover(id);
   .journal-card:hover { border-color: var(--accent); transform: translateY(-2px); }
   .journal-card-frame { flex-shrink: 0; padding: 7px 7px 0; }
   .journal-card-image { position: relative; overflow: hidden; aspect-ratio: 2.4 / 1; border-radius: 5px; background: var(--surface-raised); }
-  .journal-card-image > img { display: block; width: 100%; height: 100%; object-fit: cover; filter: saturate(.3); transition: transform .35s ease; }
-  .journal-card:hover .journal-card-image > img { transform: scale(1.025); }
-  .image-note { position: absolute; top: 7px; left: 7px; padding: 3px 6px; border-radius: 3px; background: var(--page); color: var(--muted); font-size: 9px; line-height: 1.4; }
+  .journal-card-image > img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .35s ease; }
+  .journal-card-image[data-image-kind="document"] > img { object-fit: contain; }
+  .journal-card:hover .journal-card-image[data-image-kind="photo"] > img { transform: scale(1.025); }
+  .image-note { display: block; margin: 5px 2px 0; color: var(--muted); font-size: 9px; line-height: 1.4; overflow-wrap: anywhere; }
   .image-cta { position: absolute; right: 7px; bottom: 7px; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); opacity: 0; transition: opacity .2s ease; }
   .image-cta img { width: 13px; height: 13px; filter: brightness(0); }
   .journal-card:hover .image-cta,.journal-card:focus-visible .image-cta { opacity: 1; }
@@ -52,7 +53,7 @@ const cover = eventCover(id);
     .journal-card-frame { align-self: start; padding: 0; }
     .journal-card-image { height: 104px; aspect-ratio: auto; }
     .journal-card-image > img { object-position: center; }
-    .image-note { top: auto; bottom: 5px; left: 4px; padding: 2px 4px; font-size: 8px; }
+    .image-note { margin: 5px 0 0; font-size: 8px; }
     .image-cta { display: none; }
     .journal-card-body { padding: 0; }
     .journal-card-category { gap: 3px 6px; margin-bottom: 4px; font-size: 9px; }
@@ -66,5 +67,6 @@ const cover = eventCover(id);
     .journal-card { grid-template-columns: 68px minmax(0, 1fr); gap: 10px; padding: 10px; }
     .journal-card-image { height: 88px; }
   }
+  .journal-card--no-cover { grid-template-columns: minmax(0, 1fr); }
   @media (prefers-reduced-motion: reduce) { .journal-card, .journal-card-image > img { transition: none; } .journal-card:hover, .journal-card:hover .journal-card-image > img { transform: none; } }
 </style>
